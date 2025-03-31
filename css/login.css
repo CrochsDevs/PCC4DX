@@ -14,8 +14,8 @@ body {
 
 /* Login Container */
 .login-container {
-    width: 100%;
-    max-width: 420px;
+    width: 90%;
+    max-width: 400px;
     background: white;
     padding: 2rem;
     border-radius: 8px;
@@ -35,10 +35,10 @@ body {
 }
 
 .login-header h1 {
-    font-size: 1.75rem;
+    font-size: 2rem;
     color: #005ea2;
     margin-bottom: 0.25rem;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .login-header p {
@@ -60,10 +60,10 @@ body {
 }
 
 .form-group input {
-    width: 95%;
+    width: 93%;
     padding: 0.75rem;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 10px;
     font-size: 1rem;
     transition: all 0.3s;
 }
@@ -74,11 +74,9 @@ body {
     box-shadow: 0 0 0 3px rgba(0, 94, 162, 0.1);
 }
 
-/* Location Dropdown - Positioned after login button */
+/* Location Dropdown - Now at the top */
 .location-group {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #eee;
+    margin-bottom: 1.5rem;
 }
 
 .location-group label {

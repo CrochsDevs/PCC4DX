@@ -11,23 +11,12 @@
     <div class="login-container">
         <div class="login-header">
             <img src="images/pcclogo.png" alt="Philippine Carabao Center Logo">
-            <h1>Philippine Carabao Center</h1>
+            <h1>PCC-4DX</h1>
             <p>Fill up your details to login</p>
         </div>
 
         <form action="/login" method="post">
-            <div class="form-group">
-                <label for="username">Username or Email</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-
-            <button type="submit" class="login-button">Login</button>
-
+            <!-- Location dropdown at the top -->
             <div class="location-group">
                 <label for="location">Select Location</label>
                 <select id="location" name="location" required>
@@ -52,6 +41,19 @@
                     </optgroup>
                 </select>
             </div>
+
+            <!-- Login form fields -->
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="login-button">Login</button>
         </form>
 
         <div class="login-help">
