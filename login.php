@@ -126,7 +126,7 @@ body {
 
         <div class="login-help">
             <a href="forgetpassword.php">Forgot password?</a> | 
-            <a href="/register">Help</a>
+            <a href="help.php">Help</a>
         </div>
         <button id="theme-toggle" class="theme-toggle">🌙 Dark Mode</button>
     </div>
