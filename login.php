@@ -32,21 +32,23 @@
                 <label for="location">Select Location</label>
                 <select id="location" name="location" required>
                     <option value="" disabled selected>-- Select Location --</option>
-                    <option value="headquarters">Headquarters</option>
+                    <option value="center1" data-image="images/headquarters.png">PCC-Headquarters</option>
                     <optgroup label="Regional Centers">
-                        <option value="center1">Center 1</option>
-                        <option value="center2">Center 2</option>
-                        <option value="center3">Center 3</option>
-                        <option value="center4">Center 4</option>
-                        <option value="center5">Center 5</option>
-                        <option value="center6">Center 6</option>
-                        <option value="center7">Center 7</option>
-                        <option value="center8">Center 8</option>
-                        <option value="center9">Center 9</option>
-                        <option value="center10">Center 10</option>
-                        <option value="center11">Center 11</option>
-                        <option value="center12">Center 12</option>
-                        <option value="center13">Center 13</option>
+                    <option value="center2" data-image="images/clsu-pic.png">Central Luzon State University</option>
+                    <option value="center3" data-image="images/cmu.png">Central Mindanao University</option>
+                    <option value="center4" data-image="images/csu.png">Cagayan State University</option>
+                    <option value="center5" data-image="images/dmmmsu-pic.png">Don Mariano Marcos Memorial State University</option> 
+                    <option value="center6" data-image="images/genepool.jpg"> Gene Pool</option>
+                    <option value="center7" data-image="images/lcsf.png">La Consolacion University Philippines</option>
+                    <option value="center8" data-image="images/clsu-pic.png">National Impact Zone</option>
+                    <option value="center9" data-image="images/mlpc-pic.png">Manila Law College</option>
+                    <option value="center10" data-image="images/mmsu2.png"> Mariano Marcos State University</option>
+                    <option value="center11" data-image="images/niz.jpg"> National Institute of Zoology</option>
+                    <option value="center12" data-image="images/uplb.png"> University of the Philippines Los Baños</option>
+                    <option value="center13" data-image="images/usf.jpg"> University of San Francisco</option>
+                    <option value="center14" data-image="images/usm.jpg"> University of Southern Mindanao</option>
+                    <option value="center15" data-image="images/vsu.jpg"> Visayas State University</option> 
+                    <option value="center16" data-image="images/wvsu.jpg"> West Visayas State University</option>
                     </optgroup>
                 </select>
             </div>
