@@ -131,28 +131,33 @@ body {
         <button id="theme-toggle" class="theme-toggle">🌙 Dark Mode</button>
     </div>
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const themeToggle = document.getElementById("theme-toggle");
-        const body = document.body;
+        document.addEventListener("DOMContentLoaded", function () {
+            const themeToggle = document.getElementById("theme-toggle");
+            const body = document.body;
+            const logo = document.querySelector(".login-header img"); // Selects the logo
 
-        // Check for saved user preference
-        if (localStorage.getItem("theme") === "dark") {
-            body.classList.add("dark-mode");
-            themeToggle.textContent = "☀️ Light Mode";
-        }
-
-        themeToggle.addEventListener("click", function () {
-            body.classList.toggle("dark-mode");
-
-            if (body.classList.contains("dark-mode")) {
-                localStorage.setItem("theme", "dark");
+            // Check for saved user preference
+            if (localStorage.getItem("theme") === "dark") {
+                body.classList.add("dark-mode");
                 themeToggle.textContent = "☀️ Light Mode";
-            } else {
-                localStorage.setItem("theme", "light");
-                themeToggle.textContent = "🌙 Dark Mode";
+                logo.src = "images/whitelogo.png"; // Change to white logo in dark mode
             }
+
+            themeToggle.addEventListener("click", function () {
+                body.classList.toggle("dark-mode");
+
+                if (body.classList.contains("dark-mode")) {
+                    localStorage.setItem("theme", "dark");
+                    themeToggle.textContent = "☀️ Light Mode";
+                    logo.src = "images/whitelogo.png"; // Change logo for dark mode
+                } else {
+                    localStorage.setItem("theme", "light");
+                    themeToggle.textContent = "🌙 Dark Mode";
+                    logo.src = "images/pcclogo.png"; // Change logo back for light mode
+                }
+            });
         });
-    });
 </script>
+
 </body>
 </html>
