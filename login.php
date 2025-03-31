@@ -55,7 +55,7 @@
         </form>
 
         <div class="login-help">
-            <a href="/forgot-password">Forgot password?</a> | 
+            <a href="forgetpassword.php">Forgot password?</a> | 
             <a href="/register">Help</a>
         </div>
     </div>

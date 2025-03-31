@@ -1,0 +1,82 @@
+/* Base Styles */
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background-color: #f5f8fa;
+    margin: 0;
+    padding: 0;
+    color: #212529;
+    line-height: 1.6;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #005ea2;
+    box-shadow: 0 0 0 3px rgba(0, 94, 162, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Icons (using Unicode as fallback) */
+.icon-shield::before {
+    content: "🛡️";
+    margin-right: 0.5rem;
+}
+
+.icon-arrow-left::before {
+    content: "←";
+    margin-right: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .gov-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .gov-seal {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .form-progress {
+        flex-direction: column;
+    }
+    
+    .progress-step {
+        text-align: left;
+        padding: 0.5rem 0;
+    }
+    
+    .progress-step.active:after {
+        left: 0;
+        transform: none;
+        width: 100%;
+        bottom: -0.5rem;
+    }
+}
