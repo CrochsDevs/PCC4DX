@@ -185,48 +185,28 @@
     </div>
 
     <script>
-        // Theme Toggle Functionality
-        document.addEventListener("DOMContentLoaded", function () {
-            const themeToggle = document.getElementById("theme-toggle");
-            const body = document.body;
+    document.addEventListener("DOMContentLoaded", function () {
+        const themeToggle = document.getElementById("theme-toggle");
+        const body = document.body;
 
-            // Check for saved user preference
-            if (localStorage.getItem("theme") === "dark") {
-                body.classList.add("dark-mode");
-                themeToggle.textContent = "☀️ Light Mode";
-            }
+        // Check for saved user preference
+        if (localStorage.getItem("theme") === "dark") {
+            body.classList.add("dark-mode");
+            themeToggle.textContent = "☀️ Light Mode";
+        }
 
             themeToggle.addEventListener("click", function () {
                 body.classList.toggle("dark-mode");
 
-                if (body.classList.contains("dark-mode")) {
-                    localStorage.setItem("theme", "dark");
-                    themeToggle.textContent = "☀️ Light Mode";
-                } else {
-                    localStorage.setItem("theme", "light");
-                    themeToggle.textContent = "🌙 Dark Mode";
-                }
-            });
-
-            // Dynamic logo display and center type handling
-            const centerSelect = document.getElementById("center_code");
-            const centerLogo = document.getElementById("center-logo");
-            const centerTypeInput = document.getElementById("center_type");
-            
-            centerSelect.addEventListener("change", function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const logoPath = selectedOption.getAttribute("data-image");
-                const centerType = selectedOption.getAttribute("data-type");
-                
-                if (logoPath) {
-                    centerLogo.src = logoPath;
-                }
-                
-                if (centerType) {
-                    centerTypeInput.value = centerType;
-                }
-            });
+            if (body.classList.contains("dark-mode")) {
+                localStorage.setItem("theme", "dark");
+                themeToggle.textContent = "☀️ Light Mode";
+            } else {
+                localStorage.setItem("theme", "light");
+                themeToggle.textContent = "🌙 Dark Mode";
+            }
         });
-    </script>
+    });
+</script>
 </body>
 </html>
