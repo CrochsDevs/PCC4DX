@@ -37,27 +37,33 @@
                             <div class="step-number">1</div>
                             <div class="step-content">
                                 <h3>Access the Login Page</h3>
-                                <p>Go to the PCC Employee Portal at <a href="https://portal.pcc.gov.ph" target="_blank">portal.pcc.gov.ph</a></p>
-                                <img src="images/login-help.png" alt="Login Page" class="help-image">
+                                <p>Go to the PCC Employee Portal at <a href="https://portal.pcc.gov.ph" target="_blank">4DX.pcc.gov.ph</a></p>
+                                <img src="images/login.png" alt="Login Page" class="help-image">
                             </div>
                         </div>
+
                         <div class="step">
                             <div class="step-number">2</div>
                             <div class="step-content">
+                                <h3>Select Location</h3>
+                                <ul>
+                                    <li>Choose Headquarters if your are admin in PCC-Headquarters</li>
+                                    <li>Choose center if you are admin center</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
                                 <h3>Enter Your Credentials</h3>
                                 <ul>
-                                    <li><strong>Username:</strong> Your PCC employee ID (e.g. PCC-2023-1234)</li>
+                                    <li><strong>Username or Email:</strong> Enter your assigned username or email</li>
                                     <li><strong>Password:</strong> Your assigned or personal password</li>
                                 </ul>
                             </div>
                         </div>
-                        <div class="step">
-                            <div class="step-number">3</div>
-                            <div class="step-content">
-                                <h3>Complete Security Check</h3>
-                                <p>Enter the CAPTCHA code shown on screen</p>
-                            </div>
-                        </div>
+                  
                         <div class="step">
                             <div class="step-number">4</div>
                             <div class="step-content">
@@ -65,7 +71,7 @@
                                 <p>Press the <button class="demo-button"><i class="fas fa-sign-in-alt"></i> Login</button> button to access your account</p>
                                 <div class="help-note">
                                     <i class="fas fa-exclamation-circle"></i>
-                                    <p>If you forgot your password, click <a href="#forgotpass-help">"Forgot Password"</a> below the login button</p>
+                                    <p>If you forgot your password, click <a href="forgetpassword.php">"Forgot Password"</a> below the login button</p>
                                 </div>
                             </div>
                         </div>
@@ -80,8 +86,8 @@
                             <div class="step-number">1</div>
                             <div class="step-content">
                                 <h3>Access Password Recovery</h3>
-                                <p>Click on <a href="forgetpassword.html">"Forgot Password"</a> link on the login page</p>
-                                <img src="images/forgotpass-help.png" alt="Forgot Password Page" class="help-image">
+                                <p>Click on <a href="forgetpassword.php">"Forgot Password"</a> link on the login page</p>
+                                <img src="images/forget.png" alt="Forgot Password Page" class="help-image">
                             </div>
                         </div>
                         <div class="step">
@@ -89,9 +95,10 @@
                             <div class="step-content">
                                 <h3>Verify Your Identity</h3>
                                 <ul>
-                                    <li>Enter your registered PCC email address</li>
+                                    <li>Enter your registered PCC email account or username</li>
                                     <li>Provide your employee ID number</li>
                                     <li>Complete the CAPTCHA verification</li>
+                                    <li>Enter PCC - 2025 for captcha verification</li>
                                 </ul>
                             </div>
                         </div>
@@ -102,7 +109,7 @@
                                 <p>You'll receive a 6-digit verification code at your registered email address</p>
                                 <div class="help-warning">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    <p>The verification code expires after 15 minutes</p>
+                                    <p>The verification code expires after 5 minutes</p>
                                 </div>
                             </div>
                         </div>
@@ -160,7 +167,7 @@
 
         <footer class="gov-footer">
             <p>Philippine Carabao Center Help Center</p>
-            <p>© 2023 PCC. All rights reserved. | <a href="privacy.html">Privacy Policy</a></p>
+            <p>© 2025 PCC. All rights reserved. | <a href="https://www.pcc.gov.ph/pcc-privacy-notice/">Privacy Policy</a></p>
         </footer>
     </div>
 

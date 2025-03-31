@@ -6,107 +6,158 @@
     <title>Philippine Carabao Center - Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/login.css">
-</head>
-<style>
-    
-/* Smooth Transition */
-body {
-    transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
-}
+    <style>
+        /* Smooth Transition */
+        body {
+            transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+        }
 
-.login-container, 
-.form-group input, 
-.form-group select, 
-.login-button {
-    transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out, border-color 0.5s ease-in-out;
-}
+        .login-container, 
+        .form-group input, 
+        .form-group select, 
+        .login-button {
+            transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out, border-color 0.5s ease-in-out;
+        }
 
-/* Dark Mode Styles */
-.dark-mode {
-    background-color: #121212;
-    color: #f8f9fa;
-}
+        /* Dark Mode Styles */
+        .dark-mode {
+            background-color: #121212;
+            color: #f8f9fa;
+        }
 
-.dark-mode .login-container {
-    background: #1e1e1e;
-    color: white;
-    border-top: 4px solid rgb(255, 221, 0);
-}
+        .dark-mode .login-container {
+            background: #1e1e1e;
+            color: white;
+            border-top: 4px solid rgb(255, 221, 0);
+        }
 
-.dark-mode input,
-.dark-mode select {
-    background-color: #333;
-    color: white;
-    border: 1px solid #777;
-}
+        .dark-mode input,
+        .dark-mode select {
+            background-color: #333;
+            color: white;
+            border: 1px solid #777;
+        }
 
-.dark-mode input:focus,
-.dark-mode select:focus {
-    border-color: rgb(255, 221, 0);
-    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.3);
-}
+        .dark-mode input:focus,
+        .dark-mode select:focus {
+            border-color: rgb(255, 221, 0);
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.3);
+        }
 
-.dark-mode .login-button {
-    background-color: rgb(255, 221, 0);
-}
+        .dark-mode .login-button {
+            background-color: rgb(255, 221, 0);
+            color: #121212;
+        }
 
-.dark-mode .login-button:hover {
-    background-color: rgb(255, 221, 0);
-}
+        .dark-mode .login-button:hover {
+            background-color: rgb(255, 196, 0);
+        }
 
-.dark-mode .login-help a {
-    color: rgb(255, 221, 0);
-}
-/* Theme Toggle Button */
-.theme-toggle {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: #005ea2;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.3s;
-}
+        .dark-mode .login-help a {
+            color: rgb(255, 221, 0);
+        }
 
-.theme-toggle:hover {
-    background: #004b87;
-}
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #005ea2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+
+        .dark-mode .theme-toggle {
+            background: rgb(255, 221, 0);
+            color: #121212;
+        }
+
+        .theme-toggle:hover {
+            background: #004b87;
+        }
+
+        .dark-mode .theme-toggle:hover {
+            background: rgb(255, 196, 0);
+        }
+
+        /* Logo Preview */
+        .logo-preview {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .logo-preview img {
+            max-height: 80px;
+            transition: filter 0.5s ease-in-out;
+        }
+        .dark-mode .logo-preview img {
+            filter: brightness(0.8);
+        }
+
+        /* Error Message */
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        .dark-mode .error-message {
+            color: #ff6b6b;
+        }
     </style>
+</head>
 <body>
     <div class="login-container">
         <div class="login-header">
-            <img src="images/pcclogo.png" alt="Philippine Carabao Center Logo">
+            <div class="logo-preview">
+                <img id="center-logo" src="images/pccnewlogo.png" alt="Philippine Carabao Center Logo">
+            </div>
             <h1>PCC-4DX</h1>
             <p>Fill up your details to login</p>
         </div>
 
-        <form action="/login" method="post">
-            <!-- Location dropdown at the top -->
-            <div class="location-group">
-                <label for="location">Select Location</label>
-                <select id="location" name="location" required>
+        <?php if (isset($_GET['error'])): ?>
+            <div class="error-message">
+                <?php
+                $errors = [
+                    'invalid' => 'Invalid username or password',
+                    'inactive' => 'Account is inactive',
+                    'center' => 'Selected center is unavailable',
+                    'required' => 'Please fill all fields',
+                    'unauthorized' => 'You are not authorized to access this center'
+                ];
+                echo $errors[$_GET['error']] ?? 'Login error occurred';
+                ?>
+            </div>
+        <?php endif; ?>
+
+        <form action="authenticate.php" method="post">
+            <!-- Location dropdown -->
+            <div class="form-group location-group">
+                <label for="center_code">Select Location</label>
+                <select id="center_code" name="center_code" required>
                     <option value="" disabled selected>-- Select Location --</option>
-                    <option value="center1" data-image="images/headquarters.png">PCC-Headquarters</option>
-                    <optgroup label="Regional Centers">
-                    <option value="center2" data-image="images/clsu-pic.png">Central Luzon State University</option>
-                    <option value="center3" data-image="images/cmu.png">Central Mindanao University</option>
-                    <option value="center4" data-image="images/csu.png">Cagayan State University</option>
-                    <option value="center5" data-image="images/dmmmsu-pic.png">Don Mariano Marcos Memorial State University</option> 
-                    <option value="center6" data-image="images/genepool.jpg"> Gene Pool</option>
-                    <option value="center7" data-image="images/lcsf.png">La Carlota Stock Farm</option>
-                    <option value="center8" data-image="images/niz.jpg"> National Impact Zone</option>
-                    <option value="center9" data-image="images/mlpc-pic.png">Mindanao Livestock Production Center</option>
-                    <option value="center10" data-image="images/mmsu2.png"> Mariano Marcos State University</option>
-                    <option value="center11" data-image="images/usf.jpg"> Ubay Stock Farm</option>
-                    <option value="center12" data-image="images/uplb.png"> University of the Philippines Los Baños</option>
-                    <option value="center13" data-image="images/usm.jpg"> University of Southern Mindanao</option>
-                    <option value="center14" data-image="images/vsu.jpg"> Visayas State University</option> 
-                    <option value="center15" data-image="images/wvsu.jpg"> West Visayas State University</option>
-                    </optgroup>
+                    <?php
+                    // Database connection
+                    require 'db_config.php';
+                    
+                    // Fetch active centers
+                    $centers = $pdo->query("SELECT * FROM centers WHERE is_active = TRUE ORDER BY 
+                                          CASE WHEN center_type = 'Headquarters' THEN 0 ELSE 1 END, 
+                                          center_name")->fetchAll();
+                    
+                    foreach ($centers as $center):
+                    ?>
+                        <option value="<?= htmlspecialchars($center['center_code']) ?>" 
+                                data-image="<?= htmlspecialchars($center['logo_path']) ?>"
+                                data-type="<?= htmlspecialchars($center['center_type']) ?>">
+                            <?= htmlspecialchars($center['center_name']) ?> (<?= htmlspecialchars($center['center_type']) ?>)
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
@@ -121,6 +172,8 @@ body {
                 <input type="password" id="password" name="password" required>
             </div>
 
+            <input type="hidden" id="center_type" name="center_type" value="">
+
             <button type="submit" class="login-button">Login</button>
         </form>
 
@@ -130,29 +183,50 @@ body {
         </div>
         <button id="theme-toggle" class="theme-toggle">🌙 Dark Mode</button>
     </div>
+
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const themeToggle = document.getElementById("theme-toggle");
-        const body = document.body;
+        // Theme Toggle Functionality
+        document.addEventListener("DOMContentLoaded", function () {
+            const themeToggle = document.getElementById("theme-toggle");
+            const body = document.body;
 
-        // Check for saved user preference
-        if (localStorage.getItem("theme") === "dark") {
-            body.classList.add("dark-mode");
-            themeToggle.textContent = "☀️ Light Mode";
-        }
-
-        themeToggle.addEventListener("click", function () {
-            body.classList.toggle("dark-mode");
-
-            if (body.classList.contains("dark-mode")) {
-                localStorage.setItem("theme", "dark");
+            // Check for saved user preference
+            if (localStorage.getItem("theme") === "dark") {
+                body.classList.add("dark-mode");
                 themeToggle.textContent = "☀️ Light Mode";
-            } else {
-                localStorage.setItem("theme", "light");
-                themeToggle.textContent = "🌙 Dark Mode";
             }
+
+            themeToggle.addEventListener("click", function () {
+                body.classList.toggle("dark-mode");
+
+                if (body.classList.contains("dark-mode")) {
+                    localStorage.setItem("theme", "dark");
+                    themeToggle.textContent = "☀️ Light Mode";
+                } else {
+                    localStorage.setItem("theme", "light");
+                    themeToggle.textContent = "🌙 Dark Mode";
+                }
+            });
+
+            // Dynamic logo display and center type handling
+            const centerSelect = document.getElementById("center_code");
+            const centerLogo = document.getElementById("center-logo");
+            const centerTypeInput = document.getElementById("center_type");
+            
+            centerSelect.addEventListener("change", function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const logoPath = selectedOption.getAttribute("data-image");
+                const centerType = selectedOption.getAttribute("data-type");
+                
+                if (logoPath) {
+                    centerLogo.src = logoPath;
+                }
+                
+                if (centerType) {
+                    centerTypeInput.value = centerType;
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
