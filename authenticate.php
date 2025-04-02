@@ -19,13 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
-            // Verify user has access to the selected center
+            // Verify that user has access to the selected center
             $stmt = $pdo->prepare("SELECT * FROM centers WHERE center_code = :center_code AND is_active = TRUE");
             $stmt->execute([':center_code' => $center_code]);
             $center = $stmt->fetch();
 
-            if (!$center) {
-                header("Location: login.php?error=center");
+            if (!$center || $user['center_code'] !== $center_code) {
+                header("Location: login.php?error=center_access_denied");
                 exit();
             }
 
@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'email' => $user['email'],
                 'full_name' => $user['full_name'],
                 'position' => $user['position'],
+                'role' => $user['role'],  // Admin, Center_Admin, etc.
                 'center_code' => $center['center_code'],
                 'center_name' => $center['center_name'],
                 'center_type' => $center['center_type'],
@@ -50,12 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             exit();
         } else {
-            header("Location: login.php?error=invalid");
+            header("Location: login.php?error=invalid_credentials");
             exit();
         }
     } catch (PDOException $e) {
         error_log("Database error: " . $e->getMessage());
-        header("Location: login.php?error=invalid");
+        header("Location: login.php?error=db_error");
         exit();
     }
 } else {

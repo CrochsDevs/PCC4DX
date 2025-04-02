@@ -2,7 +2,7 @@
 session_start();
 require 'auth_check.php';
 
-// Only allow HQ admin access
+// Ensure only HQ admins can access
 if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     header('Location: access_denied.php');
     exit;
@@ -14,32 +14,39 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCC Headquarters Admin</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        .header { background: #003366; color: white; padding: 1rem; display: flex; justify-content: space-between; }
-        .sidebar { width: 250px; background: #f5f5f5; height: 100vh; padding: 1rem; }
-        .main-content { margin-left: 250px; padding: 2rem; }
-    </style>
+    <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
-    <div class="header">
-        <h1>PCC Headquarters Admin Panel</h1>
-        <div>Welcome, <?= htmlspecialchars($_SESSION['user']['full_name']) ?></div>
-    </div>
-    
+
+    <!-- Sidebar -->
     <div class="sidebar">
-        <h3>Admin Menu</h3>
+        <h2>PCC Admin</h2>
         <ul>
-            <li><a href="#">Manage Centers</a></li>
-            <li><a href="#">User Accounts</a></li>
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Manage Users</a></li>
             <li><a href="#">Reports</a></li>
-            <li><a href="logout.php">Logout</a></li>
+            <li><a href="#">Settings</a></li>
         </ul>
     </div>
-    
-    <div class="main-content">
-        <h2>Central Monitoring Dashboard</h2>
-        <p>You are logged in as: <?= htmlspecialchars($_SESSION['user']['position']) ?></p>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+        <h1>Welcome, <?= htmlspecialchars($_SESSION['user']['full_name']) ?> (HQ Admin)</h1>
+        <a href="logout.php" class="logout">Logout</a>
     </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h2>Dashboard</h2>
+        <p>Manage PCC Headquarters operations here.</p>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('collapsed');
+        }
+    </script>
+
 </body>
 </html>
