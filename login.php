@@ -1,3 +1,18 @@
+<?php
+require 'db_config.php';  // This includes your new database configuration file
+
+// Fetch active centers from the database
+try {
+    $stmt = $conn->prepare("SELECT * FROM centers WHERE is_active = TRUE ORDER BY 
+                            CASE WHEN center_type = 'Headquarters' THEN 0 ELSE 1 END, 
+                            center_name");
+    $stmt->execute();
+    $centers = $stmt->fetchAll();
+} catch (PDOException $e) {
+    die("Database query failed: " . $e->getMessage());
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,14 +157,6 @@
                 <select id="center_code" name="center_code" required>
                     <option value="" disabled selected>-- Select Location --</option>
                     <?php
-                    // Database connection
-                    require 'db_config.php';
-                    
-                    // Fetch active centers
-                    $centers = $pdo->query("SELECT * FROM centers WHERE is_active = TRUE ORDER BY 
-                                          CASE WHEN center_type = 'Headquarters' THEN 0 ELSE 1 END, 
-                                          center_name")->fetchAll();
-                    
                     foreach ($centers as $center):
                     ?>
                         <option value="<?= htmlspecialchars($center['center_code']) ?>" 

@@ -1,5 +1,26 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Chart colors
+    // Navigation functionality
+    const navLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all links and sections
+            navLinks.forEach(navLink => navLink.classList.remove('active'));
+            contentSections.forEach(section => section.classList.remove('active'));
+            
+            // Add active class to clicked link
+            this.classList.add('active');
+            
+            // Show the corresponding section
+            const targetSection = this.getAttribute('data-section');
+            document.getElementById(targetSection).classList.add('active');
+        });
+    });
+    
+    // Chart.js initialization
     const colors = {
         primary: '#0056b3',
         primaryLight: '#3a7fc5',
@@ -10,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
         gray: '#e2e8f0'
     };
 
-    // Common chart configuration
     const chartConfig = {
         type: 'doughnut',
         options: {
@@ -55,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Farmers Chart
+    // Initialize all charts
     new Chart(
         document.getElementById('usersChart'),
         {
@@ -71,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     );
 
-    // Carabaos Chart
     new Chart(
         document.getElementById('carabaosChart'),
         {
@@ -87,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     );
 
-    // Services Chart
     new Chart(
         document.getElementById('servicesChart'),
         {
@@ -103,7 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     );
 
-    // Requests Chart
     new Chart(
         document.getElementById('requestsChart'),
         {
@@ -118,45 +135,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     );
-      // Navigation functionality
-      document.addEventListener('DOMContentLoaded', function() {
-        // Hide all sections except dashboard initially
-        document.querySelectorAll('#services-section, #reports-section, #settings-section').forEach(section => {
-            section.style.display = 'none';
-        });
-        
-        // Handle sidebar navigation clicks
-        document.querySelectorAll('.sidebar a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Remove active class from all links
-                document.querySelectorAll('.sidebar a').forEach(a => {
-                    a.classList.remove('active');
-                });
-                
-                // Add active class to clicked link
-                this.classList.add('active');
-                
-                // Hide all sections
-                document.querySelectorAll('#dashboard-section, #services-section, #reports-section, #settings-section').forEach(section => {
-                    section.style.display = 'none';
-                });
-                
-                // Show the corresponding section
-                const target = this.getAttribute('href');
-                if (target === '#services-section') {
-                    document.getElementById('services-section').style.display = 'block';
-                } else if (target === '#reports-section') {
-                    document.getElementById('reports-section').style.display = 'block';
-                } else if (target === '#settings-section') {
-                    document.getElementById('settings-section').style.display = 'block';
-                } else {
-                    document.getElementById('dashboard-section').style.display = 'block';
-                }
-            });
-        });
-        
-        // [Previous Chart.js initialization code remains the same]
-    });
 });

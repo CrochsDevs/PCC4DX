@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'db_config.php';
+require 'db_config.php';  // Make sure this is the correct path to your db_config.php
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']);
@@ -13,14 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     try {
-        // Fetch user details
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE (username = :username OR email = :username) AND is_active = TRUE");
+        // Fetch user details using the correct connection variable $conn
+        $stmt = $conn->prepare("SELECT * FROM users WHERE (username = :username OR email = :username) AND is_active = TRUE");
         $stmt->execute([':username' => $username]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
             // Verify that user has access to the selected center
-            $stmt = $pdo->prepare("SELECT * FROM centers WHERE center_code = :center_code AND is_active = TRUE");
+            $stmt = $conn->prepare("SELECT * FROM centers WHERE center_code = :center_code AND is_active = TRUE");
             $stmt->execute([':center_code' => $center_code]);
             $center = $stmt->fetch();
 
