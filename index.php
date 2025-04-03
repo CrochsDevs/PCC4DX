@@ -145,7 +145,7 @@
     <!-- News Section -->
     <section class="news-section">
         <div class="container">
-            <h2 class="section-title">Latest News & Updates</h2>
+            <h2 class="section-title">Announcements & Updates</h2>
             <div class="news-grid">
                 <article class="news-card featured">
                     <img src="images/1.jpg" alt="News Feature">
