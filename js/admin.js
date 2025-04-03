@@ -1,138 +1,110 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Navigation functionality
-    const navLinks = document.querySelectorAll('.nav-link');
-    const contentSections = document.querySelectorAll('.content-section');
+document.addEventListener("DOMContentLoaded", function () {
+    /*** Navigation Functionality ***/
+    const navLinks = document.querySelectorAll(".nav-link");
+    const contentSections = document.querySelectorAll(".content-section");
     
     navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener("click", function (e) {
             e.preventDefault();
             
-            // Remove active class from all links and sections
-            navLinks.forEach(navLink => navLink.classList.remove('active'));
-            contentSections.forEach(section => section.classList.remove('active'));
+            navLinks.forEach(navLink => navLink.classList.remove("active"));
+            contentSections.forEach(section => section.classList.remove("active"));
             
-            // Add active class to clicked link
-            this.classList.add('active');
-            
-            // Show the corresponding section
-            const targetSection = this.getAttribute('data-section');
-            document.getElementById(targetSection).classList.add('active');
+            this.classList.add("active");
+            document.getElementById(this.dataset.section).classList.add("active");
         });
     });
-    
-    // Chart.js initialization
-    const colors = {
-        primary: '#0056b3',
-        primaryLight: '#3a7fc5',
-        secondary: '#ffc107',
-        secondaryLight: '#ffd54f',
-        success: '#38a169',
-        danger: '#e53e3e',
-        gray: '#e2e8f0'
-    };
 
-    const chartConfig = {
-        type: 'doughnut',
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        font: {
-                            family: 'Poppins',
-                            size: 11,
-                            weight: '500'
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleFont: {
-                        family: 'Poppins',
-                        size: 14,
-                        weight: '600'
-                    },
-                    bodyFont: {
-                        family: 'Poppins',
-                        size: 12
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: true,
-                    usePointStyle: true
+    /*** Update Sidebar Profile ***/
+    function updateSidebarProfile(data) {
+        const profileImg = document.getElementById("sidebar-profile-img");
+        if (data.profile_image) {
+            profileImg.src = "uploads/profile_images/" + data.profile_image;
+        } else {
+            profileImg.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.full_name) + "&background=0056b3&color=fff&size=128";
+        }
+
+        document.getElementById("sidebar-profile-name").textContent = data.full_name;
+        document.getElementById("sidebar-profile-email").textContent = data.email;
+    }
+
+    // Profile Update Form
+    const profileForm = document.getElementById("profileForm");
+    if (profileForm) {
+        profileForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById("submitBtn");
+            const notification = document.getElementById("notification");
+            const formData = new FormData(this);
+            
+            btn.textContent = "Processing...";
+            btn.disabled = true;
+            notification.style.display = "none";
+            
+            fetch("update_profile.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateSidebarProfile({
+                        full_name: formData.get("full_name"),
+                        email: formData.get("email"),
+                        profile_image: data.profile_image
+                    });
+                    notification.className = "notification success";
+                    notification.innerHTML = "<i class='fas fa-check-circle'></i> " + data.message;
+                } else {
+                    notification.className = "notification error";
+                    notification.innerHTML = "<i class='fas fa-exclamation-circle'></i> " + data.message;
                 }
-            },
-            animation: {
-                animateScale: true,
-                animateRotate: true
-            }
-        }
+                notification.style.display = "block";
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                notification.className = "notification error";
+                notification.innerHTML = "<i class='fas fa-exclamation-circle'></i> An error occurred. Please try again.";
+                notification.style.display = "block";
+            })
+            .finally(() => {
+                btn.textContent = "Update Profile";
+                btn.disabled = false;
+            });
+        });
+    }
+    
+    /*** Chart.js Initialization ***/
+    const chartColors = { primary: "#0056b3", success: "#38a169", danger: "#e53e3e", gray: "#e2e8f0" };
+    const createChart = (ctx, labels, data, backgroundColor) => {
+        return new Chart(ctx, {
+            type: "doughnut",
+            data: { labels, datasets: [{ data, backgroundColor, borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: "75%" }
+        });
     };
-
-    // Initialize all charts
-    new Chart(
-        document.getElementById('usersChart'),
-        {
-            ...chartConfig,
-            data: {
-                labels: ['Registered Farmers', 'Remaining Target'],
-                datasets: [{
-                    data: [1254, 1500-1254],
-                    backgroundColor: [colors.primary, colors.gray],
-                    borderWidth: 0
-                }]
+    
+    if (document.getElementById("usersChart")) {
+        createChart(document.getElementById("usersChart"), ["Registered", "Remaining"], [1254, 1500-1254], [chartColors.primary, chartColors.gray]);
+    }
+    if (document.getElementById("carabaosChart")) {
+        createChart(document.getElementById("carabaosChart"), ["Carabaos", "Remaining"], [3421, 3800-3421], [chartColors.success, chartColors.gray]);
+    }
+    if (document.getElementById("servicesChart")) {
+        createChart(document.getElementById("servicesChart"), ["Completed", "Remaining"], [892, 1000-892], [chartColors.primary, chartColors.gray]);
+    }
+    if (document.getElementById("requestsChart")) {
+        createChart(document.getElementById("requestsChart"), ["Pending", "Target"], [59, 30], [chartColors.danger, chartColors.gray]);
+    }
+    
+    /*** Profile Image Preview ***/
+    const profileImageInput = document.getElementById("profile_image");
+    if (profileImageInput) {
+        profileImageInput.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                document.getElementById("profilePreview").src = URL.createObjectURL(this.files[0]);
             }
-        }
-    );
-
-    new Chart(
-        document.getElementById('carabaosChart'),
-        {
-            ...chartConfig,
-            data: {
-                labels: ['Registered Carabaos', 'Remaining Target'],
-                datasets: [{
-                    data: [3421, 3800-3421],
-                    backgroundColor: [colors.success, colors.gray],
-                    borderWidth: 0
-                }]
-            }
-        }
-    );
-
-    new Chart(
-        document.getElementById('servicesChart'),
-        {
-            ...chartConfig,
-            data: {
-                labels: ['Completed Services', 'Remaining Target'],
-                datasets: [{
-                    data: [892, 1000-892],
-                    backgroundColor: [colors.primaryLight, colors.gray],
-                    borderWidth: 0
-                }]
-            }
-        }
-    );
-
-    new Chart(
-        document.getElementById('requestsChart'),
-        {
-            ...chartConfig,
-            data: {
-                labels: ['Pending Requests', 'Target Limit'],
-                datasets: [{
-                    data: [59, 30],
-                    backgroundColor: [colors.danger, colors.gray],
-                    borderWidth: 0
-                }]
-            }
-        }
-    );
+        });
+    }
 });

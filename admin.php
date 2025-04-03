@@ -540,34 +540,47 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
-        }
+            }
+        .profile-updated {
+                animation: profileUpdate 1s ease;
+                background-color: rgba(0, 86, 179, 0.1);
+                border-radius: 8px;
+            }
+
+            @keyframes profileUpdate {
+                0% { background-color: rgba(0, 86, 179, 0); }
+                50% { background-color: rgba(0, 86, 179, 0.2); }
+                100% { background-color: rgba(0, 86, 179, 0); }
+            }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-       <!-- User Profile Section -->
-<div class="user-profile">
+<div class="sidebar">
+   <!-- User Profile Section -->
+<div class="user-profile" id="sidebar-profile">
     <div class="profile-picture">
         <?php if (!empty($_SESSION['user']['profile_image'])): ?>
             <!-- Display the uploaded profile image -->
-            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture" id="sidebar-profile-img">
         <?php else: ?>
             <!-- Fallback to the generated avatar -->
-            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture" id="sidebar-profile-img">
         <?php endif; ?>
     </div>
     <div class="profile-info">
-        <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-    </div>
+        <h3 class="user-name" id="sidebar-profile-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+        <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+    </div>                          
 </div>
 
-        <ul>
-            <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> Services</a></li>
-            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
-        </ul>
+<ul>
+    <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-syringe"></i> AI Insemination</a></li>
+    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-cow"></i> Calf Drop</a></li>
+    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-wine-bottle"></i> Milk Feeding</a></li>
+    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-flask"></i> Milk Production</a></li>
+    <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cog"></i> Settings</a></li>
+</ul>
     </div>
 
     <!-- Main Content -->
@@ -575,14 +588,14 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <h1><i class="fas fa-user-shield"></i> Welcome, <?= htmlspecialchars($_SESSION['user']['full_name']) ?> (HQ Admin)</h1>
+                <h1><i class="fas fa-user-shield"></i> Welcome, <?= htmlspecialchars($_SESSION['user']['full_name']) ?> (NHQ Admin)</h1>
             </div>
             
             <div class="header-right">
                 <div class="notification-container">
                     <button class="notification-btn">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
+                        <span class="notification-badge">3</span>   
                     </button>
                     <div class="notification-dropdown">
                         <div class="notification-header">
@@ -678,7 +691,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                         <div class="chart-stats">
                             <span class="actual">892</span>
                             <span class="target">Target: 1,000</span>
-                        </div>
+                        </div>                                                                              
                         <div class="chart-change negative">
                             <i class="fas fa-arrow-down"></i> 5% decrease
                         </div>
@@ -704,51 +717,41 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             </div>
         </div>
         
-        <!-- Services Section -->
-        <div id="services-section" class="content-section">
-    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
-    <p class="dashboard-description">Manage all PCC services offered to farmers and track service delivery metrics.</p>
+        
+       <!-- Settings Section -->
+<div id="settings-section" class="content-section">
+    <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
+    <p class="dashboard-description">Configure system settings and user preferences.</p>
     
-    <div class="services-grid">
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
-            <p>Track and manage artificial insemination services for carabaos.</p>
+    <div class="settings-grid">
+        <div class="dashboard-card">
+            <a href="update_profile.php" class="card-link">    
+                <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
+                <p>Update your account information and password.</p>
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <a href="password.php" class="card-link">
+                <h3 class="card-title"><i class="fas fa-lock"></i> Password and Security</h3>
+                <p>Update your account password.</p>
+            </a>
         </div>
         
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
-            <p>Monitor milk feeding programs and nutritional supplements for calves.</p>
-        </div>
-        
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
-            <p>Manage and track carabao milk production metrics and quality.</p>
-        </div>
-        
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-            <p>Track successful births and calf health monitoring programs.</p>
+        <div class="dashboard-card">
+            <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
+            <p>Configure how you receive notifications.</p>
+            <div class="notification-settings">
+                <label>
+                    <input type="checkbox" checked> Email Notifications
+                </label>
+                <label>
+                    <input type="checkbox" checked> SMS Notifications
+                </label>
+            </div>
         </div>
     </div>
 </div>
-        
-        
-        <!-- Settings Section -->
-        <div id="settings-section" class="content-section">
-            <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
-            <p class="dashboard-description">Configure system settings and user preferences.</p>
-            
-            <div class="dashboard-card">
-                <a href="account.php" class="card-link">
-                    <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
-                    <p>Update your account information and password.</p>
-                </a>
-            </div>
-            
-            <div class="dashboard-card">
-                <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
-                <p>Configure how you receive notifications.</p>
-            </div>
         </div>
     </div>
 <script src="js/admin.js"></script>

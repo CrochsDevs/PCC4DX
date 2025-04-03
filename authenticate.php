@@ -1,21 +1,21 @@
 <?php
 session_start();
-require 'db_config.php';  // Make sure this is the correct path to your db_config.php
+require 'db_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
+    $login = trim($_POST['username']); // Changed from $username to $login to be more generic
     $password = trim($_POST['password']);
     $center_code = trim($_POST['center_code']);
 
-    if (empty($username) || empty($password) || empty($center_code)) {
+    if (empty($login) || empty($password) || empty($center_code)) {
         header("Location: login.php?error=required");
         exit();
     }
 
     try {
-        // Fetch user details using the correct connection variable $conn
-        $stmt = $conn->prepare("SELECT * FROM users WHERE (username = :username OR email = :username) AND is_active = TRUE");
-        $stmt->execute([':username' => $username]);
+        // Modified query to check both username and email fields
+        $stmt = $conn->prepare("SELECT * FROM users WHERE (username = :login OR email = :login) AND is_active = TRUE");
+        $stmt->execute([':login' => $login]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
@@ -29,18 +29,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 exit();
             }
 
-            // Set session variables
+            // Set session variables - ensure all necessary fields are included
             $_SESSION['user'] = [
                 'id' => $user['user_id'],
                 'username' => $user['username'],
                 'email' => $user['email'],
                 'full_name' => $user['full_name'],
                 'position' => $user['position'],
-                'role' => $user['role'],  // Admin, Center_Admin, etc.
+                'role' => $user['role'],
                 'center_code' => $center['center_code'],
                 'center_name' => $center['center_name'],
                 'center_type' => $center['center_type'],
-                'logo_path' => $center['logo_path']
+                'logo_path' => $center['logo_path'],
+                'profile_image' => $user['profile_image'] ?? null // Added profile image if exists
             ];
 
             // Redirect based on center type
