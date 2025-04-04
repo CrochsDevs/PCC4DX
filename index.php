@@ -56,6 +56,32 @@
     </div>
 </header>
  
+    <!-- Hero Section with Video Background -->
+    <section class="hero">
+        <video class="video-background" autoplay loop muted playsinline>
+            <source src="images/introvideo.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h2>Enhancing Carabao Value Chain for Sustainable Development</h2>
+                <p>Empowering Filipino farmers through carabao-based enterprises and genetic improvement programs</p>
+                <div class="hero-btns">
+                    <a href="#" class="btn-primary">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Video Popup Container -->
+    <div id="videoContainer" style="display: none;">
+        <video width="800" controls autoplay loop muted>
+            <source src="images/introvideo.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <button class="close-video">Close</button>
+    </div>
 
     
     <!-- Quick Links -->
@@ -122,35 +148,35 @@
             <h2 class="section-title">Announcements & Updates</h2>
             <div class="news-grid">
                 <article class="news-card featured">
-                    <img src="images/1.jpg" alt="News Feature" style="display: none;">
+                    <img src="images/1.jpg" alt="News Feature">
                     <div class="news-content">
                         <span class="news-date">June 15, 2023</span>
                         <h3>PCC Launches New Dairy Facility in Nueva Ecija</h3>
                         <p>The new facility will serve as training center and milk processing plant for farmer cooperatives...</p>
-                       
+                        <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </article>
                 <article class="news-card">
-                    <img src="images/2.png" alt="News" style="display: none;">
+                    <img src="images/2.png" alt="News">
                     <div class="news-content">
                         <span class="news-date">June 10, 2023</span>
                         <h3>PCC Conducts AI Training for Farmers</h3>
                         <p>Artificial insemination techniques taught to 50 farmers from Central Luzon...</p>
-            
+                        <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </article>
                 <article class="news-card">
-                    <img src="images/3.png" alt="News" style="display: none;">
+                    <img src="images/3.png" alt="News">
                     <div class="news-content">
                         <span class="news-date">March 28, 2025</span>
                         <h3>DA marks 32nd anniversary in Nueva Ecija</h3>
                         <p>Muñoz, Nueva Ecija — The Department of Agriculture (DA) marked its 32nd Anniversary at...</p>
-                     
+                        <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </article>
             </div>
             <div class="section-footer">
-                <a href="#" class="btn-outline">View All </a>
+                <a href="#" class="btn-outline">View All News</a>
             </div>
         </div>
     </section>

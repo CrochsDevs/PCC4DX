@@ -1,7 +1,13 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// I-require ang mga necessary files
+require 'db_config.php';
 require 'auth_check.php';
 
+// I-check ang user privileges
 if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     header('Location: access_denied.php');
     exit;
@@ -575,6 +581,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 
 <ul>
     <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+    <li><a href="#" class="nav-link" data-section="announcement-section"><i class="fas fa-bullhorn"></i> Announcement</a></li>
     <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-syringe"></i> AI Insemination</a></li>
     <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-cow"></i> Calf Drop</a></li>
     <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-wine-bottle"></i> Milk Feeding</a></li>
@@ -732,7 +739,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
         </div>
 
         <div class="dashboard-card">
-            <a href="password.php" class="card-link">
+            <a href="update_password.php" class="card-link">
                 <h3 class="card-title"><i class="fas fa-lock"></i> Password and Security</h3>
                 <p>Update your account password.</p>
             </a>
