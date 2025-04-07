@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
 
             // Set session variables - ensure all necessary fields are included
-            $_SESSION['user'] = [
+            $_SESSION['users'] = [
                 'id' => $user['user_id'],
                 'username' => $user['username'],
                 'email' => $user['email'],
