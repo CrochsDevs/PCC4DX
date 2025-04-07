@@ -739,9 +739,16 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             <p class="dashboard-description">Configure system settings and user preferences.</p>
             
             <div class="dashboard-card">
-                <a href="account.php" class="card-link">
+                <a href="center_profile_update.php" class="card-link">
                     <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
                     <p>Update your account information and password.</p>
+                </a>
+            </div>
+
+            <div class="dashboard-card">
+                <a href="center_update_password.php" class="card-link">
+                    <h3 class="card-title"><i class="fas fa-user-cog"></i> Password and Security</h3>
+                    <p>Update your account password.</p>
                 </a>
             </div>
             

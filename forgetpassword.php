@@ -18,7 +18,7 @@
                 <p>Password Recovery System</p>
             </div>
         </div>
-
+        
         <div class="gov-form-container">
             <!-- Step 1: Verify Identity -->
             <form id="verifyIdentityForm" class="gov-form active">
