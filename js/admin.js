@@ -74,6 +74,8 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    
     
     /*** Chart.js Initialization ***/
     const chartColors = { primary: "#0056b3", success: "#38a169", danger: "#e53e3e", gray: "#e2e8f0" };
