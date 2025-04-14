@@ -33,8 +33,6 @@ try {
         .login-button {
             transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out, border-color 0.5s ease-in-out;
         }
-
-
     </style>
 </head>
 <body>
