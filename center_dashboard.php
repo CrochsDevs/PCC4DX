@@ -45,10 +45,10 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 </div>
 
         <ul>
-            <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
             <li><a href="Partners.php"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
+            <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
@@ -217,11 +217,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 <div id="loader-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center;">
   <div class="spinner" style="border:6px solid #f3f3f3; border-top:6px solid #3498db; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite;"></div>
 </div>
-
-
-
-
-          
 
 
         <!-- Settings Section -->

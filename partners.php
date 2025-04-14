@@ -917,6 +917,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--danger);
             border-left: 4px solid var(--danger);
         }
+        
 
         /* Responsive Adjustments */
         @media (max-width: 992px) {
@@ -969,7 +970,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
             <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
             <li><a href="Partners.php"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
+            <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
