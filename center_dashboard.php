@@ -16,8 +16,11 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
+ 
+</head>
+<style>
         :root {
             --primary: #0056b3;
             --primary-light: #3a7fc5;
@@ -482,31 +485,251 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             display: block;
         }
         
-        /* Services Section */
+            /* Services Section */
         .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
         }
-        
+
         .service-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        }
+
+        .service-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title i {
+        margin-right: 20px;
+        font-size: 1.2em;
+        width: 24px;
+        text-align: center;
+        }
+        /* Cooperative Management Section */
+        #cooperative-section .dashboard-card {
+            padding: 2rem;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+        }
+
+        .search-group {
+            position: relative;
+            flex-grow: 2;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 1.2rem;
+        }
+
+        .add-group {
+            flex-grow: 0;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            border-color: #4299e1;
+        }
+
+        .submit-btn {
+            background-color: #38a169;
+            color: white;
+            font-weight: 600;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: #2f855a;
+        }
+
+        .milk-table {
+            width: 100%;
+            border-collapse: collapse;
             background: white;
-            border-radius: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .milk-table thead {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .milk-table th {
             padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            color: #2d3436;
+            font-weight: 600;
+        }
+
+        .milk-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .milk-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .milk-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-badge.active {
+            background-color: rgba(56, 161, 105, 0.1);
+            color: #38a169;
+        }
+
+        .status-badge.inactive {
+            background-color: rgba(229, 62, 62, 0.1);
+            color: #e53e3e;
+        }
+
+        /* Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .pagination-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        #pageNumber {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+
+        /* Action Buttons */
+        .edit-btn, .delete-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: none;
+            border-radius: 50%;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
-        
-        .service-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+        .edit-btn {
+            color: #4299e1;
         }
-        .card-title i {
-            margin-right: 20px;
-            font-size: 1.2em;
-            width: 24px;
-            text-align: center;
+
+        .edit-btn:hover {
+            background-color: rgba(66, 153, 225, 0.1);
         }
+
+        .delete-btn {
+            color: #e53e3e;
+        }
+
+        .delete-btn:hover {
+            background-color: rgba(229, 62, 62, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .filter-section {
+                flex-direction: column;
+            }
+            
+            .milk-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            #cooperative-section .dashboard-card {
+                padding: 1rem;
+            }
+        }
+
+
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .cooperative-table {
+                    display: block;
+                    overflow-x: auto;
+                }
+                
+                .cooperative-header {
+                    flex-direction: column;
+                    gap: 1rem;
+                    align-items: flex-start;
+                }
+            }
+
         
         /* Responsive Design */
         @media (max-width: 1024px) {
@@ -543,7 +766,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             }
         }
     </style>
-</head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
@@ -567,7 +789,9 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <ul>
             <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
             <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="#" class="nav-link" data-section="cooperative-section"><i class="fas fa-users"></i> Partner</a></li>
             <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
+            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
 
@@ -625,7 +849,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
                     </div>
                 </div>
                 
-                <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                
             </div>
         </div>
         
@@ -705,33 +929,93 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             </div>
         </div>
         
-        <!-- Services Section -->
 <div id="services-section" class="content-section">
-    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
-    <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
-    
-    <div class="services-grid">
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
-            <p>Report on artificial insemination services for carabaos.</p>
-        </div>
-        
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
-            <p>Report on milk feeding programs and nutritional supplements for calves.</p>
-        </div>
-        
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
-            <p>Report on carabao milk production metrics and quality.</p>
-        </div>
-        
-        <div class="service-card">
-            <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-            <p>Report on successful births and calf health monitoring programs.</p>
-        </div>
+  <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
+  <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
+
+  <div class="services-grid">
+    <a href="artificial_insemination.php" class="service-card">
+      <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
+      <p>Report on artificial insemination services for carabaos.</p>
+    </a>
+
+    <a href="milk_feeding.php" class="service-card">
+      <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
+      <p>Report on milk feeding programs and nutritional supplements for calves.</p>
+    </a>
+
+    <a href="milk_production.php" class="service-card">
+      <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
+      <p>Report on carabao milk production metrics and quality.</p>
+    </a>
+
+    <a href="calf_drop.php" class="service-card">
+      <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
+      <p>Report on successful births and calf health monitoring programs.</p>
+    </a>
+  </div>
+</div>
+
+<div id="cooperative-section" class="content-section">
+    <div class="dashboard-card">
+        <h2 class="dashboard-title"><i class="fas fa-users"></i> Cooperative Management</h2>
+        <p class="dashboard-description">Manage registered cooperatives and their information.</p>
+
+        <div class="filter-section">
+    <div class="form-group search-group">
+        <input type="text" class="form-input" placeholder="Search cooperatives..." id="searchCooperative">
+        <i class="fas fa-search search-icon"></i>
+    </div>
+    <div class="form-group add-group">
+        <button class="submit-btn" id="addCooperativeBtn">
+            <i class="fas fa-plus"></i> Add Cooperative
+        </button>
     </div>
 </div>
+
+        <table class="milk-table">
+            <thead>
+                <tr>
+                    <th>Cooperative Name</th>
+                    <th>Member Count</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="cooperative-list">
+                <!-- Sample Data -->
+                <tr>
+                    <td>Cooperative A</td>
+                    <td>45</td>
+                    <td>San Jose, Tarlac</td>
+                    <td><span class="status-badge active">Active</span></td>
+                    <td>
+                        <button class="edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="delete-btn"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                       <td>Cooperative B</td>
+              <tr>
+                   <td>32</td>
+                    <td>Concepcion, Tarlac</td>
+                    <td><span class="status-badge inactive">Inactive</span></td>
+                    <td>
+                        <button class="edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="delete-btn"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button id="prevPage" class="pagination-btn">Previous</button>
+            <span id="pageNumber">1</span>
+            <button id="nextPage" class="pagination-btn">Next</button>
+        </div>
+    </div>
+</div>  
+
 
         <!-- Settings Section -->
         <div id="settings-section" class="content-section">
@@ -758,5 +1042,142 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             </div>
         </div>
     </div>
-<script src="js/admin.js"></script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    /*** Navigation Functionality ***/
+    const navLinks = document.querySelectorAll(".nav-link");
+    const contentSections = document.querySelectorAll(".content-section");
+    
+    navLinks.forEach(link => {
+        link.addEventListener("click", function (e) {
+            e.preventDefault();
+            
+            navLinks.forEach(navLink => navLink.classList.remove("active"));
+            contentSections.forEach(section => section.classList.remove("active"));
+            
+            this.classList.add("active");
+            document.getElementById(this.dataset.section).classList.add("active");
+        });
+    });
+
+    /*** Update Sidebar Profile ***/
+    function updateSidebarProfile(data) {
+        const profileImg = document.getElementById("sidebar-profile-img");
+        if (data.profile_image) {
+            profileImg.src = "uploads/profile_images/" + data.profile_image;
+        } else {
+            profileImg.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.full_name) + "&background=0056b3&color=fff&size=128";
+        }
+
+        document.getElementById("sidebar-profile-name").textContent = data.full_name;
+        document.getElementById("sidebar-profile-email").textContent = data.email;
+    }
+
+    // Profile Update Form
+    const profileForm = document.getElementById("profileForm");
+    if (profileForm) {
+        profileForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById("submitBtn");
+            const notification = document.getElementById("notification");
+            const formData = new FormData(this);
+            
+            btn.textContent = "Processing...";
+            btn.disabled = true;
+            notification.style.display = "none";
+            
+            fetch("update_profile.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateSidebarProfile({
+                        full_name: formData.get("full_name"),
+                        email: formData.get("email"),
+                        profile_image: data.profile_image
+                    });
+                    notification.className = "notification success";
+                    notification.innerHTML = "<i class='fas fa-check-circle'></i> " + data.message;
+                } else {
+                    notification.className = "notification error";
+                    notification.innerHTML = "<i class='fas fa-exclamation-circle'></i> " + data.message;
+                }
+                notification.style.display = "block";
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                notification.className = "notification error";
+                notification.innerHTML = "<i class='fas fa-exclamation-circle'></i> An error occurred. Please try again.";
+                notification.style.display = "block";
+            })
+            .finally(() => {
+                btn.textContent = "Update Profile";
+                btn.disabled = false;
+            });
+        });
+    }
+
+    
+    
+    /*** Chart.js Initialization ***/
+    const chartColors = { primary: "#0056b3", success: "#38a169", danger: "#e53e3e", gray: "#e2e8f0" };
+    const createChart = (ctx, labels, data, backgroundColor) => {
+        return new Chart(ctx, {
+            type: "doughnut",
+            data: { labels, datasets: [{ data, backgroundColor, borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: "75%" }
+        });
+    };
+    
+    if (document.getElementById("usersChart")) {
+        createChart(document.getElementById("usersChart"), ["Registered", "Remaining"], [1254, 1500-1254], [chartColors.primary, chartColors.gray]);
+    }
+    if (document.getElementById("carabaosChart")) {
+        createChart(document.getElementById("carabaosChart"), ["Carabaos", "Remaining"], [3421, 3800-3421], [chartColors.success, chartColors.gray]);
+    }
+    if (document.getElementById("servicesChart")) {
+        createChart(document.getElementById("servicesChart"), ["Completed", "Remaining"], [892, 1000-892], [chartColors.primary, chartColors.gray]);
+    }
+    if (document.getElementById("requestsChart")) {
+        createChart(document.getElementById("requestsChart"), ["Pending", "Target"], [59, 30], [chartColors.danger, chartColors.gray]);
+    }
+    
+    /*** Profile Image Preview ***/
+    const profileImageInput = document.getElementById("profile_image");
+    if (profileImageInput) {
+        profileImageInput.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                document.getElementById("profilePreview").src = URL.createObjectURL(this.files[0]);
+            }
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('logoutLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = this.href;
+        
+        Swal.fire({
+            title: 'Logout Confirmation',
+            text: "Are you sure you want to logout?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = url;
+            }
+        });
+    });
+});
+</script>
 </html>
