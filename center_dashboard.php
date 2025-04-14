@@ -7,8 +7,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     header('Location: access_denied.php');
     exit;
 }
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -777,16 +775,16 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <!-- Sidebar -->
     <div class="sidebar">
        <!-- User Profile Section -->
-<div class="user-profile">
-    <div class="profile-picture">
-        <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-            <!-- Display the uploaded profile image -->
-            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-        <?php else: ?>
-            <!-- Fallback to the generated avatar -->
-            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-        <?php endif; ?>
-    </div>
+    <div class="user-profile">
+        <div class="profile-picture">
+            <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                <!-- Display the uploaded profile image -->
+                <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+            <?php else: ?>
+                <!-- Fallback to the generated avatar -->
+                <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+            <?php endif; ?>
+        </div>
     <div class="profile-info">
         <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
         <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
@@ -794,22 +792,22 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 </div>
 
         <ul>
-            <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
-            <li><a href="Partners.php"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
+            <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
+ <!-- Main Content -->
+<div class="main-content">
         <!-- Header -->
         <div class="header">
             <div class="header-left">
                     <h1>Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
             </div>
-            
+            <!-- Notification Section -->
             <div class="header-right">
                 <div class="notification-container">
                     <button class="notification-btn">
@@ -936,25 +934,26 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             </div>
         </div>
 
-        <div id="services-section" class="content-section">
-  <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
-  <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
+        <!-- Services Section -->
+    <div id="services-section" class="content-section">
+    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
+    <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
 
-  <div class="services-grid">
-    <a href="artificial_insemination.php" class="service-card">
-      <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
-      <p>Report on artificial insemination services for carabaos.</p>
-    </a>
+    <div class="services-grid">
+        <a href="artificial_insemination.php" class="service-card">
+        <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
+        <p>Report on artificial insemination services for carabaos.</p>
+        </a>
 
-    <a href="milk_feeding.php" class="service-card">
-      <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
-      <p>Report on milk feeding programs and nutritional supplements for calves.</p>
-    </a>
+        <a href="milk_feeding.php" class="service-card">
+        <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
+        <p>Report on milk feeding programs and nutritional supplements for calves.</p>
+        </a>
 
-    <a href="milk_production.php" class="service-card">
-      <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
-      <p>Report on carabao milk production metrics and quality.</p>
-    </a>
+        <a href="milk_production.php" class="service-card">
+        <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
+        <p>Report on carabao milk production metrics and quality.</p>
+        </a>
 
     <a href="calf_drop.php" class="service-card">
       <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
@@ -968,55 +967,36 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 </div>
 
 
-
-
-            
-
-
         <!-- Settings Section -->
-        <div id="settings-section" class="content-section">
-            <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
-            <p class="dashboard-description">Configure system settings and user preferences.</p>
-            
-            <div class="dashboard-card">
-                <a href="center_profile_update.php" class="card-link">
-                    <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
-                    <p>Update your account information and password.</p>
-                </a>
-            </div>
+    <div id="settings-section" class="content-section">
+        <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
+        <p class="dashboard-description">Configure system settings and user preferences.</p>
+        
+        <div class="dashboard-card">
+            <a href="center_profile_update.php" class="card-link">
+                <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
+                <p>Update your account information and password.</p>
+            </a>
+        </div>
 
-            <div class="dashboard-card">
-                <a href="center_update_password.php" class="card-link">
-                    <h3 class="card-title"><i class="fas fa-user-cog"></i> Password and Security</h3>
-                    <p>Update your account password.</p>
-                </a>
-            </div>
-            
-            <div class="dashboard-card">
-                <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
-                <p>Configure how you receive notifications.</p>
-            </div>
+        <div class="dashboard-card">
+            <a href="center_update_password.php" class="card-link">
+                <h3 class="card-title"><i class="fas fa-user-cog"></i> Password and Security</h3>
+                <p>Update your account password.</p>
+            </a>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
+            <p>Configure how you receive notifications.</p>
         </div>
     </div>
 
+</div>
+
 <script>
 
-document.addEventListener("DOMContentLoaded", function () {
-    /*** Navigation Functionality ***/
-    const navLinks = document.querySelectorAll(".nav-link");
-    const contentSections = document.querySelectorAll(".content-section");
-    
-    navLinks.forEach(link => {
-        link.addEventListener("click", function (e) {
-            e.preventDefault();
-            
-            navLinks.forEach(navLink => navLink.classList.remove("active"));
-            contentSections.forEach(section => section.classList.remove("active"));
-            
-            this.classList.add("active");
-            document.getElementById(this.dataset.section).classList.add("active");
-        });
-    });
+
 
     /*** Update Sidebar Profile ***/
     function updateSidebarProfile(data) {
@@ -1113,7 +1093,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-});
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logoutLink').addEventListener('click', function(e) {
