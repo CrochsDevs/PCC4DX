@@ -7,8 +7,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     header('Location: access_denied.php');
     exit;
 }
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
