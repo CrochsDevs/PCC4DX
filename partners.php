@@ -335,7 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button class="btn btn-info btn-sm" 
+                                                    <button class="btn btn-info btn-sm edit-btn" style="/* height: -webkit-fill-available; *//* width: -webkit-fill-available; */"
                                                             data-id="<?= $partner['id'] ?>"
                                                             data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
                                                             data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
@@ -349,13 +349,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     </button>
                                                     <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');">
                                                         <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                        <button type="submit" name="delete" class="btn btn-danger btn-sm">
+                                                        <button type="submit" name="delete" class="btn btn-danger btn-sm delete-btn">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
                                                     <form method="POST">
                                                         <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                        <button type="submit" name="toggle_status" class="btn btn-<?= $partner['is_active'] ? 'warning' : 'success' ?> btn-sm">
+                                                        <button type="submit" name="toggle_status" class="btn btn-<?= $partner['is_active'] ? 'warning' : 'success' ?> btn-sm" style="height: -webkit-fill-available;width: -webkit-fill-available;">
                                                             <i class="fas fa-<?= $partner['is_active'] ? 'ban' : 'check' ?>"></i>
                                                         </button>
                                                     </form>
