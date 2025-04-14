@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="css/partners.css">
+    <link rel="stylesheet" href="css/center.css">
 </head>
 <body>
 <body>
@@ -270,8 +270,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
-                
-                
             </div>
         </div>
 
@@ -420,7 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light modal-close">Cancel</button>
+                    <button type="button" class="btn btn-danger">Cancel</button>
                     <button type="submit" name="add" class="btn btn-primary">Save Partner</button>
                 </div>
             </form>
@@ -473,7 +471,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light modal-close">Cancel</button>
+                    <button type="button" class="btn btn-danger">Cancel</button>
                     <button type="submit" name="edit" class="btn btn-primary">Update Partner</button>
                 </div>
             </form>
