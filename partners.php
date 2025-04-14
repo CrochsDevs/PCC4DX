@@ -313,13 +313,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </tr>
                             </thead>
                             <tbody>
+                            <tbody>
                                 <?php if (empty($partners)): ?>
                                     <tr>
                                         <td colspan="6" class="text-center">No partners found. Add your first partner!</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($partners as $partner): ?>
-                                        <tr>
+                                        <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
                                             <td><?= htmlspecialchars($partner['partner_name']) ?></td>
                                             <td><?= htmlspecialchars($partner['herd_code']) ?></td>
                                             <td>
@@ -337,6 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
+                                                    <!-- Buttons still work normally -->
                                                     <button class="btn btn-info btn-sm" 
                                                             data-id="<?= $partner['id'] ?>"
                                                             data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
@@ -349,13 +351,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                             data-active="<?= $partner['is_active'] ?>">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');">
+                                                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');" style="display:inline;">
                                                         <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
                                                         <button type="submit" name="delete" class="btn btn-danger btn-sm">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
-                                                    <form method="POST">
+                                                    <form method="POST" style="display:inline;">
                                                         <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
                                                         <button type="submit" name="toggle_status" class="btn btn-<?= $partner['is_active'] ? 'warning' : 'success' ?> btn-sm">
                                                             <i class="fas fa-<?= $partner['is_active'] ? 'ban' : 'check' ?>"></i>
@@ -367,6 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
+
                         </table>
                     </div>
                 </div>
@@ -566,6 +569,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         window.addEventListener('resize', handleResize);
         handleResize();
+
+        document.addEventListener("DOMContentLoaded", function() {
+        const rows = document.querySelectorAll(".clickable-row");
+
+        rows.forEach(row => {
+            row.addEventListener("click", function(e) {
+                // Avoid clicking if action buttons are clicked
+                if (e.target.closest(".action-buttons")) return;
+
+                const url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
     </script>
 </body>
 </html>
