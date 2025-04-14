@@ -183,19 +183,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --primary-light: #ebf0ff;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --info: #4895ef;
+       :root {
+            --primary: #0056b3;
+            --primary-light: #3a7fc5;
+            --primary-lighter: #e6f0fa;
+            --secondary: #ffc107;
+            --secondary-light: #ffd54f;
+            --secondary-lighter: #fff8e6;
+            --dark: #2d3748;
+            --dark-light: #4a5568;
             --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --gray-light: #e9ecef;
+            --danger: #e53e3e;
+            --danger-light: #feb2b2;
+            --danger-lighter: #fde8e8;
+            --success: #38a169;
+            --success-light: #9ae6b4;
+            --success-lighter: #f0fff4;
+            --info: #3182ce;
+            --warning: #dd6b20;
+            --gray: #718096;
+            --gray-light: #e2e8f0;
+            --gray-lighter: #f7fafc;
             --white: #ffffff;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -217,118 +225,306 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         body {
-            background-color: #f5f7fb;
-            color: var(--dark);
-        }
-
-        .container {
+            background-color: #f7fafc;
             display: grid;
             grid-template-columns: 280px 1fr;
             min-height: 100vh;
+            color: var(--dark);
         }
-
+        
         /* Sidebar Styles */
         .sidebar {
-            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
             padding: 2rem 1.5rem;
-            box-shadow: var(--shadow-md);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
             position: relative;
             z-index: 10;
         }
-
-        .sidebar-header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 2rem;
+        
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 2.5rem;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .profile-img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 1rem;
-        }
-
-        .sidebar-title {
-            font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
         }
-
-        .sidebar-subtitle {
-            font-size: 0.875rem;
-            opacity: 0.8;
-        }
-
-        .sidebar-menu {
+        
+        .sidebar ul {
             list-style: none;
         }
-
-        .sidebar-item {
-            margin-bottom: 0.75rem;
+        
+        .sidebar li {
+            margin-bottom: 1.25rem;
+            transition: transform 0.2s;
         }
-
-        .sidebar-link {
+        
+        .sidebar li:hover {
+            transform: translateX(5px);
+        }
+        
+        .sidebar a {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1rem;
+            padding: 0.9rem 1.25rem;
             color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
-            border-radius: var(--radius);
-            transition: var(--transition);
+            border-radius: 8px;
+            transition: all 0.3s ease;
             font-weight: 500;
         }
-
-        .sidebar-link i {
-            margin-right: 0.75rem;
+        
+        .sidebar a i {
+            margin-right: 1rem;
             font-size: 1.1rem;
             width: 24px;
             text-align: center;
         }
-
-        .sidebar-link:hover {
+        
+        .sidebar a:hover {
             background: rgba(255, 255, 255, 0.15);
             color: white;
-            transform: translateX(5px);
         }
-
-        .sidebar-link.active {
-            background: var(--white);
+        
+        .sidebar a.active {
+            background: var(--secondary);
             color: var(--primary);
             font-weight: 600;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .logout-btn {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            margin-top: 2rem;
-            background-color: var(--danger);
+            gap: 8px;
+            padding: 8px 15px;
+            background-color: red;
             color: white;
-            border-radius: var(--radius);
+            border-radius: 6px;
             text-decoration: none;
             font-weight: 500;
-            transition: var(--transition);
+            transition: all 0.3s;
         }
-
+        
         .logout-btn:hover {
-            background-color: #d31666;
+            background-color: #c53030;
             transform: translateY(-2px);
         }
-
+        
         /* Main Content Styles */
         .main-content {
-            padding: 2rem;
+            padding: 2.5rem;
             overflow-y: auto;
+        }
+        
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            position: relative;
+        }
+        
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .notification-container {
+            position: relative;
+        }
+        
+        .notification-btn {
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.25rem;
+            cursor: pointer;
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .notification-btn:hover {
+            background: var(--gray-light);
+            transform: translateY(-2px);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .notification-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 350px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s;
+        }
+        
+        .notification-container:hover .notification-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .notification-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .notification-header h4 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--dark);
+        }
+        
+        .mark-all-read {
+            color: var(--primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            display: flex;
+            padding: 1rem;
+            gap: 1rem;
+            text-decoration: none;
+            color: var(--dark);
+            border-bottom: 1px solid var(--gray-light);
+            transition: all 0.2s;
+        }
+        
+        .notification-item:hover {
+            background: rgba(0, 86, 179, 0.05);
+        }
+        
+        .notification-item.unread {
+            background: rgba(0, 86, 179, 0.03);
+        }
+        
+        .notification-icon {
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+        
+        .notification-icon .text-success {
+            color: var(--success);
+        }
+        
+        .notification-icon .text-danger {
+            color: var(--danger);
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-content p {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .notification-content small {
+            color: var(--gray);
+            font-size: 0.8rem;
+        }
+        
+        .notification-footer {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border-top: 1px solid var(--gray-light);
+        }
+        
+        .notification-footer a {
+            color: var(--primary);
+            font-size: 0.85rem;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+         /* User Profile Styles */
+         .user-profile {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .profile-picture {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--secondary);
+        }
+        
+        .profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-info {
+            color: white;
+        }
+        
+        .user-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-email {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            word-break: break-word;
+        }
+        
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
         }
 
         /* Header Styles */
@@ -749,70 +945,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile" class="profile-img">
-                <?php else: ?>
-                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=4361ee&color=fff&size=128" alt="Profile" class="profile-img">
-                <?php endif; ?>
-                <h3 class="sidebar-title"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-                <p class="sidebar-subtitle"><?= htmlspecialchars($_SESSION['user']['center_name']) ?></p>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+       <!-- User Profile Section -->
+<div class="user-profile">
+    <div class="profile-picture">
+        <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+            <!-- Display the uploaded profile image -->
+            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+        <?php else: ?>
+            <!-- Fallback to the generated avatar -->
+            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+        <?php endif; ?>
+    </div>
+    <div class="profile-info">
+        <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+    </div>
+</div>
+
+        <ul>
+            <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="Partners.php"><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
+            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                    <h1>Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
             </div>
             
-            <ul class="sidebar-menu">
-                <li class="sidebar-item">
-                    <a href="center_dashboard.php" class="sidebar-link">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="reports.php" class="sidebar-link">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>4DX Reports</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="partners.php" class="sidebar-link active">
-                        <i class="fas fa-users"></i>
-                        <span>Partners</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="settings.php" class="sidebar-link">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </li>
-            </ul>
-            
-            <a href="logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Header -->
-            <header class="header">
-                <div class="page-title">
-                    <h1>Partners Management</h1>
-                    <p>Manage your cooperative partners and their information</p>
-                </div>
-                
-                <div class="header-actions">
-                    <div class="notification">
-                        <button class="notification-btn">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </button>
+            <div class="header-right">
+                <div class="notification-container">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <div class="notification-dropdown">
+                        <div class="notification-header">
+                            <h4>Notifications</h4>
+                            <span class="mark-all-read">Mark all as read</span>
+                        </div>
+                        <div class="notification-list">
+                            <a href="#" class="notification-item unread">
+                                <div class="notification-icon">
+                                    <i class="fas fa-users text-primary"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p>5 new farmers registered today</p>
+                                    <small>2 hours ago</small>
+                                </div>
+                            </a>
+                            <a href="#" class="notification-item unread">
+                                <div class="notification-icon">
+                                    <i class="fas fa-paw text-success"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p>New carabao health report available</p>
+                                    <small>5 hours ago</small>
+                                </div>
+                            </a>
+                            <a href="#" class="notification-item">
+                                <div class="notification-icon">
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p>3 pending requests need approval</p>
+                                    <small>Yesterday</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="notification-footer">
+                            <a href="#">View all notifications</a>
+                        </div>
                     </div>
                 </div>
-            </header>
+                
+                
+            </div>
+        </div>
 
             <!-- Flash Messages -->
             <?php if (isset($_SESSION['message'])): ?>
