@@ -44,10 +44,10 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         </div>
 
         <ul>
-            <li><a href="center_dashboard.php" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="center_dashboard.php"><i class="fas fa-file-medical"></i> 4DX Report</a></li>
-            <li><a href="Partners.php"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="settings.php"  class="nav-link active"><i class="fas fa-cogs"></i> Settings</a></li>
+            <li><a href="center_dashboard.php" class="nav-link" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="settings.php" class="nav-link active" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
@@ -108,43 +108,33 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             </div>
         </div>
 
-        <!-- Dashboard Content -->
-       
-            
-            <!-- Recent Activity Section -->
-            <div class="activity-section">
-                <h3><i class="fas fa-history"></i> Recent Activity</h3>
-                <div class="activity-list">
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-user-plus text-success"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p>5 new partners registered today</p>
-                            <small>2 hours ago</small>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-file-upload text-primary"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p>New 4DX report submitted</p>
-                            <small>5 hours ago</small>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-exclamation-triangle text-warning"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p>3 pending requests need approval</p>
-                            <small>Yesterday</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Settings Section -->
+        <div id="settings-section" class="content-section active">
+        <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
+        <p class="dashboard-description">Configure system settings and user preferences.</p>
+        
+        <div class="dashboard-card">
+            <a href="center_profile_update.php" class="card-link">
+                <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
+                <p>Update your account information and password.</p>
+            </a>
         </div>
+
+        <div class="dashboard-card">
+            <a href="center_update_password.php" class="card-link">
+                <h3 class="card-title"><i class="fas fa-user-cog"></i> Password and Security</h3>
+                <p>Update your account password.</p>
+            </a>
+        </div>
+        
+        <div class="dashboard-card">
+            <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
+            <p>Configure how you receive notifications.</p>
+        </div>
+    </div>
+            
+
+       
     </div>
 
     <script>

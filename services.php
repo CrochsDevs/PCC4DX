@@ -42,8 +42,8 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 </div>
 
         <ul>
-            <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="center_dashboard.php" class="nav-link" ><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="services.php" class="nav-link active" ><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
             <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -108,84 +108,9 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             </div>
         </div>
         
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="content-section active">
-            <h2 class="dashboard-title"><i class="fas fa-chart-line"></i> Performance Dashboard</h2>
-            <p class="dashboard-description">Monitor and manage all PCC Headquarters operations. Track key metrics and performance indicators to ensure efficient service delivery.</p>
-            
-            <div class="dashboard-grid">
-                <!-- Farmers Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-users"></i> Farmers</h3>
-                    <div class="chart-container">
-                        <canvas id="usersChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">1,254</span>
-                            <span class="target">Target: 1,500</span>
-                        </div>
-                        <div class="chart-change positive">
-                            <i class="fas fa-arrow-up"></i> 12% increase
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Carabaos Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-paw"></i> Carabaos</h3>
-                    <div class="chart-container">
-                        <canvas id="carabaosChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">3,421</span>
-                            <span class="target">Target: 3,800</span>
-                        </div>
-                        <div class="chart-change positive">
-                            <i class="fas fa-arrow-up"></i> 8% increase
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Services Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-check-circle"></i> Completed Services</h3>
-                    <div class="chart-container">
-                        <canvas id="servicesChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">892</span>
-                            <span class="target">Target: 1,000</span>
-                        </div>
-                        <div class="chart-change negative">
-                            <i class="fas fa-arrow-down"></i> 5% decrease
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Requests Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-clock"></i> Pending Requests</h3>
-                    <div class="chart-container">
-                        <canvas id="requestsChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">59</span>
-                            <span class="target">Target: 30</span>
-                        </div>
-                        <div class="chart-change negative">
-                            <i class="fas fa-arrow-down"></i> 15% increase
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Services Section -->
-    <div id="services-section" class="content-section">
+    <div id="services-section" class="content-section active">
     <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
     <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
 
@@ -212,37 +137,10 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     </div>
     </div>
 
-        <!-- Settings Section -->
-    <div id="settings-section" class="content-section">
-        <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
-        <p class="dashboard-description">Configure system settings and user preferences.</p>
-        
-        <div class="dashboard-card">
-            <a href="center_profile_update.php" class="card-link">
-                <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
-                <p>Update your account information and password.</p>
-            </a>
-        </div>
-
-        <div class="dashboard-card">
-            <a href="center_update_password.php" class="card-link">
-                <h3 class="card-title"><i class="fas fa-user-cog"></i> Password and Security</h3>
-                <p>Update your account password.</p>
-            </a>
-        </div>
-        
-        <div class="dashboard-card">
-            <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
-            <p>Configure how you receive notifications.</p>
-        </div>
-    </div>
 
 </div>
 
 <script>
-
-
-
     /*** Update Sidebar Profile ***/
     function updateSidebarProfile(data) {
         const profileImg = document.getElementById("sidebar-profile-img");
@@ -304,7 +202,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     }
 
     
-    
     /*** Chart.js Initialization ***/
     const chartColors = { primary: "#0056b3", success: "#38a169", danger: "#e53e3e", gray: "#e2e8f0" };
     const createChart = (ctx, labels, data, backgroundColor) => {
@@ -338,6 +235,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             }
         });
     }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logoutLink').addEventListener('click', function(e) {

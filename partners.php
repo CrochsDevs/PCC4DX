@@ -182,6 +182,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Cooperative Partners Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/partners.css">
 </head>
 <body>
@@ -207,8 +210,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <ul>
             <li><a href="center_dashboard.php" class="nav-link" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="center_dashboard.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
-            <li><a href="Partners.php"  class="nav-link active" ><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="partners.php"  class="nav-link active" ><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
