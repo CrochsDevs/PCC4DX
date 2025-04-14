@@ -23,7 +23,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/center.css">
 </head>
-
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
