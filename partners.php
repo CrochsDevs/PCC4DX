@@ -338,12 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
-<<<<<<< HEAD
-                                                    <!-- Buttons still work normally -->
-                                                    <button class="btn btn-info btn-sm" 
-=======
                                                     <button class="btn btn-info btn-sm edit-btn" style="/* height: -webkit-fill-available; *//* width: -webkit-fill-available; */"
->>>>>>> 64409a8f40d97e114a3ff5661d3928c5c335af24
                                                             data-id="<?= $partner['id'] ?>"
                                                             data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
                                                             data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
