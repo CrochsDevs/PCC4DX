@@ -182,7 +182,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Cooperative Partners Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/center.css">
@@ -338,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button class="btn btn-info btn-sm edit-btn" 
+                                                    <button class="btn btn-info btn-sm" 
                                                             data-id="<?= $partner['id'] ?>"
                                                             data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
                                                             data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
