@@ -1086,6 +1086,35 @@
             border-left: 4px solid var(--danger);
         }
 
+         /* Add these new styles (clickable partners) */
+         .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .clickable-row:hover {
+            background-color: #f8f9fa;
+        }
+        .action-buttons {
+            pointer-events: auto;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-inactive {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .modal-details .badge {
+            font-size: 0.9rem;
+            margin-right: 5px;
+        }
+
         /* Responsive Adjustments */
         @media (max-width: 992px) {
             .container {

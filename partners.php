@@ -281,6 +281,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
             <?php endif; ?>
 
+            
+
             <!-- Partners Card -->
             <div class="card">
                 <div class="card-header">
@@ -523,7 +525,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 e.target.classList.remove('show');
-                document.body.style.overflow = 'auto';
+                document.body.style.overflow =  'auto';
             }
         });
 

@@ -12,247 +12,38 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> - Milk Management</title>
+    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary: #0056b3;
-            --primary-light: #3a7fc5;
-            --secondary: #ecc94b;
-            --secondary-light: #f6e05e;
-            --accent: #48bb78;
-            --light: #f7fafc;
-            --dark: #2d3748;
-            --gray: #718096;
-            --gray-light: #e2e8f0;
-        }
+    <link rel="stylesheet" href="css/center.css">
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body {
-            background-color: var(--light);
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            min-height: 100vh;
-            color: var(--dark);
-        }
-
-        /* Sidebar Styles */
-        .sidebar {
-            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 2rem 1rem;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            height: 100vh;
-        }
-
-        .user-profile {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .profile-picture img {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 3px solid var(--secondary);
-            margin-bottom: 1rem;
-            object-fit: cover;
-        }
-
-        .profile-info h3 {
-            color: white;
-            margin-bottom: 0.5rem;
-            font-size: 1.2rem;
-        }
-
-        .profile-info p {
-            color: var(--gray-light);
-            font-size: 0.9rem;
-        }
-
-        .sidebar ul {
-            list-style: none;
-        }
-
-        .sidebar li {
-            margin-bottom: 1rem;
-        }
-
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            gap: 1rem;
-        }
-
-        .sidebar a:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px);
-        }
-
-        .sidebar a.active {
-            background: var(--secondary);
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        /* Main Content */
-        #main-content {
-            padding: 2rem;
-            background-color: var(--light);
-        }
-
-        .content-section {
-            display: none;
-        }
-
-        .content-section.active {
-            display: block;
-        }
-
-        /* Dashboard Section */
-        .dashboard-card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-container {
-            max-width: 800px;
-            margin: 2rem auto;
-        }
-
-        /* Entry Form */
-        .entry-form {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--gray-light);
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .submit-btn {
-            background: var(--accent);
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s ease;
-        }
-
-        /* Reports Section */
-        .filter-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .milk-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .milk-table th,
-        .milk-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--gray-light);
-        }
-
-        .milk-table th {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-        }
-
-        .milk-table tr:nth-child(even) td {
-            background: #f8fafc;
-        }
-
-        .export-btn {
-            background: var(--secondary);
-            color: var(--dark);
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            margin-top: 1rem;
-            cursor: pointer;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                display: none;
-            }
-
-            #main-content {
-                padding: 1.5rem;
-            }
-        }
-    </style>
 </head>
+<body>
+
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="user-profile">
-            <div class="profile-picture">
-                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile">
-                <?php else: ?>
-                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=2c5282&color=fff" alt="Profile">
-                <?php endif; ?>
-            </div>
-            <div class="profile-info">
-                <h3><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-                <p><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-                <p><?= htmlspecialchars($_SESSION['user']['center_name']) ?></p>
-            </div>
+       <!-- User Profile Section -->
+    <div class="user-profile">
+        <div class="profile-picture">
+            <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                <!-- Display the uploaded profile image -->
+                <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+            <?php else: ?>
+                <!-- Fallback to the generated avatar -->
+                <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+            <?php endif; ?>
         </div>
+    <div class="profile-info">
+        <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+    </div>
+</div>
 
         <nav>
             <ul>
