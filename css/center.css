@@ -816,8 +816,8 @@
         }
 
         .btn-primary {
-            background-color: var(--primary);
-            color: white;
+            background-color: #8faeff;
+            color: #1200ff;
         }
 
         .btn-primary:hover {
@@ -876,7 +876,7 @@
         }
 
         .btn-light:hover {
-            background-color: #d9dde2;
+            background-color: #848484;
             transform: translateY(-2px);
             box-shadow: var(--shadow);
         }
