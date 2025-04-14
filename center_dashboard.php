@@ -7,6 +7,8 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     header('Location: access_denied.php');
     exit;
 }
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,6 +18,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  
@@ -24,16 +27,35 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         :root {
             --primary: #0056b3;
             --primary-light: #3a7fc5;
+            --primary-lighter: #e6f0fa;
             --secondary: #ffc107;
             --secondary-light: #ffd54f;
+            --secondary-lighter: #fff8e6;
             --dark: #2d3748;
+            --dark-light: #4a5568;
             --light: #f8f9fa;
             --danger: #e53e3e;
             --danger-light: #feb2b2;
+            --danger-lighter: #fde8e8;
             --success: #38a169;
             --success-light: #9ae6b4;
+            --success-lighter: #f0fff4;
+            --info: #3182ce;
+            --warning: #dd6b20;
             --gray: #718096;
             --gray-light: #e2e8f0;
+            --gray-lighter: #f7fafc;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius-sm: 0.25rem;
+            --radius: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.5rem;
+            --transition: all 0.2s ease-in-out;
         }
 
         * {
@@ -764,6 +786,10 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
+            @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  } 
         }
     </style>
 <body>
@@ -789,7 +815,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <ul>
             <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
             <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
-            <li><a href="#" class="nav-link" data-section="cooperative-section"><i class="fas fa-users"></i> Partner</a></li>
+            <li><a href="Partners.php"><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -928,8 +954,8 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
                 </div>
             </div>
         </div>
-        
-<div id="services-section" class="content-section">
+
+        <div id="services-section" class="content-section">
   <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
   <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
 
@@ -956,65 +982,14 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
   </div>
 </div>
 
-<div id="cooperative-section" class="content-section">
-    <div class="dashboard-card">
-        <h2 class="dashboard-title"><i class="fas fa-users"></i> Cooperative Management</h2>
-        <p class="dashboard-description">Manage registered cooperatives and their information.</p>
-
-        <div class="filter-section">
-    <div class="form-group search-group">
-        <input type="text" class="form-input" placeholder="Search cooperatives..." id="searchCooperative">
-        <i class="fas fa-search search-icon"></i>
-    </div>
-    <div class="form-group add-group">
-        <button class="submit-btn" id="addCooperativeBtn">
-            <i class="fas fa-plus"></i> Add Cooperative
-        </button>
-    </div>
+<div id="loader-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center;">
+  <div class="spinner" style="border:6px solid #f3f3f3; border-top:6px solid #3498db; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite;"></div>
 </div>
 
-        <table class="milk-table">
-            <thead>
-                <tr>
-                    <th>Cooperative Name</th>
-                    <th>Member Count</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="cooperative-list">
-                <!-- Sample Data -->
-                <tr>
-                    <td>Cooperative A</td>
-                    <td>45</td>
-                    <td>San Jose, Tarlac</td>
-                    <td><span class="status-badge active">Active</span></td>
-                    <td>
-                        <button class="edit-btn"><i class="fas fa-edit"></i></button>
-                        <button class="delete-btn"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                       <td>Cooperative B</td>
-              <tr>
-                   <td>32</td>
-                    <td>Concepcion, Tarlac</td>
-                    <td><span class="status-badge inactive">Inactive</span></td>
-                    <td>
-                        <button class="edit-btn"><i class="fas fa-edit"></i></button>
-                        <button class="delete-btn"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
 
-        <div class="pagination">
-            <button id="prevPage" class="pagination-btn">Previous</button>
-            <span id="pageNumber">1</span>
-            <button id="nextPage" class="pagination-btn">Next</button>
-        </div>
-    </div>
-</div>  
+
+
+          
 
 
         <!-- Settings Section -->
@@ -1131,22 +1106,23 @@ document.addEventListener("DOMContentLoaded", function () {
             type: "doughnut",
             data: { labels, datasets: [{ data, backgroundColor, borderWidth: 0 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: "75%" }
-        });
-    };
-    
-    if (document.getElementById("usersChart")) {
-        createChart(document.getElementById("usersChart"), ["Registered", "Remaining"], [1254, 1500-1254], [chartColors.primary, chartColors.gray]);
-    }
-    if (document.getElementById("carabaosChart")) {
-        createChart(document.getElementById("carabaosChart"), ["Carabaos", "Remaining"], [3421, 3800-3421], [chartColors.success, chartColors.gray]);
-    }
-    if (document.getElementById("servicesChart")) {
-        createChart(document.getElementById("servicesChart"), ["Completed", "Remaining"], [892, 1000-892], [chartColors.primary, chartColors.gray]);
-    }
-    if (document.getElementById("requestsChart")) {
-        createChart(document.getElementById("requestsChart"), ["Pending", "Target"], [59, 30], [chartColors.danger, chartColors.gray]);
-    }
-    
+                       
+                        });
+                    };
+                    
+                    if (document.getElementById("usersChart")) {
+                        createChart(document.getElementById("usersChart"), ["Registered", "Remaining"], [1254, 1500-1254], [chartColors.primary, chartColors.gray]);
+                    }
+                    if (document.getElementById("carabaosChart")) {
+                        createChart(document.getElementById("carabaosChart"), ["Carabaos", "Remaining"], [3421, 3800-3421], [chartColors.success, chartColors.gray]);
+                    }
+                    if (document.getElementById("servicesChart")) {
+                        createChart(document.getElementById("servicesChart"), ["Completed", "Remaining"], [892, 1000-892], [chartColors.primary, chartColors.gray]);
+                    }
+                    if (document.getElementById("requestsChart")) {
+                        createChart(document.getElementById("requestsChart"), ["Pending", "Target"], [59, 30], [chartColors.danger, chartColors.gray]);
+                    }
+                    
     /*** Profile Image Preview ***/
     const profileImageInput = document.getElementById("profile_image");
     if (profileImageInput) {
@@ -1178,6 +1154,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    document.getElementById('partners-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('loader-overlay').style.display = 'flex';
+
+    // Simulate a short delay then redirect
+    setTimeout(function () {
+      window.location.href = 'Partners.php';
+    }, 1000); // 1 second delay (can adjust)
+  });
+  
 });
 </script>
 </html>

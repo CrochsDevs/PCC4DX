@@ -34,95 +34,7 @@ try {
             transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out, border-color 0.5s ease-in-out;
         }
 
-        /* Dark Mode Styles */
-        .dark-mode {
-            background-color: #121212;
-            color: #f8f9fa;
-        }
 
-        .dark-mode .login-container {
-            background: #1e1e1e;
-            color: white;
-            border-top: 4px solid rgb(255, 221, 0);
-        }
-
-        .dark-mode input,
-        .dark-mode select {
-            background-color: #333;
-            color: white;
-            border: 1px solid #777;
-        }
-
-        .dark-mode input:focus,
-        .dark-mode select:focus {
-            border-color: rgb(255, 221, 0);
-            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.3);
-        }
-
-        .dark-mode .login-button {
-            background-color: rgb(255, 221, 0);
-            color: #121212;
-        }
-
-        .dark-mode .login-button:hover {
-            background-color: rgb(255, 196, 0);
-        }
-
-        .dark-mode .login-help a {
-            color: rgb(255, 221, 0);
-        }
-
-        /* Theme Toggle Button */
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #005ea2;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-
-        .dark-mode .theme-toggle {
-            background: rgb(255, 221, 0);
-            color: #121212;
-        }
-
-        .theme-toggle:hover {
-            background: #004b87;
-        }
-
-        .dark-mode .theme-toggle:hover {
-            background: rgb(255, 196, 0);
-        }
-
-        /* Logo Preview */
-        .logo-preview {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        .logo-preview img {
-            max-height: 80px;
-            transition: filter 0.5s ease-in-out;
-        }
-        .dark-mode .logo-preview img {
-            filter: brightness(0.8);
-        }
-
-        /* Error Message */
-        .error-message {
-            color: #dc3545;
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-        }
-        .dark-mode .error-message {
-            color: #ff6b6b;
-        }
     </style>
 </head>
 <body>
@@ -187,33 +99,7 @@ try {
         <div class="login-help">
             <a href="forgetpassword.php">Forgot password?</a> | 
             <a href="help.php">Help</a>
-        </div>
-        <button id="theme-toggle" class="theme-toggle">🌙 Dark Mode</button>
-    </div>
+        
 
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const themeToggle = document.getElementById("theme-toggle");
-        const body = document.body;
-
-        // Check for saved user preference
-        if (localStorage.getItem("theme") === "dark") {
-            body.classList.add("dark-mode");
-            themeToggle.textContent = "☀️ Light Mode";
-        }
-
-            themeToggle.addEventListener("click", function () {
-                body.classList.toggle("dark-mode");
-
-            if (body.classList.contains("dark-mode")) {
-                localStorage.setItem("theme", "dark");
-                themeToggle.textContent = "☀️ Light Mode";
-            } else {
-                localStorage.setItem("theme", "light");
-                themeToggle.textContent = "🌙 Dark Mode";
-            }
-        });
-    });
-</script>
 </body>
 </html>

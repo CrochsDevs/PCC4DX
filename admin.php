@@ -21,6 +21,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     <title>PCC Headquarters Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -35,6 +36,12 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             --success: #38a169;
             --success-light: #9ae6b4;
             --gray: #718096;
+            --gray-light: #e2e8f0;
+            --dark-bg: #1a1a1a;
+            --dark-card-bg: #2d2d2d;
+            --dark-text: #ffffff;
+            --dark-border: #404040;
+            --dark-primary: #4a90e2;
             --gray-light: #e2e8f0;
         }
 
@@ -512,6 +519,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             width: 24px;
             text-align: center;
         }
+
         
         /* Responsive Design */
         @media (max-width: 1024px) {
@@ -552,6 +560,98 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 background-color: rgba(0, 86, 179, 0.1);
                 border-radius: 8px;
             }
+            .theme-toggle-card {
+                cursor: pointer;
+                transition: background 0.3s ease;
+            }
+
+            .theme-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+            /* Dark mode toggle switch */
+            .dark-theme {
+    background-color: var(--dark-bg);
+    color: var(--dark-text);
+}
+
+.dark-theme .dashboard-card {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+}
+
+.dark-theme .header {
+    border-bottom-color: var(--dark-border);
+}
+
+.dark-theme .notification-dropdown {
+    background-color: var(--dark-card-bg);
+    border: 1px solid var(--dark-border);
+}
+
+.dark-theme .notification-header {
+    border-bottom-color: var(--dark-border);
+}
+
+.dark-theme .notification-content small {
+    color: var(--gray-light);
+}
+
+.dark-theme .sidebar {
+    background: linear-gradient(180deg, var(--dark-primary) 0%, #1a365d 100%);
+}
+
+.dark-theme .chart-stats .target {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode text colors */
+.dark-theme .card-title,
+.dark-theme .dashboard-description,
+.dark-theme .chart-stats .actual,
+.dark-theme .chart-stats .target,
+.dark-theme .notification-content p,
+.dark-theme .notification-header h4,
+.dark-theme .mark-all-read,
+.dark-theme .notification-footer a,
+.dark-theme .user-name,
+.dark-theme .user-email,
+.dark-theme .dashboard-title,
+.dark-theme .header h1 {
+    color: var(--dark-text) !important;
+}
+
+.dark-theme .notification-content small {
+    color: var(--gray-light);
+}
+
+.dark-theme .chart-stats .target {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--dark-text);
+}
+
+.dark-theme .notification-item {
+    border-bottom-color: var(--dark-border);
+}
+
+.dark-theme .notification-dropdown {
+    border: 1px solid var(--dark-border);
+}
+
+.dark-theme .sidebar a {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.dark-theme .sidebar a.active {
+    color: var(--dark-text);
+}
+
+.dark-theme .logout-btn {
+    background-color: #c53030;
+}
 
             @keyframes profileUpdate {
                 0% { background-color: rgba(0, 86, 179, 0); }
@@ -644,7 +744,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                     </div>
                 </div>
                 
-                <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="logout.php" class="logout-btn" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
         
@@ -744,6 +844,22 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <p>Update your account password.</p>
             </a>
         </div>
+
+        <div class="dashboard-card">
+    <div class="card-link theme-toggle-card" onclick="toggleDarkMode()">
+        <div class="theme-header">
+            <h3 class="card-title">
+                <i class="fas" id="theme-icon"></i> 
+                Appearance Settings
+            </h3>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+        <p>Toggle between light and dark mode</p>
+    </div>
+</div>
         
         <div class="dashboard-card">
             <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
@@ -762,4 +878,186 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
         </div>
     </div>
 <script src="js/admin.js"></script>
+<script>
+    function confirmLogout(e) {
+  e.preventDefault();
+  
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You want to logout?",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, logout!',
+    cancelButtonText: 'Cancel',
+    reverseButtons: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.href = 'logout.php';
+    }
+  })
+}
+
+// Dark Mode Functions
+function checkTheme() {
+    const isDark = localStorage.getItem('theme') === 'dark';
+    document.body.classList.toggle('dark-theme', isDark);
+    document.getElementById('theme-toggle').checked = isDark;
+    updateChartColors(isDark);
+}
+
+function toggleDarkMode() {
+    const body = document.body;
+    const isDark = body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    document.getElementById('theme-toggle').checked = isDark;
+    updateChartColors(isDark);
+}
+
+function updateChartColors(isDark) {
+    const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+    charts.forEach(chartId => {
+        const chart = Chart.getChart(chartId);
+        if (chart) {
+            chart.options.scales.x.ticks.color = isDark ? '#fff' : '#666';
+            chart.options.scales.y.ticks.color = isDark ? '#fff' : '#666';
+            chart.update();
+        }
+    });
+}
+
+function updateChartColors(isDark) {
+    const textColor = isDark ? '#ffffff' : '#2d3748';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    
+    const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+    charts.forEach(chartId => {
+        const chart = Chart.getChart(chartId);
+        if (chart) {
+            // Update axis colors
+            chart.options.scales.x.ticks.color = textColor;
+            chart.options.scales.y.ticks.color = textColor;
+            chart.options.scales.x.grid.color = gridColor;
+            chart.options.scales.y.grid.color = gridColor;
+            
+            // Update dataset colors
+            chart.data.datasets.forEach(dataset => {
+                dataset.borderColor = textColor;
+                dataset.backgroundColor = isDark ? 
+                    'rgba(255, 255, 255, 0.5)' : 
+                    'rgba(0, 86, 179, 0.5)';
+            });
+            
+            chart.update();
+        }
+    });
+}
+
+// Initialize charts with theme-appropriate colors
+function initializeCharts() {
+    const isDark = document.body.classList.contains('dark-theme');
+    const textColor = isDark ? '#ffffff' : '#2d3748';
+    
+    // Users Chart
+    new Chart(document.getElementById('usersChart'), {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Farmers Registered',
+                data: [65, 59, 80, 81, 56, 55],
+                borderColor: textColor,
+                backgroundColor: isDark ? 
+                    'rgba(255, 255, 255, 0.5)' : 
+                    'rgba(0, 86, 179, 0.5)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: {
+                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        color: textColor
+                    }
+                },
+                y: {
+                    grid: {
+                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        color: textColor
+                    }
+                }
+            }
+        }
+    });
+
+    // Initialize other charts similarly...
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkTheme();
+    initializeCharts();
+});
+
+// Initialize theme and charts
+document.addEventListener('DOMContentLoaded', function() {
+    checkTheme();
+    
+    // Initialize all charts with theme-appropriate colors
+    const chartOptions = {
+        scales: {
+            x: {
+                ticks: {
+                    color: document.body.classList.contains('dark-theme') ? '#fff' : '#666'
+                }
+            },
+            y: {
+                ticks: {
+                    color: document.body.classList.contains('dark-theme') ? '#fff' : '#666'
+                }
+            }
+        }
+    };
+    
+    // Example for usersChart
+    new Chart(document.getElementById('usersChart'), {
+        type: 'line',
+        data: {/* your chart data */},
+        options: chartOptions
+    });
+    
+    // Repeat for other charts
+
+    function updateThemeIcon(isDark) {
+    const themeIcon = document.getElementById('theme-icon');
+    themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+}
+
+// Update sa toggleDarkMode function
+function toggleDarkMode() {
+    const body = document.body;
+    const isDark = body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateChartColors(isDark);
+    updateThemeIcon(isDark);
+}
+
+// Update sa checkTheme function
+function checkTheme() {
+    const isDark = localStorage.getItem('theme') === 'dark';
+    document.body.classList.toggle('dark-theme', isDark);
+    document.getElementById('theme-toggle').checked = isDark;
+    updateChartColors(isDark);
+    updateThemeIcon(isDark);
+}
+});
+
+</script>
 </html>
