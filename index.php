@@ -19,6 +19,7 @@
             display: flex;
             width: 100%; 
             max-width: none; 
+            padding-top: 20px;
         }
  
         #map {
