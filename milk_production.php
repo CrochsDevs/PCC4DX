@@ -1,41 +1,121 @@
 <?php
 session_start();
 require 'auth_check.php';
-require 'db_config.php'; // Ensure this has your DB connection setup
+require 'db_config.php';
 
 if ($_SESSION['user']['center_type'] === 'Headquarters') {
     header('Location: access_denied.php');
     exit;
 }
+
+$centerCode = $_SESSION['user']['center_code'];
+
+// Handle Milk Entry Form Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_milk'])) {
+    $entry_date = $_POST['entry_date'];
+    $quantity = $_POST['quantity'];
+    $volume = $_POST['volume'];
+    $cooperative_id = $_POST['cooperative'];
+    
+    try {
+        $stmt = $conn->prepare("INSERT INTO milk_production 
+            (entry_date, quantity, volume, partner_id, center_code)
+            VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $entry_date,
+            $quantity,
+            $volume,
+            $cooperative_id,
+            $centerCode
+        ]);
+        
+        $_SESSION['message'] = "Milk entry added successfully!";
+        $_SESSION['message_type'] = "success";
+        header("Location: ".$_SERVER['PHP_SELF']);
+        exit;
+    } catch (PDOException $e) {
+        $_SESSION['message'] = "Error adding entry: " . $e->getMessage();
+        $_SESSION['message_type'] = "danger";
+        header("Location: ".$_SERVER['PHP_SELF']);
+        exit;
+    }
+}
+
+// Get Partners for Dropdown
+try {
+    $stmt = $conn->prepare("SELECT id, partner_name, coop_type FROM partners 
+                          WHERE center_code = ?");
+    $stmt->execute([$centerCode]);
+    $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $partners = [];
+    $_SESSION['message'] = "Error loading partners: " . $e->getMessage();
+    $_SESSION['message_type'] = "danger";
+}
+
+// Get Milk Production Data
+try {
+    $stmt = $conn->prepare("SELECT mp.*, p.partner_name 
+                          FROM milk_production mp
+                          JOIN partners p ON partner_id = p.id
+                          WHERE mp.center_code = ?
+                          ORDER BY mp.entry_date DESC");
+    $stmt->execute([$centerCode]);
+    $milkEntries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $milkEntries = [];
+    $_SESSION['message'] = "Error loading milk entries: " . $e->getMessage();
+    $_SESSION['message_type'] = "danger";
+}
+
+// Calculate the current week's Monday and Sunday
+$today = new DateTime();
+$dayOfWeek = $today->format('N'); // 1 (Mon) - 7 (Sun)
+
+$monday = clone $today;
+$monday->modify('-' . ($dayOfWeek - 1) . ' days');
+
+$sunday = clone $today;
+$sunday->modify('+' . (7 - $dayOfWeek) . ' days');
+
+$mondayDate = $monday->format('Y-m-d');
+$sundayDate = $sunday->format('Y-m-d');
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/center.css">
+
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="user-profile">
-            <div class="profile-picture">
-                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-                <?php else: ?>
-                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-                <?php endif; ?>
-            </div>
-            <div class="profile-info">
-                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-            </div>
+       <!-- User Profile Section -->
+    <div class="user-profile">
+        <div class="profile-picture">
+            <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                <!-- Display the uploaded profile image -->
+                <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+            <?php else: ?>
+                <!-- Fallback to the generated avatar -->
+                <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+            <?php endif; ?>
         </div>
+    <div class="profile-info">
+        <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+    </div>
+    </div>
+
         <nav>
             <ul>
                 <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-chart-line"></i> Dashboard</a></li>
@@ -46,118 +126,204 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         </nav>
     </div>
 
-    <!-- Entry Section -->
-    <div id="entry-section" class="content-section active">
-        <div class="dashboard-card">
-            <h2>New Milk Entry</h2>
-            <form class="entry-form" action="insert_milk.php" method="POST">
-                <div class="form-group">
-                    <label class="form-label">Date</label>
-                    <input type="date" class="form-input" name="date" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Quantity (Liters)</label>
-                    <input type="number" step="0.1" class="form-input" name="quantity" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Cooperative</label>
-                    <select class="form-input" name="partner_id" required>
-                        <option value="">Select Cooperative</option>
-                        <?php
-                        $query = "SELECT id, partner_name, herd_code FROM partners WHERE is_active = 1";
-                        $result = mysqli_query($conn, $query);
-                        while ($row = mysqli_fetch_assoc($result)) {
-                            $id = $row['id'];
-                            $name = htmlspecialchars($row['partner_name']);
-                            $herd = htmlspecialchars($row['herd_code']);
-                            echo "<option value='$id'>$name ($herd)</option>";
-                        }
-                        ?>
-                    </select>
-                </div>
-                <button type="submit" class="submit-btn">Submit Entry</button>
-            </form>
-        </div>
-    </div>
 
-    <!-- Reports Section -->
-    <div id="reports-section" class="content-section">
-        <div class="dashboard-card">
-            <h2>Production Reports</h2>
-            <div class="filter-section">
-                <div class="form-group">
-                    <label class="form-label">Start Date</label>
-                    <input type="date" id="start-date" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">End Date</label>
-                    <input type="date" id="end-date" class="form-input">
-                </div>
-                <div class="form-group">
-                    <button id="generate-report" class="submit-btn">Generate</button>
-                </div>
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Flash Messages -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-<?= $_SESSION['message_type'] ?>">
+                <?= $_SESSION['message'] ?>
             </div>
+            <?php 
+            unset($_SESSION['message']);
+            unset($_SESSION['message_type']); 
+            ?>
+        <?php endif; ?>
 
-            <table class="milk-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Cooperative</th>
-                        <th>Quantity (L)</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="report-data">
-                    <tr>
-                        <td>2024-03-01</td>
-                        <td>Cooperative A</td>
-                        <td>150</td>
-                        <td><span class="status-badge completed">Completed</span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Entry Section -->
+        <div id="entry-section" class="content-section">
+            <div class="dashboard-card">
+                <h2>New Milk Entry</h2>
+                <form method="POST" class="entry-form">
+                <div class="form-group">
+    <label class="form-label">Start Date (Monday)</label>
+    <input type="date" name="start_date" class="form-input" value="<?= $mondayDate ?>" readonly>
+</div>
+<div class="form-group">
+    <label class="form-label">End Date (Sunday)</label>
+    <input type="date" name="end_date" class="form-input" value="<?= $sundayDate ?>" readonly>
+</div>
 
-            <button class="export-btn"><i class="fas fa-download"></i> Export CSV</button>
+                    <div class="form-group">
+                        <label class="form-label">Cooperative</label>
+                        <select class="form-input" name="cooperative" required>
+                            <option value="">Select Cooperative</option>
+                            <?php foreach ($partners as $partner): ?>
+                                <option value="<?= $partner['id'] ?>">
+                                    <?= htmlspecialchars($partner['partner_name']) ?> 
+                                    (<?= htmlspecialchars($partner['coop_type']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Value (kg)</label>
+                        <input type="number" step="0.01" name="quantity" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price (Peso)</label>
+                        <input type="number" step="0.01" name="volume" class="form-input" required>
+                    </div>
+                   
+                    <button type="submit" name="add_milk" class="submit-btn">Submit Entry</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports-section" class="content-section">
+            <div class="dashboard-card">
+                <h2>Production Reports</h2>
+                <table class="milk-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Cooperative</th>
+                            <th>Quantity (kg)</th>
+                            <th>Volume (L)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-data">
+                        <?php foreach ($milkEntries as $entry): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($entry['entry_date']) ?></td>
+                                <td><?= htmlspecialchars($entry['partner_name']) ?></td>
+                                <td><?= number_format($entry['quantity'], 2) ?></td>
+                                <td><?= number_format($entry['volume'], 2) ?></td>
+                                <td>
+                                    <span class="status-badge <?= $entry['status'] ?>">
+                                        <?= $entry['status'] ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-
-    <!-- Chart Placeholder (You may insert <canvas id="productionChart"> wherever needed) -->
 
     <script>
-        // Navigation toggle
+        // Navigation
         document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', e => {
+            link.addEventListener('click', (e) => {
                 e.preventDefault();
                 document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
                 document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
                 link.classList.add('active');
                 document.getElementById(link.dataset.section).classList.add('active');
             });
         });
 
-        // Logout Confirmation
-        document.getElementById('logoutLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            const url = this.href;
-            Swal.fire({
-                title: 'Logout Confirmation',
-                text: "Are you sure you want to logout?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, logout!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = url;
+        // Chart Initialization
+        const ctx = document.getElementById('productionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Milk Production (Liters)',
+                    data: [650, 590, 800, 810, 560, 550],
+                    borderColor: '#2c5282',
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Monthly Production' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
                 }
-            });
+            }
         });
 
-        // Report Button (Placeholder only)
+        // Report Generation
         document.getElementById('generate-report').addEventListener('click', () => {
+            // Add your report generation logic here
             console.log('Generating report...');
         });
+
+    document.getElementById('logoutLink').addEventListener('click', function(e) {
+    e.preventDefault();
+    const url = this.href;
+    
+    Swal.fire({
+        title: 'Logout Confirmation',
+        text: "Are you sure you want to logout?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, logout!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = url;
+        }
+    });
+});
+
+// Report filtering
+document.getElementById('reportFilter').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('filter_entries.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('report-data').innerHTML = html;
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+// CSV Export
+function exportToCSV() {
+    const table = document.querySelector('.milk-table');
+    const rows = table.querySelectorAll('tr');
+    const csv = [];
+    
+    for (const row of rows) {
+        const rowData = [];
+        const cols = row.querySelectorAll('td, th');
+        
+        for (const col of cols) {
+            rowData.push(col.innerText);
+        }
+        
+        csv.push(rowData.join(','));
+    }
+
+    const csvString = csv.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'milk_entries.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
     </script>
 </body>
 </html>
