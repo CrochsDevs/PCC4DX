@@ -45,7 +45,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             <li><a href="services.php" class="nav-link active" ><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
             <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
-            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            <li><a href="logout.php" class="logout-btn" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
 

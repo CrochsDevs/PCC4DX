@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'logo_path' => $center['logo_path'],
                 'profile_image' => $user['profile_image'] ?? null // Added profile image if exists
             ];
+            $_SESSION['center_code'] = $center['center_code']; // Set center_code separately
 
             // Redirect based on center type
             if ($center['center_type'] === 'Headquarters') {

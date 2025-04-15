@@ -246,82 +246,82 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 <script src="js/admin.js"></script>
 <script>
     function confirmLogout(e) {
-  e.preventDefault();
-  
-  Swal.fire({
-    title: 'Are you sure?',
-    text: "You want to logout?",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Yes, logout!',
-    cancelButtonText: 'Cancel',
-    reverseButtons: true
-  }).then((result) => {
-    if (result.isConfirmed) {
-      window.location.href = 'logout.php';
-    }
-  })
-}
-
-// Dark Mode Functions
-function checkTheme() {
-    const isDark = localStorage.getItem('theme') === 'dark';
-    document.body.classList.toggle('dark-theme', isDark);
-    document.getElementById('theme-toggle').checked = isDark;
-    updateChartColors(isDark);
-}
-
-function toggleDarkMode() {
-    const body = document.body;
-    const isDark = body.classList.toggle('dark-theme');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    document.getElementById('theme-toggle').checked = isDark;
-    updateChartColors(isDark);
-}
-
-function updateChartColors(isDark) {
-    const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
-    charts.forEach(chartId => {
-        const chart = Chart.getChart(chartId);
-        if (chart) {
-            chart.options.scales.x.ticks.color = isDark ? '#fff' : '#666';
-            chart.options.scales.y.ticks.color = isDark ? '#fff' : '#666';
-            chart.update();
-        }
-    });
-}
-
-function updateChartColors(isDark) {
-    const textColor = isDark ? '#ffffff' : '#2d3748';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    e.preventDefault();
     
-    const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
-    charts.forEach(chartId => {
-        const chart = Chart.getChart(chartId);
-        if (chart) {
-            // Update axis colors
-            chart.options.scales.x.ticks.color = textColor;
-            chart.options.scales.y.ticks.color = textColor;
-            chart.options.scales.x.grid.color = gridColor;
-            chart.options.scales.y.grid.color = gridColor;
-            
-            // Update dataset colors
-            chart.data.datasets.forEach(dataset => {
-                dataset.borderColor = textColor;
-                dataset.backgroundColor = isDark ? 
-                    'rgba(255, 255, 255, 0.5)' : 
-                    'rgba(0, 86, 179, 0.5)';
-            });
-            
-            chart.update();
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You want to logout?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, logout!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+        window.location.href = 'logout.php';
         }
-    });
-}
+    })
+    }
 
-// Initialize charts with theme-appropriate colors
-function initializeCharts() {
+    // Dark Mode Functions
+    function checkTheme() {
+        const isDark = localStorage.getItem('theme') === 'dark';
+        document.body.classList.toggle('dark-theme', isDark);
+        document.getElementById('theme-toggle').checked = isDark;
+        updateChartColors(isDark);
+    }
+
+    function toggleDarkMode() {
+        const body = document.body;
+        const isDark = body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        document.getElementById('theme-toggle').checked = isDark;
+        updateChartColors(isDark);
+    }
+
+    function updateChartColors(isDark) {
+        const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+        charts.forEach(chartId => {
+            const chart = Chart.getChart(chartId);
+            if (chart) {
+                chart.options.scales.x.ticks.color = isDark ? '#fff' : '#666';
+                chart.options.scales.y.ticks.color = isDark ? '#fff' : '#666';
+                chart.update();
+            }
+        });
+    }
+
+    function updateChartColors(isDark) {
+        const textColor = isDark ? '#ffffff' : '#2d3748';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        
+        const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+        charts.forEach(chartId => {
+            const chart = Chart.getChart(chartId);
+            if (chart) {
+                // Update axis colors
+                chart.options.scales.x.ticks.color = textColor;
+                chart.options.scales.y.ticks.color = textColor;
+                chart.options.scales.x.grid.color = gridColor;
+                chart.options.scales.y.grid.color = gridColor;
+                
+                // Update dataset colors
+                chart.data.datasets.forEach(dataset => {
+                    dataset.borderColor = textColor;
+                    dataset.backgroundColor = isDark ? 
+                        'rgba(255, 255, 255, 0.5)' : 
+                        'rgba(0, 86, 179, 0.5)';
+                });
+                
+                chart.update();
+            }
+        });
+    }
+
+    // Initialize charts with theme-appropriate colors
+    function initializeCharts() {
     const isDark = document.body.classList.contains('dark-theme');
     const textColor = isDark ? '#ffffff' : '#2d3748';
     
@@ -364,17 +364,16 @@ function initializeCharts() {
         }
     });
 
-    // Initialize other charts similarly...
-}
+    }
 
-document.addEventListener('DOMContentLoaded', function() {
-    checkTheme();
-    initializeCharts();
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        checkTheme();
+        initializeCharts();
+    });
 
-// Initialize theme and charts
-document.addEventListener('DOMContentLoaded', function() {
-    checkTheme();
+    // Initialize theme and charts
+    document.addEventListener('DOMContentLoaded', function() {
+        checkTheme();
     
     // Initialize all charts with theme-appropriate colors
     const chartOptions = {
@@ -404,26 +403,26 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateThemeIcon(isDark) {
     const themeIcon = document.getElementById('theme-icon');
     themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-}
+    }
 
-// Update sa toggleDarkMode function
-function toggleDarkMode() {
-    const body = document.body;
-    const isDark = body.classList.toggle('dark-theme');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    updateChartColors(isDark);
-    updateThemeIcon(isDark);
-}
+    // Update sa toggleDarkMode function
+    function toggleDarkMode() {
+        const body = document.body;
+        const isDark = body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateChartColors(isDark);
+        updateThemeIcon(isDark);
+    }
 
-// Update sa checkTheme function
-function checkTheme() {
-    const isDark = localStorage.getItem('theme') === 'dark';
-    document.body.classList.toggle('dark-theme', isDark);
-    document.getElementById('theme-toggle').checked = isDark;
-    updateChartColors(isDark);
-    updateThemeIcon(isDark);
-}
-});
+    // Update sa checkTheme function
+    function checkTheme() {
+        const isDark = localStorage.getItem('theme') === 'dark';
+        document.body.classList.toggle('dark-theme', isDark);
+        document.getElementById('theme-toggle').checked = isDark;
+        updateChartColors(isDark);
+        updateThemeIcon(isDark);
+    }
+    });
 
 </script>
 </html>
