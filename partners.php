@@ -151,6 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
 // Get sorting/filtering parameters
 $sort = $_GET['sort'] ?? 'partner_name';
 $order = $_GET['order'] ?? 'ASC';
