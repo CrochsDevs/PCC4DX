@@ -2,9 +2,8 @@
 include('db_config.php');
 session_start();
 
-$centerCode = $_SESSION['center_code']; 
+$centerCode = $_SESSION['center_code'];
 
-// Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add'])) {
         $coop_type = trim($_POST['coop_type']);
@@ -18,24 +17,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
         try {
-            $query = "INSERT INTO partners (partner_name, herd_code, contact_person, contact_number, barangay, municipality, province, is_active, center_code, coop_type) 
-                      VALUES (:partner_name, :herd_code, :contact_person, :contact_number, :barangay, :municipality, :province, :is_active, :center_code, :coop_type)";
+            $query = "INSERT INTO partners (partner_name, herd_code, contact_person, contact_number, barangay, municipality, province, is_active, center_code, coop_type) VALUES (:partner_name, :herd_code, :contact_person, :contact_number, :barangay, :municipality, :province, :is_active, :center_code, :coop_type)";
             $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_name', $partner_name);
-            $stmt->bindParam(':herd_code', $herd_code);
-            $stmt->bindParam(':contact_person', $contact_person);
-            $stmt->bindParam(':contact_number', $contact_number);
-            $stmt->bindParam(':barangay', $barangay);
-            $stmt->bindParam(':municipality', $municipality);
-            $stmt->bindParam(':province', $province);
-            $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->bindParam(':coop_type', $coop_type);
-            $stmt->execute();
+            $stmt->execute([
+                ':partner_name' => $partner_name,
+                ':herd_code' => $herd_code,
+                ':contact_person' => $contact_person,
+                ':contact_number' => $contact_number,
+                ':barangay' => $barangay,
+                ':municipality' => $municipality,
+                ':province' => $province,
+                ':is_active' => $is_active,
+                ':center_code' => $centerCode,
+                ':coop_type' => $coop_type
+            ]);
             
             $_SESSION['message'] = "Partner added successfully!";
             $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']); 
+            header("Location: ".$_SERVER['PHP_SELF']);
             exit;
         } catch (PDOException $e) {
             $_SESSION['message'] = "Error adding partner: " . $e->getMessage();
@@ -43,153 +42,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: ".$_SERVER['PHP_SELF']);
             exit;
         }
-    } elseif (isset($_POST['edit'])) {
-        $partner_id = $_POST['partner_id'];
-        $coop_type = trim($_POST['coop_type']);
-        $partner_name = trim($_POST['partner_name']);
-        $herd_code = trim($_POST['herd_code']);
-        $contact_person = trim($_POST['contact_person']);
-        $contact_number = trim($_POST['contact_number']);
-        $barangay = trim($_POST['barangay']);
-        $municipality = trim($_POST['municipality']);
-        $province = trim($_POST['province']);
-        $is_active = isset($_POST['is_active']) ? 1 : 0;
-
-        try {
-            $query = "UPDATE partners SET 
-                      partner_name = :partner_name, 
-                      herd_code = :herd_code, 
-                      contact_person = :contact_person, 
-                      contact_number = :contact_number,
-                      barangay = :barangay, 
-                      municipality = :municipality, 
-                      province = :province, 
-                      is_active = :is_active,
-                      coop_type = :coop_type 
-                      WHERE id = :partner_id AND center_code = :center_code";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_name', $partner_name);
-            $stmt->bindParam(':herd_code', $herd_code);
-            $stmt->bindParam(':contact_person', $contact_person);
-            $stmt->bindParam(':contact_number', $contact_number);
-            $stmt->bindParam(':barangay', $barangay);
-            $stmt->bindParam(':municipality', $municipality);
-            $stmt->bindParam(':province', $province);
-            $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
-            $stmt->bindParam(':coop_type', $coop_type);
-            $stmt->bindParam(':partner_id', $partner_id);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->execute();
-            
-            $_SESSION['message'] = "Partner updated successfully!";
-            $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']); 
-            exit;
-        } catch (PDOException $e) {
-            $_SESSION['message'] = "Error updating partner: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
-            header("Location: ".$_SERVER['PHP_SELF']);
-            exit;
-        }
-    } elseif (isset($_POST['delete'])) {
-        $partner_id = $_POST['partner_id'];
-        try {
-            $query = "DELETE FROM partners WHERE id = :partner_id AND center_code = :center_code";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_id', $partner_id);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->execute();
-            
-            $_SESSION['message'] = "Partner deleted successfully!";
-            $_SESSION['message_type'] = "success";
-        } catch (PDOException $e) {
-            $_SESSION['message'] = "Error deleting partner: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
-        }
-        header("Location: ".$_SERVER['PHP_SELF']);
-        exit;
-    } elseif (isset($_POST['toggle_status'])) {
-        $partner_id = $_POST['partner_id'];
-        try {
-            $query = "UPDATE partners SET is_active = NOT is_active WHERE id = :partner_id AND center_code = :center_code";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_id', $partner_id);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->execute();
-            
-            $_SESSION['message'] = "Partner status updated!";
-            $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']);
-            exit;
-        } catch (PDOException $e) {
-            $_SESSION['message'] = "Error updating status: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
-            header("Location: ".$_SERVER['PHP_SELF']);
-            exit;
-        }
-    } elseif (isset($_POST['export'])) {
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="partners_export_'.date('Y-m-d').'.csv"');
-        $output = fopen("php://output", "w");
-        fputcsv($output, ['ID', 'Partner Name', 'Partner Type', 'Herd Code', 'Contact Person', 'Contact Number', 'Barangay', 'Municipality', 'Province', 'Status']);
-        foreach ($partners as $row) {
-            fputcsv($output, [
-                $row['id'],
-                $row['partner_name'],
-                $row['coop_type'],
-                $row['herd_code'],
-                $row['contact_person'],
-                $row['contact_number'],
-                $row['barangay'],
-                $row['municipality'],
-                $row['province'],
-                $row['is_active'] ? 'Active' : 'Inactive'
-            ]);
-        }
-        fclose($output);
-        exit;
     }
 }
 
-
-// Get sorting/filtering parameters
 $sort = $_GET['sort'] ?? 'partner_name';
 $order = $_GET['order'] ?? 'ASC';
 $search = $_GET['search'] ?? '';
 $filter = $_GET['filter'] ?? '';
 
-// Validate sort parameters
 $validColumns = ['partner_name', 'coop_type', 'herd_code', 'is_active'];
 $sort = in_array($sort, $validColumns) ? $sort : 'partner_name';
 $order = in_array(strtoupper($order), ['ASC', 'DESC']) ? strtoupper($order) : 'ASC';
 
-// Build query
 $query = "SELECT * FROM partners WHERE center_code = :center_code";
 $params = [':center_code' => $centerCode];
 
 if (!empty($search)) {
-    $query .= " AND (partner_name LIKE :search OR herd_code LIKE :search OR contact_person LIKE :search)";
-    $params[':search'] = "%$search%";
+    $searchTerms = array_map('trim', explode(',', $search));
+    $searchConditions = [];
+    
+    foreach ($searchTerms as $index => $term) {
+        if (strtolower($term) === 'active') {
+            $searchConditions[] = "is_active = 1";
+        } elseif (strtolower($term) === 'inactive') {
+            $searchConditions[] = "is_active = 0";
+        } else {
+            $paramName = ":search$index";
+            $searchConditions[] = "(partner_name LIKE $paramName AND herd_code LIKE $paramName AND contact_person LIKE $paramName AND contact_number LIKE $paramName AND municipality LIKE $paramName AND province LIKE $paramName AND coop_type LIKE $paramName)";
+            $params[$paramName] = "%$term%";
+        }
+    }
+    
+    if (!empty($searchConditions)) {
+        $query .= " AND (" . implode(" OR ", $searchConditions) . ")";
+    }
 }
 
 if (!empty($filter)) {
-    $query .= " AND coop_type = :filter";
-    $params[':filter'] = $filter;
+    $filterTypes = explode(',', $filter);
+    $placeholders = implode(',', array_map(function($i) { 
+        return ":filter$i"; 
+    }, array_keys($filterTypes)));
+    
+    $query .= " AND coop_type IN ($placeholders)";
+    
+    foreach ($filterTypes as $i => $type) {
+        $params[":filter$i"] = $type;
+    }
 }
 
 $query .= " ORDER BY $sort $order";
 
 try {
     $stmt = $conn->prepare($query);
-    foreach ($params as $key => $value) {
-        $stmt->bindValue($key, $value);
-    }
-    $stmt->execute();
+    $stmt->execute($params);
     $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $_SESSION['message'] = "Error fetching partners: " . $e->getMessage();
     $_SESSION['message_type'] = "danger";
     $partners = [];
+}
+
+if (isset($_POST['toggle_status'])) {
+    $partner_id = $_POST['partner_id'];
+    
+    try {
+        // Toggle the status
+        $query = "UPDATE partners SET is_active = NOT is_active WHERE id = :id AND center_code = :center_code";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':id', $partner_id);
+        $stmt->bindParam(':center_code', $centerCode);
+        $stmt->execute();
+
+        // Get the new status
+        $query = "SELECT is_active FROM partners WHERE id = :id";
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':id', $partner_id);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Ensure no output before this
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'new_status' => $result['is_active']
+        ]);
+        exit;
+        
+    } catch (PDOException $e) {
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'Database error: ' . $e->getMessage()
+        ]);
+        exit;
+    }
 }
 ?>
 
@@ -202,11 +149,11 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="css/center.css">
-    <link rel="stylesheet" href="css/partners.css">
+    <link rel="stylesheet" href="css/partners.css"> 
 </head>
 <body>
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="user-profile">
             <div class="profile-picture">
@@ -231,9 +178,7 @@ try {
         </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-        <!-- Header -->
         <div class="header">
             <div class="header-left">
                 <h1>Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
@@ -287,7 +232,6 @@ try {
             </div>
         </div>
 
-        <!-- Flash Messages -->
         <?php if (isset($_SESSION['message'])): ?>
             <div class="alert alert-<?= $_SESSION['message_type'] === 'success' ? 'success' : 'danger' ?>">
                 <i class="fas fa-<?= $_SESSION['message_type'] === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
@@ -296,7 +240,6 @@ try {
             <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
         <?php endif; ?>
 
-        <!-- Partners Card -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">Partners List</h2>
@@ -313,39 +256,41 @@ try {
             </div>
 
             <div class="card-body">
-                <!-- Search and Filter Bar -->
                 <div class="search-filter-bar">
-                    <form method="GET" class="d-flex gap-2" style="flex-grow: 1;">
-                        <div class="input-group" style="max-width: 400px;">
-                            <input type="text" name="search" class="form-control" 
-                                   placeholder="Search partners..." value="<?= htmlspecialchars($search) ?>">
-                            <button type="submit" class="btn btn-outline-secondary">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <?php if (!empty($search)): ?>
-                                <a href="?" class="btn btn-outline-danger">
+
+                    <form id="searchForm" class="d-flex gap-2" style="flex-grow: 1;">
+                        <div class="input-group" style="max-width: 500px;">
+                            <input type="text" id="searchInput" name="search" class="form-control" 
+                                placeholder="Type search terms separated by commas..." 
+                                value="<?= htmlspecialchars($search) ?>">
+                            <div class="input-group-append">
+                                <button id="clearSearch" class="btn btn-outline-secondary" type="button">
                                     <i class="fas fa-times"></i>
-                                </a>
-                            <?php endif; ?>
+                                </button>
+                            </div>
                         </div>
+                        <small class="text-muted">Add commas to narrow your search (e.g., "coop, active")</small>
                     </form>
 
                     <div class="filter-buttons">
                         <span style="font-weight: 500;">Filter by type:</span>
-                        <a href="?<?= http_build_query(['filter' => '', 'search' => $search, 'sort' => $sort, 'order' => $order]) ?>" 
-                           class="filter-btn <?= empty($filter) ? 'active' : '' ?>">All</a>
+                        <a href="#" class="filter-btn all-btn <?= empty($filter) ? 'active' : '' ?>" data-filter="all">All</a>
                         <?php 
-                        $types = ['Cooperations', 'Associations', 'LGU', 'SCU', 'Family_Module', 'Corporation'];
-                        foreach ($types as $type): ?>
-                            <a href="?<?= http_build_query(['filter' => $type, 'search' => $search, 'sort' => $sort, 'order' => $order]) ?>" 
-                               class="filter-btn <?= $filter === $type ? 'active' : '' ?>">
+                        $types = ['Cooperatives', 'Associations', 'LGU', 'SCU', 'Family_Module', 'Corporation'];
+                        foreach ($types as $type): 
+                            $isActive = !empty($filter) && in_array($type, explode(',', $filter));
+                        ?>
+                            <a href="#" class="filter-btn type-btn <?= $isActive ? 'active' : '' ?>" data-filter="<?= $type ?>">
                                 <?= str_replace('_', ' ', $type) ?>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
 
-                <!-- Partners Table -->
+                <div id="resultsCount" class="mt-3">
+                    <h4>Showing <?= count($partners) ?> of <?= count($partners) ?> partners</h4>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
@@ -380,7 +325,7 @@ try {
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="partnersTableBody">
                             <?php if (empty($partners)): ?>
                                 <tr>
                                     <td colspan="7" class="text-center">No partners found. Add your first partner!</td>
@@ -400,7 +345,7 @@ try {
                                             <small class="text-muted"><?= htmlspecialchars($partner['municipality']) ?>, <?= htmlspecialchars($partner['province']) ?></small>
                                         </td>
                                         <td>
-                                            <form method="POST" class="d-inline-block" onclick="event.stopPropagation()">
+                                            <form class="toggle-status-form" method="POST">
                                                 <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
                                                 <button type="submit" name="toggle_status" class="btn btn-sm status-toggle <?= $partner['is_active'] ? 'btn-success' : 'btn-danger' ?>">
                                                     <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
@@ -440,7 +385,6 @@ try {
         </div>
     </div>
 
-    <!-- Create Partner Modal -->
     <div id="createModal" class="modal">
         <div class="modal-dialog">
             <div class="modal-header">
@@ -453,7 +397,7 @@ try {
                         <label for="coop_type" class="drop-down">Partner Type</label>
                         <select id="coop_type" name="coop_type" class="form-control" required>
                             <option value="">-- Select Partner Type --</option>
-                            <option value="Cooperations">Cooperations</option>
+                            <option value="Cooperatives">Cooperatives</option>
                             <option value="Associations">Associations</option>
                             <option value="LGU">LGU</option>
                             <option value="SCU">SCU</option>
@@ -504,7 +448,6 @@ try {
         </div>
     </div>
 
-    <!-- Edit Partner Modal -->
     <div id="editModal" class="modal">
         <div class="modal-dialog">
             <div class="modal-header">
@@ -518,7 +461,7 @@ try {
                         <label for="edit_coop_type" class="drop-down">Partner Type</label>
                         <select id="edit_coop_type" name="coop_type" class="form-control" required>
                             <option value="">-- Select Partner Type --</option>
-                            <option value="Cooperations">Cooperations</option>
+                            <option value="Cooperatives">Cooperatives</option>
                             <option value="Associations">Associations</option>
                             <option value="LGU">LGU</option>
                             <option value="SCU">SCU</option>
@@ -570,23 +513,36 @@ try {
     </div>
 
     <script>
-        // DOM Elements
         const createBtn = document.getElementById('createBtn');
         const createModal = document.getElementById('createModal');
         const editModal = document.getElementById('editModal');
         const modalCloses = document.querySelectorAll('.modal-close');
         const editBtns = document.querySelectorAll('.edit-btn');
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
+        const partnersTableBody = document.getElementById('partnersTableBody');
+        const toggleStatusForms = document.querySelectorAll('.toggle-status-form');
 
-        // Show Create Modal
+        let currentSort = '<?= $sort ?>';
+        let currentOrder = '<?= $order ?>';
+        let currentFilter = '<?= $filter ?>';
+        let currentSearch = '<?= $search ?>';
+        let activeFilters = [];
+
+        if (currentFilter && currentFilter !== 'all') {
+            activeFilters = currentFilter.split(',');
+        }
+
         createBtn.addEventListener('click', () => {
             createModal.classList.add('show');
             document.body.style.overflow = 'hidden';
         });
 
-        // Show Edit Modal
         editBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent row click when clicking edit button
+                e.stopPropagation();
                 
                 document.getElementById('edit_id').value = btn.dataset.id;
                 document.getElementById('edit_coop_type').value = btn.dataset.coop;
@@ -604,74 +560,423 @@ try {
             });
         });
 
-        // Close Modals
-        modalCloses.forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.classList.remove('show');
-                });
-                document.body.style.overflow = 'auto';
-            });
-        });
+let searchTimeout;
 
-        // Close Modals when clicking cancel button
-        document.querySelectorAll('.modal-cancel').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.classList.remove('show');
-                });
-                document.body.style.overflow = 'auto';
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    
+    // Auto-format the input (add space after commas)
+    const cursorPos = this.selectionStart;
+    this.value = this.value.replace(/,(\S)/g, ', $1');
+    this.setSelectionRange(cursorPos, cursorPos);
+    
+    searchTimeout = setTimeout(() => {
+        currentSearch = this.value.replace(/, /g, ',').trim(); // Remove spaces after commas for processing
+        fetchPartners();
+        
+        // Debug output
+        console.log("Searching for:", currentSearch);
+    }, 500);
+});
+
+function updateSearchTermDisplay() {
+    const termsContainer = document.getElementById('searchTermsDisplay');
+    
+    if (!termsContainer) {
+        const newContainer = document.createElement('div');
+        newContainer.id = 'searchTermsDisplay';
+        newContainer.className = 'search-terms-display mt-2';
+        searchInput.parentNode.parentNode.appendChild(newContainer);
+    }
+    
+    if (currentSearch.includes(',')) {
+        const terms = currentSearch.split(',').map(t => t.trim()).filter(t => t);
+        const html = terms.map((term, i) => 
+            `<span class="search-term ${i > 0 ? 'narrow-term' : ''}">${term}</span>`).join(' ');
+        
+        termsContainer.innerHTML = `
+            <div class="narrowing-indicator">
+                <small>Narrowing by:</small>
+                ${html}
+                <small class="results-count"></small>
+            </div>
+        `;
+    } else {
+        termsContainer.innerHTML = '';
+    }
+}
+
+// Update the fetchPartners function to maintain search terms in input
+function fetchPartners() {
+    if (window.fetchPartnersXHR) {
+        window.fetchPartnersXHR.abort();
+    }
+    
+    const params = new URLSearchParams();
+    if (currentSort) params.append('sort', currentSort);
+    if (currentOrder) params.append('order', currentOrder);
+    if (currentSearch) params.append('search', currentSearch);
+    if (currentFilter) params.append('filter', currentFilter);
+    
+    window.fetchPartnersXHR = new AbortController();
+    const signal = window.fetchPartnersXHR.signal;
+    
+    fetch(`partners_ajax.php?${params.toString()}`, { signal })
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        
+        partnersTableBody.innerHTML = data.html;
+        document.getElementById('resultsCount').textContent = 
+            `Showing ${data.count} of ${data.total} partners`;
+            
+        // Update the narrowing indicator
+        const countDisplay = document.querySelector('.results-count');
+        if (countDisplay) {
+            countDisplay.textContent = `(${data.count} matching results)`;
+        }
+        
+        attachRowClickHandlers();
+        attachEditButtonHandlers();
+        attachStatusToggleHandlers();
+        })
+        .catch(error => {
+            if (error.name !== 'AbortError') console.error('Error:', error);
+        });
+}
+
+function updateClearButton() {
+    const inputGroup = searchInput.parentElement;
+    const clearBtn = document.getElementById('clearSearch');
+    
+    if (currentSearch && !clearBtn) {
+        const newClearBtn = document.createElement('button');
+        newClearBtn.id = 'clearSearch';
+        newClearBtn.className = 'btn btn-outline-danger';
+        newClearBtn.innerHTML = '<i class="fas fa-times"></i>';
+        newClearBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            searchInput.value = '';
+            currentSearch = '';
+            fetchPartners();
+            updateClearButton();
+            
+            // Update URL
+            const params = new URLSearchParams(window.location.search);
+            params.delete('search');
+            history.replaceState(null, '', '?' + params.toString());
+        });
+        inputGroup.appendChild(newClearBtn);
+    } else if (!currentSearch && clearBtn) {
+        clearBtn.parentElement.removeChild(clearBtn);
+    }
+}
+
+function attachEventHandlers() {
+    attachRowClickHandlers();
+    attachEditButtonHandlers();
+    attachStatusToggleHandlers();
+    
+    // Highlight search terms in results
+    if (currentSearch) {
+        const searchTerms = currentSearch.split(',').map(term => term.trim());
+        highlightSearchTerms(searchTerms);
+    }
+}
+
+function highlightSearchTerms(terms) {
+    const rows = partnersTableBody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td:not(:last-child)');
+        let rowContainsTerm = false;
+        
+        cells.forEach(cell => {
+            let cellHtml = cell.innerHTML;
+            let cellContainsTerm = false;
+            
+            terms.forEach(term => {
+                if (term.toLowerCase() === 'active' || term.toLowerCase() === 'inactive') {
+                    return; // Skip status terms
+                }
+                
+                const regex = new RegExp(escapeRegExp(term), 'gi');
+                cellHtml = cellHtml.replace(regex, match => 
+                    `<span class="highlight">${match}</span>`);
+                
+                if (cell.textContent.toLowerCase().includes(term.toLowerCase())) {
+                    cellContainsTerm = true;
+                }
             });
-        });     
-           
-        // Close modal when clicking outside
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                e.target.classList.remove('show');
-                document.body.style.overflow = 'auto';
+            
+            if (cellContainsTerm) {
+                rowContainsTerm = true;
+                cell.innerHTML = cellHtml;
             }
         });
+        
+        if (rowContainsTerm) {
+            row.classList.add('search-match');
+        } else {
+            row.classList.remove('search-match');
+        }
+    });
+}
 
-        // Sorting functionality
-        document.querySelectorAll('.sortable-header').forEach(header => {
-            header.addEventListener('click', () => {
-                const sortField = header.dataset.sort;
-                const currentOrder = '<?= $order ?>';
-                const currentSort = '<?= $sort ?>';
-                let newOrder = 'ASC';
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-                if (sortField === currentSort) {
-                    newOrder = currentOrder === 'ASC' ? 'DESC' : 'ASC';
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filterType = this.dataset.filter;
+                
+                const index = activeFilters.indexOf(filterType);
+                if (index === -1) {
+                    activeFilters.push(filterType);
+                    this.classList.add('active');
+                } else {
+                    activeFilters.splice(index, 1);
+                    this.classList.remove('active');
                 }
-
-                const url = new URL(window.location.href);
-                url.searchParams.set('sort', sortField);
-                url.searchParams.set('order', newOrder);
-                // Preserve search and filter
-                if ('<?= $search ?>') url.searchParams.set('search', '<?= $search ?>');
-                if ('<?= $filter ?>') url.searchParams.set('filter', '<?= $filter ?>');
-                window.location.href = url.toString();
+                
+                updateAllButtonState();
+                
+                currentFilter = activeFilters.join(',');
+                fetchPartners();
             });
         });
 
-        // Handle row clicking
-        document.addEventListener("DOMContentLoaded", function() {
-            const rows = document.querySelectorAll(".clickable-row");
+        document.querySelector('.all-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            activeFilters = [];
+            currentFilter = '';
+            
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            fetchPartners();
+        });
 
-            rows.forEach(row => {
-                row.addEventListener("click", function(e) {
-                    // Avoid clicking if action buttons are clicked
-                    if (e.target.closest(".action-buttons") || e.target.closest('form')) return;
+        function updateAllButtonState() {
+            const allBtn = document.querySelector('.all-btn');
+            if (activeFilters.length === 0) {
+                allBtn.classList.add('active');
+            } else {
+                allBtn.classList.remove('active');
+            }
+        }
 
-                    const url = this.getAttribute("data-href");
-                    if (url) {
-                        window.location.href = url;
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const sortField = this.dataset.sort;
+                
+                if (currentSort === sortField) {
+                    currentOrder = currentOrder === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    currentSort = sortField;
+                    currentOrder = 'ASC';
+                }
+                
+                fetchPartners();
+            });
+        });
+
+        toggleStatusForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                formData.append('toggle_status', '1');
+                
+                fetch(window.location.href.split('?')[0], {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
                     }
+                    throw new Error('Network response was not ok.');
+                })
+                .then(() => {
+                    fetchPartners();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                 });
             });
         });
 
-        // Responsive sidebar toggle (for mobile)
+        function fetchPartners() {
+            const params = new URLSearchParams();
+            if (currentSort) params.append('sort', currentSort);
+            if (currentOrder) params.append('order', currentOrder);
+            if (currentSearch) params.append('search', currentSearch);
+            if (currentFilter) params.append('filter', currentFilter);
+            
+            fetch(`partners_ajax.php?${params.toString()}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then(data => {
+                    partnersTableBody.innerHTML = data.html;
+                    document.getElementById('resultsCount').textContent = 
+                        `Showing ${data.count} of ${data.total} partners`;
+                        
+                    attachRowClickHandlers();
+                    attachEditButtonHandlers();
+                    attachStatusToggleHandlers();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function attachRowClickHandlers() {
+            document.querySelectorAll(".clickable-row").forEach(row => {
+                row.addEventListener("click", function(e) {
+                    if (e.target.closest(".action-buttons") || e.target.closest('form')) return;
+                    const url = this.getAttribute("data-href");
+                    if (url) window.location.href = url;
+                });
+            });
+        }
+
+        function attachEditButtonHandlers() {
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.getElementById('edit_id').value = btn.dataset.id;
+                    document.getElementById('edit_coop_type').value = btn.dataset.coop;
+                    document.getElementById('edit_name').value = btn.dataset.name;
+                    document.getElementById('edit_herd').value = btn.dataset.herd;
+                    document.getElementById('edit_person').value = btn.dataset.person;
+                    document.getElementById('edit_number').value = btn.dataset.number;
+                    document.getElementById('edit_barangay').value = btn.dataset.barangay;
+                    document.getElementById('edit_municipality').value = btn.dataset.municipality;
+                    document.getElementById('edit_province').value = btn.dataset.province;
+                    document.getElementById('edit_active').checked = btn.dataset.active === '1';
+                    editModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+        }
+
+        function attachStatusToggleHandlers() {
+            document.querySelectorAll('.toggle-status-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+                    formData.append('toggle_status', '1');
+                    
+                    fetch(window.location.href.split('?')[0], {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('Network response was not ok.');
+                    })
+                    .then(() => {
+                        fetchPartners();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            attachRowClickHandlers();
+        });
+
+// Add this to your JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Delegate event for dynamically loaded content
+    document.body.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('toggle-status-form')) {
+            e.preventDefault();
+            togglePartnerStatus(e.target);
+        }
+    });
+});
+ 
+function togglePartnerStatus(form) {
+    const formData = new FormData(form);
+    const button = form.querySelector('button');
+    
+    // Add loading state
+    const originalText = button.textContent;
+    button.disabled = true;
+
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' // Helps identify AJAX requests
+        }
+    })
+    .then(response => {
+        // First check if the response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                throw new Error(`Expected JSON, got: ${text.substring(0, 100)}...`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Update button based on new status
+        if (data.new_status == 1) {
+            button.classList.remove('btn-danger');
+            button.classList.add('btn-success');
+            button.textContent = 'Active';
+        } else {
+            button.classList.remove('btn-success');
+            button.classList.add('btn-danger');
+            button.textContent = 'Inactive';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Show error message near the button
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'text-danger small mt-1';
+        errorDiv.textContent = error.message;
+        form.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
+        
+        // Reset button
+        button.textContent = originalText;
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+}
+
         const sidebarToggle = document.createElement('button');
         sidebarToggle.innerHTML = '<i class="fas fa-bars"></i>';
         sidebarToggle.style.position = 'fixed';
@@ -693,8 +998,32 @@ try {
         sidebarToggle.addEventListener('click', () => {
             document.querySelector('.sidebar').classList.toggle('show');
         });
-        
-        // Show/hide sidebar toggle based on screen size
+
+        modalCloses.forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+                document.body.style.overflow = 'auto';
+            });
+        });
+
+        document.querySelectorAll('.modal-cancel').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+                document.body.style.overflow = 'auto';
+            });
+        });     
+           
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
         function handleResize() {
             if (window.innerWidth <= 992) {
                 sidebarToggle.style.display = 'flex';
@@ -709,7 +1038,6 @@ try {
         window.addEventListener('resize', handleResize);
         handleResize();
 
-        // Confirm logout
         function confirmLogout(event) {
             event.preventDefault();
             Swal.fire({
