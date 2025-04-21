@@ -47,7 +47,7 @@
                     </ul>
                 </li>
 
-                <li><a href="#">News</a></li> 
+                <li><a href="announcements.php">News</a></li> 
                 <li><a href="#">Contact</a></li>
                 <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i>Login Account</a></li>
             </ul>
@@ -110,92 +110,36 @@
         </div>
     </section>
 
-
-    <!-- About Section -->
-    <section class="about-section">
-    <div class="container">
-        <div class="about-content">
-            <h2 class="section-title">About 4DX</h2>
-            <p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities.</p>
-            <a href="#" class="btn-outline">Read More About Us</a>
-        </div>
-        <div class="about-images">
-        <div class="image-grid">
-    <div class="image-container">
-        <img src="images/milkfeeding.jpg" alt="milkpi">
-        <div class="hover-text">Milk Feeding</div>
-    </div>
-    <div class="image-container">
-        <img src="images/calf.jpeg" alt="calf">
-        <div class="hover-text">Calf</div>
-    </div>
-    <div class="image-container">
-        <img src="images/AI.jpg" alt="AI">
-        <div class="hover-text">Artificial Insemination</div>
-    </div>
-    <div class="image-container">
-        <img src="images/milkprodaksyon.jpg" alt="milkpro">
-        <div class="hover-text">Milk Production</div>
-    </div>
-    </div>
-
-        </div>
-    </div>
-</section>
-
     <!-- Maps -->
     <section class="Maps">
-        <div id="map-container">
-            <div id="map"></div>
-            <div id="info-panel">
-                <div class="panel-header">Center Details</div>
-                <div class="panel-details">
-                    <div id="center-name"></div>
-                    <div id="center-location" class="panel-location"></div>
-                    <div id="center-contact" class="contact-info"></div>
-                </div>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="info-panel">
+            <div class="panel-header">Center Details</div>
+            <div class="panel-details">
+                <div id="center-name"></div>
+                <div id="center-location" class="panel-location"></div>
+                <div id="center-contact" class="contact-info"></div>
             </div>
         </div>
-    </section>
-    
-    <!-- News Section -->
-    <section class="news-section">
+    </div>
+
+
+
+     <!-- Announcement Section -->
+     <section class="news-section">
         <div class="container">
             <h2 class="section-title">Announcements & Updates</h2>
-            <div class="news-grid">
-                <article class="news-card featured">
-                    <img src="images/1.jpg" alt="News Feature">
-                    <div class="news-content">
-                        <span class="news-date">June 15, 2023</span>
-                        <h3>PCC Launches New Dairy Facility in Nueva Ecija</h3>
-                        <p>The new facility will serve as training center and milk processing plant for farmer cooperatives...</p>
-                        <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </article>
-                <article class="news-card">
-                    <img src="images/2.png" alt="News">
-                    <div class="news-content">
-                        <span class="news-date">June 10, 2023</span>
-                        <h3>PCC Conducts AI Training for Farmers</h3>
-                        <p>Artificial insemination techniques taught to 50 farmers from Central Luzon...</p>
-                        <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </article>
-                <article class="news-card">
-                    <img src="images/3.png" alt="News">
-                    <div class="news-content">
-                        <span class="news-date">March 28, 2025</span>
-                        <h3>DA marks 32nd anniversary in Nueva Ecija</h3>
-                        <p>Muñoz, Nueva Ecija — The Department of Agriculture (DA) marked its 32nd Anniversary at...</p>
-                        <a href="#" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </article>
-            </div>
+
+            <!-- Dynamic announcement cards will load here -->
+            <div class="news-grid" id="latestAnnouncements"></div>
+
             <div class="section-footer">
-                <a href="#" class="btn-outline">View All News</a>
+                <a href="announcements.php" class="btn-outline">View All News</a>
             </div>
         </div>
     </section>
+
 
   <!-- Footer -->
 <footer class="main-footer">
@@ -498,6 +442,27 @@
     window.addEventListener('load', initMap);
     </script>
     <script src="js/landing.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function loadLatestAnnouncements() {
+            $.ajax({
+                url: 'fetch_latest_announcements.php',
+                method: 'GET',
+                success: function(response) {
+                    $('#latestAnnouncements').html(response);
+                },
+                error: function() {
+                    $('#latestAnnouncements').html('<p>Error loading announcements.</p>');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            loadLatestAnnouncements();
+        });
+    </script>
+
 </body>
 <div class="social-sidebar">
     <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>

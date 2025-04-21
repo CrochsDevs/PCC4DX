@@ -45,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
+
 $sort = $_GET['sort'] ?? 'partner_name';
 $order = $_GET['order'] ?? 'ASC';
 $search = $_GET['search'] ?? '';
@@ -138,6 +140,7 @@ if (isset($_POST['toggle_status'])) {
         exit;
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -247,11 +250,18 @@ if (isset($_POST['toggle_status'])) {
                     <button id="createBtn" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add Partner
                     </button>
-                    <form method="POST" style="display: inline-block;">
-                        <button type="submit" name="export" class="btn btn-success">
-                            <i class="fas fa-file-export"></i> Export
-                        </button>
-                    </form>
+                    <!-- Update the export form -->
+                        <form id="exportForm" method="POST" action="export.php" style="display: inline-block;">
+                            <button type="submit" name="export" class="btn btn-success">
+                                <i class="fas fa-file-export"></i> Export
+                            </button>
+                        </form>
+
+                        <!-- Add hidden fields for filters -->
+                        <input type="hidden" id="currentSearch" value="<?= htmlspecialchars($search) ?>">
+                        <input type="hidden" id="currentFilter" value="<?= htmlspecialchars($filter) ?>">
+                        <input type="hidden" id="currentSort" value="<?= htmlspecialchars($sort) ?>">
+                        <input type="hidden" id="currentOrder" value="<?= htmlspecialchars($order) ?>">
                 </div>
             </div>
 
@@ -264,9 +274,7 @@ if (isset($_POST['toggle_status'])) {
                                 placeholder="Type search terms separated by commas..." 
                                 value="<?= htmlspecialchars($search) ?>">
                             <div class="input-group-append">
-                                <button id="clearSearch" class="btn btn-outline-secondary" type="button">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                                
                             </div>
                         </div>
                         <small class="text-muted">Add commas to narrow your search (e.g., "coop, active")</small>
@@ -1054,6 +1062,35 @@ function togglePartnerStatus(form) {
                 }
             });
         }
+        // Add this to your existing JavaScript
+document.getElementById('exportForm').addEventListener('submit', function(e) {
+    // Create hidden inputs for current filters
+    const form = this;
+    
+    const searchInput = document.createElement('input');
+    searchInput.type = 'hidden';
+    searchInput.name = 'search';
+    searchInput.value = currentSearch;
+    form.appendChild(searchInput);
+
+    const filterInput = document.createElement('input');
+    filterInput.type = 'hidden';
+    filterInput.name = 'filter';
+    filterInput.value = currentFilter;
+    form.appendChild(filterInput);
+
+    const sortInput = document.createElement('input');
+    sortInput.type = 'hidden';
+    sortInput.name = 'sort';
+    sortInput.value = currentSort;
+    form.appendChild(sortInput);
+
+    const orderInput = document.createElement('input');
+    orderInput.type = 'hidden';
+    orderInput.name = 'order';
+    orderInput.value = currentOrder;
+    form.appendChild(orderInput);
+});
     </script>
 </body>
 </html>
