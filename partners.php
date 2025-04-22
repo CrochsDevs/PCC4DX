@@ -155,6 +155,274 @@ if (isset($_POST['toggle_status'])) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="css/center.css">
     <link rel="stylesheet" href="css/partners.css"> 
+    <style>
+            .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+            }
+
+            .herd-code {
+                color: var(--secondary);
+                font-size: 1.1rem;
+                margin-top: 0.5rem;
+            }
+
+            .partner-details {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 2rem;
+            }
+
+            .detail-card {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                padding: 1.5rem;
+            }
+
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+            }
+
+            .status-badge {
+                padding: 0.3rem 0.8rem;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                font-weight: 500;
+            }
+
+            .status-badge.active {
+                background: #d1fae5;
+                color: #065f46;
+            }
+
+            .status-badge.inactive {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+
+            .detail-item {
+                margin-bottom: 1rem;
+                padding: 0.8rem 0;
+                border-bottom: 1px solid #eee;
+            }
+
+            .label {
+                display: block;
+                color: var(--secondary);
+                font-size: 0.9rem;
+            }
+
+            .value {
+                font-weight: 500;
+                color: var(--dark);
+                font-size: 1.1rem;
+            }
+
+            /* Modal Styles */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+
+            .modal-content {
+                background: white;
+                border-radius: 12px;
+                width: 90%;
+                max-width: 600px;
+                max-height: 90vh;
+                overflow-y: auto;
+                padding: 2rem;
+                position: relative;
+            }
+
+            .modal-close {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+            }
+
+            /* Form Elements */
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+
+            .form-label {
+                display: block;
+                margin-bottom: 0.5rem;
+                color: var(--secondary);
+            }
+
+            .form-control {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #ced4da;
+                border-radius: 6px;
+                font-size: 1rem;
+            }
+
+            /* Buttons */
+            .btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 6px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .btn-primary {
+                background: var(--primary);
+                color: white;
+                border: none;
+            }
+
+            .btn-danger {
+                background: var(--danger);
+                color: white;
+                border: none;
+            }
+
+            .btn-secondary {
+                background: var(--secondary);
+                color: white;
+                border: none;
+            }
+            .detail-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+
+    .card-header {
+        background-color: #004080;
+        color: #fff;
+        padding: 15px 20px;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .info-table th,
+    .info-table td {
+        padding: 10px 15px;
+        text-align: center;
+        border: 1px solid #ddd;
+        font-size: 0.95rem;
+    }
+
+    .info-table th {
+        background-color: #f1f1f1;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 30px 0;
+    }
+
+    .add-details-btn {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .add-details-btn:hover {
+        background-color: #0056b3;
+    }
+     /* Add to existing styles */
+     .add-info-modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .add-info-modal label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .add-info-modal input,
+        .add-info-modal textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .grid-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .sidebar {
+                    width: 100%;
+                    height: auto;
+                    position: relative;
+                }
+
+                .main-content {
+                    margin-left: 0;
+                    padding: 1rem;
+                }
+
+                .page-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 1rem;
+                }
+            }
+        </style>
 </head>
 <body>
     <div class="sidebar">
@@ -181,59 +449,82 @@ if (isset($_POST['toggle_status'])) {
         </ul>
     </div>
 
-    <div class="main-content">
-        <div class="header">
-            <div class="header-left">
-                <h1>Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
-            </div>
-            
-            <div class="header-right">
-                <div class="notification-container">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <div class="notification-dropdown">
-                        <div class="notification-header">
-                            <h4>Notifications</h4>
-                            <span class="mark-all-read">Mark all as read</span>
+    <!-- Main Content -->
+    <main class="main-content">
+            <div class="container">
+                <!-- Partner Header -->
+                <div class="page-header">
+                    <div>
+                        <h1><?= htmlspecialchars($partner['partner_name']) ?></h1>
+                        <p class="herd-code">Herd Code: <?= htmlspecialchars($partner['herd_code']) ?></p>
+                    </div>
+                    <a href="partners.php" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Partners
+                    </a>
+                </div>
+
+                <!-- Partner Details Sections -->
+                <div class="partner-details">
+                    <!-- Basic Information Card -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+                            <span class="status-badge <?= $partner['is_active'] ? 'active' : 'inactive' ?>">
+                                <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
+                            </span>
                         </div>
-                        <div class="notification-list">
-                            <a href="#" class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-users text-primary"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>5 new farmers registered today</p>
-                                    <small>2 hours ago</small>
-                                </div>
-                            </a>
-                            <a href="#" class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-paw text-success"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>New carabao health report available</p>
-                                    <small>5 hours ago</small>
-                                </div>
-                            </a>
-                            <a href="#" class="notification-item">
-                                <div class="notification-icon">
-                                    <i class="fas fa-exclamation-triangle text-danger"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>3 pending requests need approval</p>
-                                    <small>Yesterday</small>
-                                </div>
-                            </a>
+                        <div class="card-body">
+                            <div class="detail-item">
+                                <span class="label">Partner Type</span>
+                                <span class="value"><?= htmlspecialchars($partner['coop_type']) ?></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Registration Date</span>
+                                <span class="value"><?= date('M d, Y', strtotime($partner['created_at'])) ?></span>
+                            </div>
                         </div>
-                        <div class="notification-footer">
-                            <a href="#">View all notifications</a>
+                    </div>
+
+                    <!-- Contact Information Card -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-address-book"></i> Contact Information</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="detail-item">
+                                <span class="label">Contact Person</span>
+                                <span class="value"><?= htmlspecialchars($partner['contact_person']) ?></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Contact Number</span>
+                                <a href="tel:<?= htmlspecialchars($partner['contact_number']) ?>" class="value">
+                                    <?= htmlspecialchars($partner['contact_number']) ?>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Card -->
+                    <div class="detail-card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-map-marker-alt"></i> Location</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="detail-item">
+                                <span class="label">Address</span>
+                                <span class="value">
+                                    <?= htmlspecialchars($partner['barangay']) ?>, 
+                                    <?= htmlspecialchars($partner['municipality']) ?>, 
+                                    <?= htmlspecialchars($partner['province']) ?>
+                                </span>
+                            </div>
+                            <div class="map-placeholder">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <p>Map integration coming soon</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
         <?php if (isset($_SESSION['message'])): ?>
             <div class="alert alert-<?= $_SESSION['message_type'] === 'success' ? 'success' : 'danger' ?>">

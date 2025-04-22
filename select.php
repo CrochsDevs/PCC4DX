@@ -1,82 +1,107 @@
-    <?php
-    session_start();
-    include('db_config.php');
+<?php
+session_start();
+include('db_config.php');
 
-    if (!isset($_SESSION['user'])) {
-        header("Location: login.php");
-        exit;
-    }
+// Redirect if not logged in
+if (!isset($_SESSION['user'])) {
+    header("Location: login.php");
+    exit;
+}
 
-    $centerCode = $_SESSION['center_code'];
-    $partnerId = filter_input(INPUT_GET, 'partner_id', FILTER_VALIDATE_INT) ?? 0;
+$centerCode = $_SESSION['center_code'];
+$partnerId = filter_input(INPUT_GET, 'partner_id', FILTER_VALIDATE_INT) ?? 0;
 
-    try {
-        $stmt = $conn->prepare("SELECT * FROM partners WHERE id = :id AND center_code = :center_code");
-        $stmt->execute([':id' => $partnerId, ':center_code' => $centerCode]);
-        $partner = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$partner) {
-            $_SESSION['message'] = "Partner not found or access denied";
-            $_SESSION['message_type'] = "danger";
-            header("Location: partners.php");
-            exit;
-        }
-    } catch (PDOException $e) {
-        error_log("Database error: " . $e->getMessage());
-        $_SESSION['message'] = "Error retrieving partner details";
+try {
+    // Fetch partner details
+    $stmt = $conn->prepare("SELECT * FROM partners WHERE id = :id AND center_code = :center_code");
+    $stmt->execute([':id' => $partnerId, ':center_code' => $centerCode]);
+    $partner = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$partner) {
+        $_SESSION['message'] = "Partner not found or access denied.";
         $_SESSION['message_type'] = "danger";
         header("Location: partners.php");
         exit;
     }
 
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        // Collect form data
-        $cbed = $_POST['cbed'];
-        $mfp = $_POST['mfp'];
-        $farmers = $_POST['farmers'];
-        $animals = $_POST['animals'];
-        $pregnant = $_POST['pregnant'];
-        $cows = $_POST['cows'];
-        $milking = $_POST['milking'];
-        $raw = $_POST['raw'];
-        $processed = $_POST['processed'];
-        $issues = $_POST['issues'];
-        $solutions = $_POST['solutions'];
-        $marketing_outlet = $_POST['marketing-outlet'];
-        $total_2024 = $_POST['total-2024'];
+    // Fetch existing additional information
+    $additionalInfoStmt = $conn->prepare("SELECT * FROM additional_information WHERE partner_id = :partner_id");
+    $additionalInfoStmt->execute([':partner_id' => $partnerId]);
+    $additionalInfo = $additionalInfoStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Here, you can process and save the data to a database
-        // Example: Database connection and insert data (assuming you have a database)
+} catch (PDOException $e) {
+    error_log("Database error: " . $e->getMessage());
+    $_SESSION['message'] = "Error retrieving data.";
+    $_SESSION['message_type'] = "danger";
+    header("Location: partners.php");
+    exit;
+}
 
-        // Example: Connecting to MySQL database (update with your actual database details)
-        $servername = "localhost";
-        $username = "root";
-        $password = "";
-        $dbname = "your_database_name";
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save_additional_info'])) {
+    $data = [
+        ':partner_id'       => $partnerId,
+        ':coop'             => in_array($_POST['coop'], ['CBED', 'CBIN', 'CCDP', 'EPAHP']) ? $_POST['coop'] : null,
+        ':mfp'              => ($_POST['mfp'] === 'Yes') ? 1 : 0,
+        ':farmers'          => (int) ($_POST['farmers'] ?? 0),
+        ':animals'          => (int) ($_POST['animals'] ?? 0),
+        ':pregnant'         => (int) ($_POST['pregnant'] ?? 0),
+        ':cows'             => (int) ($_POST['cows'] ?? 0),
+        ':milking'          => (int) ($_POST['milking'] ?? 0),
+        ':raw'              => (int) ($_POST['raw'] ?? 0),
+        ':processed'        => (int) ($_POST['processed'] ?? 0),
+        ':issues'           => trim($_POST['issues'] ?? ''),
+        ':solutions'        => trim($_POST['solutions'] ?? ''),
+        ':marketing_outlet' => trim($_POST['marketing_outlet'] ?? ''),
+        ':total_2024'       => (int) ($_POST['total_2024'] ?? 0)
+    ];
 
-        // Create connection
-        $conn = new mysqli($servername, $username, $password, $dbname);
-
-        // Check connection
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
-
-        // Insert data into database
-        $sql = "INSERT INTO additional_information (cbed, mfp, farmers, animals, pregnant, cows, milking, raw, processed, issues, solutions, marketing_outlet, total_2024)
-                VALUES ('$cbed', '$mfp', '$farmers', '$animals', '$pregnant', '$cows', '$milking', '$raw', '$processed', '$issues', '$solutions', '$marketing_outlet', '$total_2024')";
-
-        if ($conn->query($sql) === TRUE) {
-            echo "New record created successfully";
+    try {
+        if ($additionalInfo) {
+            // Update existing record
+            $sql = "UPDATE additional_information SET
+                    coop = :coop,
+                    mfp = :mfp,
+                    farmers = :farmers,
+                    animals = :animals,
+                    pregnant = :pregnant,
+                    cows = :cows,
+                    milking = :milking,
+                    raw = :raw,
+                    processed = :processed,
+                    issues = :issues,
+                    solutions = :solutions,
+                    marketing_outlet = :marketing_outlet,
+                    total_2024 = :total_2024
+                    WHERE partner_id = :partner_id";
         } else {
-            echo "Error: " . $sql . "<br>" . $conn->error;
+            // Insert new record
+            $sql = "INSERT INTO additional_information 
+                    (partner_id, coop, mfp, farmers, animals, pregnant, cows, milking, 
+                     raw, processed, issues, solutions, marketing_outlet, total_2024)
+                    VALUES 
+                    (:partner_id, :coop, :mfp, :farmers, :animals, :pregnant, :cows, 
+                     :milking, :raw, :processed, :issues, :solutions, :marketing_outlet, :total_2024)";
         }
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($data);
 
-        // Close connection
-        $conn->close();
+        $_SESSION['message'] = "Additional information " . ($additionalInfo ? "updated" : "added") . " successfully!";
+        $_SESSION['message_type'] = "success";
+        header("Location: " . $_SERVER['PHP_SELF'] . "?partner_id=" . $partnerId);
+        exit;
+
+    } catch (PDOException $e) {
+        error_log("Database error: " . $e->getMessage());
+        $_SESSION['message'] = "Error saving data: " . $e->getMessage();
+        $_SESSION['message_type'] = "danger";
+        header("Location: " . $_SERVER['PHP_SELF'] . "?partner_id=" . $partnerId);
+        exit;
     }
+}
+?>
 
-    ?>
 
     <!DOCTYPE html>
     <html lang="en">
@@ -310,6 +335,31 @@
     .add-details-btn:hover {
         background-color: #0056b3;
     }
+     /* Add to existing styles */
+     .add-info-modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .add-info-modal label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .add-info-modal input,
+        .add-info-modal textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .grid-columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
 
 
             /* Responsive Design */
@@ -331,6 +381,49 @@
                     gap: 1rem;
                 }
             }
+            /* Dropdown Styles */
+.dropdown-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 1rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem top 50%;
+    background-size: 0.65rem auto;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.dropdown-select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Boolean Dropdown Specific */
+select[name="mfp"] {
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+select[name="mfp"] option[value="Yes"] {
+    color: #28a745;
+}
+
+select[name="mfp"] option[value="No"] {
+    color: #dc3545;
+}
+
+/* Responsive Dropdowns */
+@media (max-width: 768px) {
+    .dropdown-select {
+        font-size: 0.9rem;
+        padding: 0.6rem;
+    }
+}
         </style>
     </head>
     <body>
@@ -435,91 +528,152 @@
                         </div>
                     </div>
                 </div>
-
-            <!-- Additional Information Card -->
-    <div class="detail-card">
-        <div class="card-header">
-            <h2><i class="fas fa-plus-circle"></i> Additional Information</h2>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="info-table">
-                    <thead>
-                        <tr>
-                            <th>CBED/CBIN/CCDP/EPAHP</th>
-                            <th>MFP</th>
-                            <th>FARMERS</th>
-                            <th>ANIMALS</th>
-                            <th>PREGNANT</th>
-                            <th>COWS</th>
-                            <th>MILKING</th>
-                            <th>RAW</th>
-                            <th>PROCESSED</th>
-                            <th>ISSUES</th>
-                            <th>SOLUTIONS/NEWS TO SHARE</th>
-                            <th>MARKETING OUTLET</th>
-                            <th>TOTAL 2024</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Empty row or you can leave it blank -->
-                        <tr>
-                            <td colspan="13" class="empty-message">
-                                <button class="add-details-btn" onclick="toggleForm()">+ Add Details</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- Additional Information Card -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-plus-circle"></i> Additional Information</h2>
+                        <button class="btn <?= $additionalInfo ? 'btn-warning' : 'btn-primary' ?>" onclick="openAddInfoModal()">
+                            <i class="fas <?= $additionalInfo ? 'fa-edit' : 'fa-plus' ?>"></i> 
+                            <?= $additionalInfo ? 'Edit Information' : 'Add Information' ?>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                    <?php if (!empty($additionalInfo)): ?>
+                        <div class="table-responsive">
+                            <table class="info-table">
+                                <thead>
+                                    <tr>
+                                        <th>COOP</th>
+                                        <th>MFP</th>
+                                        <th>Farmers</th>
+                                        <th>Animals</th>
+                                        <th>Cows</th>
+                                        <th>Pregnant</th>
+                                        <th>Milking</th>
+                                        <th>Raw</th>
+                                        <th>Processed</th>
+                                        <th>Issue</th>
+                                        <th>Solution</th>
+                                        <th>Marketing outlet</th>
+                                        <th>Last Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($additionalInfo as $info): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($info['coop']) ?></td>
+                                            <td><?= $info['mfp'] ? 'Yes' : 'No' ?></td>
+                                            <td><?= $info['farmers'] ?></td>
+                                            <td><?= $info['animals'] ?></td>
+                                            <td><?= $info['pregnant'] ?></td>
+                                            <td><?= $info['cows'] ?></td>
+                                            <td><?= $info['milking'] ?></td>
+                                            <td><?= $info['raw'] ?></td>
+                                            <td><?= $info['processed'] ?></td>
+                                            <td><?= $info['issues'] ?></td>
+                                            <td><?= $info['solutions'] ?></td>
+                                            <td><?= $info['marketing_outlet'] ?></td>
+                                            <td><?= date('M d, Y H:i', strtotime($info['created_at'])) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="empty-message">No additional information found</div>
+                    <?php endif; ?>
+                </div>
             </div>
 
-            <!-- Form to Add Details -->
-            <div id="add-details-form" style="display: none;">
-                <h3>Fill Out the Details</h3>
-                <form action="your-php-file.php" method="POST">
-                    <label for="cbed">CBED/CBIN/CCDP/EPAHP:</label>
-                    <input type="text" id="cbed" name="cbed"><br>
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="addInfoModal">
+    <div class="modal-content add-info-modal">
+        <button class="modal-close" onclick="closeAddInfoModal()">&times;</button>
+        <h2><?= $additionalInfo ? 'Edit' : 'Add' ?> Additional Information</h2>
+        <form method="POST" action="">
+            <div class="grid-columns">
+                <div class="form-group">
+                    <label>COOP Type *</label>
+                    <select class="dropdown-select" name="coop" required>
+                        <option value="">Select Type</option>
+                        <option value="CBED" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CBED' ? 'selected' : '' ?>>CBED</option>
+                        <option value="CBIN" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CBIN' ? 'selected' : '' ?>>CBIN</option>
+                        <option value="CCDP" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CCDP' ? 'selected' : '' ?>>CCDP</option>
+                        <option value="EPAHP" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'EPAHP' ? 'selected' : '' ?>>EPAHP</option>
+                    </select>
+                </div>
 
-                    <label for="mfp">MFP:</label>
-                    <input type="text" id="mfp" name="mfp"><br>
+                <div class="form-group">
+                    <label>MFP Member *</label>
+                    <select class="dropdown-select" name="mfp" required>
+                        <option value="Yes" <?= isset($additionalInfo[0]['mfp']) && $additionalInfo[0]['mfp'] ? 'selected' : '' ?>>Yes</option>
+                        <option value="No" <?= isset($additionalInfo[0]['mfp']) && !$additionalInfo[0]['mfp'] ? 'selected' : '' ?>>No</option>
+                    </select>
+                </div>
 
-                    <label for="farmers">FARMERS:</label>
-                    <input type="text" id="farmers" name="farmers"><br>
+                <!-- Rest of the form fields remain the same -->
+                <div class="form-group">
+                    <label>Farmers</label>
+                    <input type="number" name="farmers" required>
+                </div>
+                <div class="form-group">
+                    <label>Animals</label>
+                    <input type="number" name="animals" required>
+                </div>
+                <div class="form-group">
+                    <label>Pregnant</label>
+                    <input type="number" name="pregnant" required>
+                </div>
+                <div class="form-group">
+                    <label>Cows</label>
+                    <input type="number" name="cows" required>
+                </div>
+                <div class="form-group">
+                    <label>Milking</label>
+                    <input type="number" name="milking" required>
+                </div>
+                <div class="form-group">
+                    <label>Raw</label>
+                    <input type="number" name="raw" required>
+                </div>
+                <div class="form-group">
+                    <label>Processed</label>
+                    <input type="number" name="processed" required>
+                </div>
 
-                    <label for="animals">ANIMALS:</label>
-                    <input type="text" id="animals" name="animals"><br>
-
-                    <label for="pregnant">PREGNANT:</label>
-                    <input type="text" id="pregnant" name="pregnant"><br>
-
-                    <label for="cows">COWS:</label>
-                    <input type="text" id="cows" name="cows"><br>
-
-                    <label for="milking">MILKING:</label>
-                    <input type="text" id="milking" name="milking"><br>
-
-                    <label for="raw">RAW:</label>
-                    <input type="text" id="raw" name="raw"><br>
-
-                    <label for="processed">PROCESSED:</label>
-                    <input type="text" id="processed" name="processed"><br>
-
-                    <label for="issues">ISSUES:</label>
-                    <input type="text" id="issues" name="issues"><br>
-
-                    <label for="solutions">SOLUTIONS/NEWS TO SHARE:</label>
-                    <input type="text" id="solutions" name="solutions"><br>
-
-                    <label for="marketing-outlet">MARKETING OUTLET:</label>
-                    <input type="text" id="marketing-outlet" name="marketing-outlet"><br>
-
-                    <label for="total-2024">TOTAL 2024:</label>
-                    <input type="text" id="total-2024" name="total-2024"><br>
-
-                    <button type="submit">Submit</button>
-                </form>
+                <div class="form-group">
+                <label>Issues</label>
+                <textarea name="issues" rows="3"></textarea>
             </div>
-        </div>
+            
+            <div class="form-group">
+                <label>Solutions/News</label>
+                <textarea name="solutions" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Marketing Outlet</label>
+                <input type="text" name="marketing_outlet" required>
+            </div>
+
+                <div class="form-group">
+                    <label>Total</label>
+                    <input type="number" name="total_2024" required>
+                </div>
+            </div>
+            
+            
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeAddInfoModal()">Cancel</button>
+                <button type="submit" name="save_additional_info" class="btn btn-primary">
+                    <?= $additionalInfo ? 'Update' : 'Save' ?> Information
+                </button>
+            </div>
+        </form>
     </div>
+</div>
+
 
                 <br>
                 <br>
@@ -652,6 +806,41 @@
                 }
                 
             });
+                // Add Info Modal Functions
+        function openAddInfoModal() {
+            document.getElementById('addInfoModal').style.display = 'flex';
+        }
+
+        function closeAddInfoModal() {
+            document.getElementById('addInfoModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('addInfoModal').addEventListener('click', (e) => {
+            if(e.target === document.getElementById('addInfoModal')) {
+                closeAddInfoModal();
+            }
+        });
+
+        // Handle form submission
+        document.querySelector('#addInfoModal form').addEventListener('submit', function(e) {
+            const inputs = this.querySelectorAll('input, textarea');
+            let isValid = true;
+            
+            inputs.forEach(input => {
+                if (input.required && !input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('error');
+                } else {
+                    input.classList.remove('error');
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                Swal.fire('Error', 'Please fill all required fields', 'error');
+            }
+        });
             
         </script>
     </body>
