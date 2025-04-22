@@ -427,30 +427,36 @@ select[name="mfp"] option[value="No"] {
         </style>
     </head>
     <body>
-        <!-- Sidebar -->
-        <div class="sidebar">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <!-- User Profile Section -->
             <div class="user-profile">
                 <div class="profile-picture">
                     <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                        <!-- Display the uploaded profile image -->
                         <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
                     <?php else: ?>
+                        <!-- Fallback to the generated avatar -->
                         <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
                     <?php endif; ?>
                 </div>
-                <div class="profile-info">
-                    <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-                    <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-                </div>
+            <div class="profile-info">
+                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
             </div>
-
-            <ul>
-                <li><a href="center_dashboard.php" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="services.php" class="nav-link"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
-                <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
-                <li><a href="settings.php" class="nav-link"><i class="fas fa-cogs"></i> Settings</a></li>
-                <li><a href="logout.php" class="logout-btn" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-            </ul>
         </div>
+
+        <nav>
+            <ul>
+                <li><a href="milk_production.php?section=dashboard-section" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
+                <li><a href="milk_production.php?section=entry-section" class="nav-link"><i class="fas fa-edit"></i> New Entry</a></li>
+                <li><a href="milk_production.php?section=reports-section" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
+
+    </div>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -585,94 +591,94 @@ select[name="mfp"] option[value="No"] {
                 </div>
             </div>
 
-<!-- Add/Edit Modal -->
-<div class="modal-overlay" id="addInfoModal">
-    <div class="modal-content add-info-modal">
-        <button class="modal-close" onclick="closeAddInfoModal()">&times;</button>
-        <h2><?= $additionalInfo ? 'Edit' : 'Add' ?> Additional Information</h2>
-        <form method="POST" action="">
-            <div class="grid-columns">
-                <div class="form-group">
-                    <label>COOP Type *</label>
-                    <select class="dropdown-select" name="coop" required>
-                        <option value="">Select Type</option>
-                        <option value="CBED" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CBED' ? 'selected' : '' ?>>CBED</option>
-                        <option value="CBIN" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CBIN' ? 'selected' : '' ?>>CBIN</option>
-                        <option value="CCDP" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CCDP' ? 'selected' : '' ?>>CCDP</option>
-                        <option value="EPAHP" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'EPAHP' ? 'selected' : '' ?>>EPAHP</option>
-                    </select>
-                </div>
+            <!-- Add/Edit Modal -->
+            <div class="modal-overlay" id="addInfoModal">
+                <div class="modal-content add-info-modal">
+                    <button class="modal-close" onclick="closeAddInfoModal()">&times;</button>
+                    <h2><?= $additionalInfo ? 'Edit' : 'Add' ?> Additional Information</h2>
+                    <form method="POST" action="">
+                        <div class="grid-columns">
+                            <div class="form-group">
+                                <label>COOP Type *</label>
+                                <select class="dropdown-select" name="coop" required>
+                                    <option value="">Select Type</option>
+                                    <option value="CBED" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CBED' ? 'selected' : '' ?>>CBED</option>
+                                    <option value="CBIN" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CBIN' ? 'selected' : '' ?>>CBIN</option>
+                                    <option value="CCDP" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'CCDP' ? 'selected' : '' ?>>CCDP</option>
+                                    <option value="EPAHP" <?= isset($additionalInfo[0]['coop']) && $additionalInfo[0]['coop'] === 'EPAHP' ? 'selected' : '' ?>>EPAHP</option>
+                                </select>
+                            </div>
 
-                <div class="form-group">
-                    <label>MFP Member *</label>
-                    <select class="dropdown-select" name="mfp" required>
-                        <option value="Yes" <?= isset($additionalInfo[0]['mfp']) && $additionalInfo[0]['mfp'] ? 'selected' : '' ?>>Yes</option>
-                        <option value="No" <?= isset($additionalInfo[0]['mfp']) && !$additionalInfo[0]['mfp'] ? 'selected' : '' ?>>No</option>
-                    </select>
-                </div>
+                            <div class="form-group">
+                                <label>MFP Member *</label>
+                                <select class="dropdown-select" name="mfp" required>
+                                    <option value="Yes" <?= isset($additionalInfo[0]['mfp']) && $additionalInfo[0]['mfp'] ? 'selected' : '' ?>>Yes</option>
+                                    <option value="No" <?= isset($additionalInfo[0]['mfp']) && !$additionalInfo[0]['mfp'] ? 'selected' : '' ?>>No</option>
+                                </select>
+                            </div>
 
-                <!-- Rest of the form fields remain the same -->
-                <div class="form-group">
-                    <label>Farmers</label>
-                    <input type="number" name="farmers" required>
-                </div>
-                <div class="form-group">
-                    <label>Animals</label>
-                    <input type="number" name="animals" required>
-                </div>
-                <div class="form-group">
-                    <label>Pregnant</label>
-                    <input type="number" name="pregnant" required>
-                </div>
-                <div class="form-group">
-                    <label>Cows</label>
-                    <input type="number" name="cows" required>
-                </div>
-                <div class="form-group">
-                    <label>Milking</label>
-                    <input type="number" name="milking" required>
-                </div>
-                <div class="form-group">
-                    <label>Raw</label>
-                    <input type="number" name="raw" required>
-                </div>
-                <div class="form-group">
-                    <label>Processed</label>
-                    <input type="number" name="processed" required>
-                </div>
+                            <!-- Rest of the form fields remain the same -->
+                            <div class="form-group">
+                                <label>Farmers</label>
+                                <input type="number" name="farmers" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Animals</label>
+                                <input type="number" name="animals" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Pregnant</label>
+                                <input type="number" name="pregnant" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Cows</label>
+                                <input type="number" name="cows" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Milking</label>
+                                <input type="number" name="milking" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Raw</label>
+                                <input type="number" name="raw" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Processed</label>
+                                <input type="number" name="processed" required>
+                            </div>
 
-                <div class="form-group">
-                <label>Issues</label>
-                <textarea name="issues" rows="3"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label>Solutions/News</label>
-                <textarea name="solutions" rows="3"></textarea>
-            </div>
+                            <div class="form-group">
+                            <label>Issues</label>
+                            <textarea name="issues" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Solutions/News</label>
+                            <textarea name="solutions" rows="3"></textarea>
+                        </div>
 
-            <div class="form-group">
-                <label>Marketing Outlet</label>
-                <input type="text" name="marketing_outlet" required>
-            </div>
+                        <div class="form-group">
+                            <label>Marketing Outlet</label>
+                            <input type="text" name="marketing_outlet" required>
+                        </div>
 
-                <div class="form-group">
-                    <label>Total</label>
-                    <input type="number" name="total_2024" required>
+                            <div class="form-group">
+                                <label>Total</label>
+                                <input type="number" name="total_2024" required>
+                            </div>
+                        </div>
+                        
+                        
+                        
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeAddInfoModal()">Cancel</button>
+                            <button type="submit" name="save_additional_info" class="btn btn-primary">
+                                <?= $additionalInfo ? 'Update' : 'Save' ?> Information
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            
-            
-            
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeAddInfoModal()">Cancel</button>
-                <button type="submit" name="save_additional_info" class="btn btn-primary">
-                    <?= $additionalInfo ? 'Update' : 'Save' ?> Information
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 
 
                 <br>
@@ -841,6 +847,38 @@ select[name="mfp"] option[value="No"] {
                 Swal.fire('Error', 'Please fill all required fields', 'error');
             }
         });
+
+        // navigation.js
+document.addEventListener('DOMContentLoaded', () => {
+    const currentPage = window.location.pathname.split('/').pop(); // Get current filename (e.g., "partners.php")
+
+    // Highlight active nav-link based on current page or section
+    document.querySelectorAll('nav .nav-link, nav a').forEach(link => {
+        const href = link.getAttribute('href');
+        
+        // Highlight if href matches the current page
+        if (href && currentPage === href) {
+            link.classList.add('active');
+        }
+
+        // SPA-style section toggle for links with data-section (if ever needed again)
+        if (link.dataset.section) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+                link.classList.add('active');
+                const targetSection = document.getElementById(link.dataset.section);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+            });
+        }
+    });
+});
+
             
         </script>
     </body>

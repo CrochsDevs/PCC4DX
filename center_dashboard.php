@@ -47,12 +47,11 @@ $centerCode = $_SESSION['center_code'];
         <ul>
             <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
             <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
-            <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
-
+                
  <!-- Main Content -->
 <div class="main-content">
         <!-- Header -->
