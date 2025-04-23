@@ -627,6 +627,93 @@ body {
         background-color: #c53030;
     }
 
+    /* Dark Theme Table Enhancements */
+.dark-theme table {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border);
+    color: var(--dark-text);
+}
+
+.dark-theme thead {
+    background-color: var(--dark-primary);
+    color: white;
+}
+
+.dark-theme thead th {
+    color: white;
+}
+
+.dark-theme tbody td {
+    border-bottom: 1px solid var(--dark-border);
+    color: var(--dark-text);
+}
+
+.dark-theme tbody tr:nth-child(even) {
+    background-color: #2e2e2e;
+}
+
+.dark-theme tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .btn-warning {
+    color: #fff;
+}
+
+.dark-theme .btn-danger {
+    color: #fff;
+}
+
+.dark-theme .btn-success {
+    color: #fff;
+}
+
+
+/* Table Enhancements */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem; /* spacing below the title */
+    background-color: white;
+    border: 1px solid var(--gray-light);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+thead {
+    background-color: var(--primary);
+    color: white;
+}
+
+thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+tbody td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--gray-light);
+    font-size: 0.92rem;
+}
+
+tbody tr:nth-child(even) {
+    background-color: var(--gray-light);
+}
+
+tbody tr:hover {
+    background-color: rgba(0, 86, 179, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.btn i {
+    margin-right: 5px;
+}
+
+
     @keyframes profileUpdate {
         0% { background-color: rgba(0, 86, 179, 0); }
         50% { background-color: rgba(0, 86, 179, 0.2); }

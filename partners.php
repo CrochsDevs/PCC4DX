@@ -4,6 +4,7 @@ session_start();
 
 $centerCode = $_SESSION['center_code'];
 
+// Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add'])) {
         $coop_type = trim($_POST['coop_type']);
@@ -17,24 +18,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $is_active = isset($_POST['is_active']) ? 1 : 0;
 
         try {
-            $query = "INSERT INTO partners (partner_name, herd_code, contact_person, contact_number, barangay, municipality, province, is_active, center_code, coop_type) VALUES (:partner_name, :herd_code, :contact_person, :contact_number, :barangay, :municipality, :province, :is_active, :center_code, :coop_type)";
+            $query = "INSERT INTO partners (partner_name, herd_code, contact_person, contact_number, barangay, municipality, province, is_active, center_code, coop_type) 
+                      VALUES (:partner_name, :herd_code, :contact_person, :contact_number, :barangay, :municipality, :province, :is_active, :center_code, :coop_type)";
             $stmt = $conn->prepare($query);
-            $stmt->execute([
-                ':partner_name' => $partner_name,
-                ':herd_code' => $herd_code,
-                ':contact_person' => $contact_person,
-                ':contact_number' => $contact_number,
-                ':barangay' => $barangay,
-                ':municipality' => $municipality,
-                ':province' => $province,
-                ':is_active' => $is_active,
-                ':center_code' => $centerCode,
-                ':coop_type' => $coop_type
-            ]);
+            $stmt->bindParam(':partner_name', $partner_name);
+            $stmt->bindParam(':herd_code', $herd_code);
+            $stmt->bindParam(':contact_person', $contact_person);
+            $stmt->bindParam(':contact_number', $contact_number);
+            $stmt->bindParam(':barangay', $barangay);
+            $stmt->bindParam(':municipality', $municipality);
+            $stmt->bindParam(':province', $province);
+            $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
+            $stmt->bindParam(':center_code', $centerCode);
+            $stmt->bindParam(':coop_type', $coop_type);
+            $stmt->execute();
             
             $_SESSION['message'] = "Partner added successfully!";
             $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']);
+            header("Location: ".$_SERVER['PHP_SELF']); 
             exit;
         } catch (PDOException $e) {
             $_SESSION['message'] = "Error adding partner: " . $e->getMessage();
@@ -42,8 +43,133 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: ".$_SERVER['PHP_SELF']);
             exit;
         }
+    } elseif (isset($_POST['edit'])) {
+        $partner_id = $_POST['partner_id'];
+        $coop_type = trim($_POST['coop_type']);
+        $partner_name = trim($_POST['partner_name']);
+        $herd_code = trim($_POST['herd_code']);
+        $contact_person = trim($_POST['contact_person']);
+        $contact_number = trim($_POST['contact_number']);
+        $barangay = trim($_POST['barangay']);
+        $municipality = trim($_POST['municipality']);
+        $province = trim($_POST['province']);
+        $is_active = isset($_POST['is_active']) ? 1 : 0;
+
+        try {
+            $query = "UPDATE partners SET 
+                      partner_name = :partner_name, 
+                      herd_code = :herd_code, 
+                      contact_person = :contact_person, 
+                      contact_number = :contact_number,
+                      barangay = :barangay, 
+                      municipality = :municipality, 
+                      province = :province, 
+                      is_active = :is_active,
+                      coop_type = :coop_type 
+                      WHERE id = :partner_id AND center_code = :center_code";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':partner_name', $partner_name);
+            $stmt->bindParam(':herd_code', $herd_code);
+            $stmt->bindParam(':contact_person', $contact_person);
+            $stmt->bindParam(':contact_number', $contact_number);
+            $stmt->bindParam(':barangay', $barangay);
+            $stmt->bindParam(':municipality', $municipality);
+            $stmt->bindParam(':province', $province);
+            $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
+            $stmt->bindParam(':coop_type', $coop_type);
+            $stmt->bindParam(':partner_id', $partner_id);
+            $stmt->bindParam(':center_code', $centerCode);
+            $stmt->execute();
+            
+            $_SESSION['message'] = "Partner updated successfully!";
+            $_SESSION['message_type'] = "success";
+            header("Location: ".$_SERVER['PHP_SELF']); 
+            exit;
+        } catch (PDOException $e) {
+            $_SESSION['message'] = "Error updating partner: " . $e->getMessage();
+            $_SESSION['message_type'] = "danger";
+            header("Location: ".$_SERVER['PHP_SELF']);
+            exit;
+        }
+    } elseif (isset($_POST['delete'])) {
+        $partner_id = $_POST['partner_id'];
+        try {
+            $query = "DELETE FROM partners WHERE id = :partner_id AND center_code = :center_code";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':partner_id', $partner_id);
+            $stmt->bindParam(':center_code', $centerCode);
+            $stmt->execute();
+            
+            $_SESSION['message'] = "Partner deleted successfully!";
+            $_SESSION['message_type'] = "success";
+        } catch (PDOException $e) {
+            $_SESSION['message'] = "Error deleting partner: " . $e->getMessage();
+            $_SESSION['message_type'] = "danger";
+        }
+        header("Location: ".$_SERVER['PHP_SELF']);
+        exit;
+    } elseif (isset($_POST['toggle_status'])) {
+        $partner_id = $_POST['partner_id'];
+        try {
+            $query = "UPDATE partners SET is_active = NOT is_active WHERE id = :partner_id AND center_code = :center_code";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':partner_id', $partner_id);
+            $stmt->bindParam(':center_code', $centerCode);
+            $stmt->execute();
+            
+            $_SESSION['message'] = "Partner status updated!";
+            $_SESSION['message_type'] = "success";
+            header("Location: ".$_SERVER['PHP_SELF']);
+            exit;
+        } catch (PDOException $e) {
+            $_SESSION['message'] = "Error updating status: " . $e->getMessage();
+            $_SESSION['message_type'] = "danger";
+            header("Location: ".$_SERVER['PHP_SELF']);
+            exit;
+        }
+    } elseif (isset($_POST['export'])) {
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="partners_export_'.date('Y-m-d').'.csv"');
+        $output = fopen("php://output", "w");
+        fputcsv($output, ['ID', 'Partner Name', 'Partner Type', 'Herd Code', 'Contact Person', 'Contact Number', 'Barangay', 'Municipality', 'Province', 'Status']);
+        foreach ($partners as $row) {
+            fputcsv($output, [
+                $row['id'],
+                $row['partner_name'],
+                $row['coop_type'],
+                $row['herd_code'],
+                $row['contact_person'],
+                $row['contact_number'],
+                $row['barangay'],
+                $row['municipality'],
+                $row['province'],
+                $row['is_active'] ? 'Active' : 'Inactive'
+            ]);
+        }
+        fclose($output);
+        exit;
     }
 }
+
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
+
+// Sorting logic
+$sort = $_GET['sort'] ?? 'partner_name';
+$order = $_GET['order'] ?? 'ASC';
+
+// Count total partners
+$totalQuery = $conn->query("SELECT COUNT(*) FROM partners");
+$totalPartners = $totalQuery->fetchColumn();
+$totalPages = ceil($totalPartners / $limit);
+
+// Fetch paginated partners
+$stmt = $conn->prepare("SELECT * FROM partners ORDER BY $sort $order LIMIT :limit OFFSET :offset");
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $sort = $_GET['sort'] ?? 'partner_name';
 $order = $_GET['order'] ?? 'ASC';
@@ -138,6 +264,83 @@ if (isset($_POST['toggle_status'])) {
         exit;
     }
 }
+// Pagination parameters
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
+
+// Build base query
+$baseQuery = "SELECT * FROM partners WHERE center_code = :center_code";
+$countQuery = "SELECT COUNT(*) FROM partners WHERE center_code = :center_code";
+$params = [':center_code' => $centerCode];
+
+// Search handling
+if (!empty($search)) {
+    $searchTerms = array_map('trim', explode(',', $search));
+    $searchConditions = [];
+    
+    foreach ($searchTerms as $index => $term) {
+        if (strtolower($term) === 'active') {
+            $searchConditions[] = "is_active = 1";
+        } elseif (strtolower($term) === 'inactive') {
+            $searchConditions[] = "is_active = 0";
+        } else {
+            $paramName = ":search$index";
+            $searchConditions[] = "(partner_name LIKE $paramName OR herd_code LIKE $paramName OR contact_person LIKE $paramName OR contact_number LIKE $paramName OR municipality LIKE $paramName OR province LIKE $paramName OR coop_type LIKE $paramName)";
+            $params[$paramName] = "%$term%";
+        }
+    }
+    
+    if (!empty($searchConditions)) {
+        $baseQuery .= " AND (" . implode(" OR ", $searchConditions) . ")";
+        $countQuery .= " AND (" . implode(" OR ", $searchConditions) . ")";
+    }
+}
+
+// Filter handling
+if (!empty($filter)) {
+    $filterTypes = explode(',', $filter);
+    $placeholders = implode(',', array_map(function($i) { 
+        return ":filter$i"; 
+    }, array_keys($filterTypes)));
+    
+    $baseQuery .= " AND coop_type IN ($placeholders)";
+    $countQuery .= " AND coop_type IN ($placeholders)";
+    
+    foreach ($filterTypes as $i => $type) {
+        $params[":filter$i"] = $type;
+    }
+}
+
+// Get total count
+try {
+    $stmt = $conn->prepare($countQuery);
+    $stmt->execute($params);
+    $totalFilteredPartners = $stmt->fetchColumn();
+} catch (PDOException $e) {
+    $totalFilteredPartners = 0;
+}
+
+$totalPages = ceil($totalFilteredPartners / $limit);
+
+// Add sorting and pagination
+$baseQuery .= " ORDER BY $sort $order LIMIT :limit OFFSET :offset";
+$params[':limit'] = $limit;
+$params[':offset'] = $offset;
+
+// Fetch partners
+try {
+    $stmt = $conn->prepare($baseQuery);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $stmt->execute();
+    $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $_SESSION['message'] = "Error fetching partners: " . $e->getMessage();
+    $_SESSION['message_type'] = "danger";
+    $partners = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -152,30 +355,87 @@ if (isset($_POST['toggle_status'])) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="css/center.css">
     <link rel="stylesheet" href="css/partners.css"> 
+
+    <style>
+    .pagination-container {
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination {
+        display: flex;
+        list-style: none;
+        padding-left: 0;
+        flex-wrap: wrap;
+    }
+
+    .page-item {
+        margin: 2px;
+    }
+
+    .page-link {
+        display: block;
+        color: #004080;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        padding: 6px 12px;
+        text-decoration: none;
+        min-width: 40px;
+        text-align: center;
+        border-radius: 4px;
+        transition: 0.3s ease;
+    }
+
+    .page-item.active .page-link {
+        background-color: #004080;
+        border-color: #004080;
+        color: white;
+    }
+
+    .page-link:hover {
+        color: #002b5c;
+        background-color: #e9ecef;
+    }
+
+    .page-item.disabled .page-link {
+        color: #6c757d;
+        pointer-events: none;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+    </style>
 </head>
 <body>
+      <!-- Sidebar -->
     <div class="sidebar">
+       <!-- User Profile Section -->
         <div class="user-profile">
             <div class="profile-picture">
                 <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                    <!-- Display the uploaded profile image -->
                     <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
                 <?php else: ?>
+                    <!-- Fallback to the generated avatar -->
                     <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
                 <?php endif; ?>
             </div>
-            <div class="profile-info">
-                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-            </div>
+        <div class="profile-info">
+            <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+            <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
         </div>
+    </div>
 
+    <nav>
         <ul>
-            <li><a href="center_dashboard.php" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="services.php" class="nav-link"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="milk_production.php?section=dashboard-section" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
             <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="settings.php" class="nav-link"><i class="fas fa-cogs"></i> Settings</a></li>
-            <li><a href="logout.php" class="logout-btn" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            <li><a href="milk_production.php?section=entry-section" class="nav-link"><i class="fas fa-edit"></i> New Entry</a></li>
+            <li><a href="milk_production.php?section=reports-section" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
+    </nav>
+
     </div>
 
     <div class="main-content">
@@ -272,6 +532,8 @@ if (isset($_POST['toggle_status'])) {
                         <small class="text-muted">Add commas to narrow your search (e.g., "coop, active")</small>
                     </form>
 
+                    <div id="searchTermsDisplay" class="search-terms-display mt-2"></div>
+
                     <div class="filter-buttons">
                         <span style="font-weight: 500;">Filter by type:</span>
                         <a href="#" class="filter-btn all-btn <?= empty($filter) ? 'active' : '' ?>" data-filter="all">All</a>
@@ -331,7 +593,14 @@ if (isset($_POST['toggle_status'])) {
                                     <td colspan="7" class="text-center">No partners found. Add your first partner!</td>
                                 </tr>
                             <?php else: ?>
-                                <?php foreach ($partners as $partner): ?>
+                                <?php 
+                                // Sort partners - active first
+                                usort($partners, function($a, $b) {
+                                    return $b['is_active'] <=> $a['is_active']; // Descending order for active status
+                                });
+                                
+                                foreach ($partners as $partner): 
+                                ?>
                                     <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
                                         <td><?= htmlspecialchars($partner['partner_name']) ?></td>
                                         <td><?= htmlspecialchars($partner['coop_type']) ?></td>
@@ -378,10 +647,53 @@ if (isset($_POST['toggle_status'])) {
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
-                        </tbody>
+                        </tbody>                            
                     </table>
                 </div>
             </div>
+            <!-- Pagination Section -->
+<!-- Pagination Section -->
+<div class="pagination-container">
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+
+            <!-- Previous Button -->
+            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" 
+                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
+                   aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+
+            <!-- Page Numbers -->
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                    <a class="page-link" 
+                       href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>">
+                        <?= $i ?>
+                    </a>
+                </li>
+            <?php endfor; ?>
+
+            <!-- Next Button -->
+            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                <a class="page-link" 
+                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
+                   aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+</div>
+
+<!-- Pagination Summary -->
+<div class="text-center text-muted small">
+    Showing <?= ($offset + 1) ?> to <?= min($offset + $limit, $totalFilteredPartners) ?> of <?= $totalFilteredPartners ?> entries
+</div>
+
         </div>
     </div>
 
@@ -512,7 +824,7 @@ if (isset($_POST['toggle_status'])) {
         </div>
     </div>
 
-    <script>
+<script>
         const createBtn = document.getElementById('createBtn');
         const createModal = document.getElementById('createModal');
         const editModal = document.getElementById('editModal');
@@ -977,6 +1289,65 @@ function togglePartnerStatus(form) {
     });
 }
 
+            // Update URL without reload
+            function updateURL() {
+                const params = new URLSearchParams();
+                if (currentSort !== 'partner_name') params.append('sort', currentSort);
+                if (currentOrder !== 'ASC') params.append('order', currentOrder);
+                if (currentSearch) params.append('search', currentSearch);
+                if (currentFilter) params.append('filter', currentFilter);
+                
+                const newUrl = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
+                window.history.replaceState(null, '', newUrl);
+            }
+            
+            
+            function escapeRegExp(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+            
+            // Update search term display
+            function updateSearchTermDisplay() {
+                const termsDisplay = $('#searchTermsDisplay');
+                
+                if (currentSearch.includes(',')) {
+                    const terms = currentSearch.split(',').map(t => t.trim()).filter(t => t);
+                    const html = terms.map((term, i) => 
+                        `<span class="search-term ${i > 0 ? 'narrow-term' : ''}">${term}</span>`).join(' ');
+                    
+                    termsDisplay.html(`
+                        <div class="narrowing-indicator">
+                            <small>Narrowing by:</small>
+                            ${html}
+                        </div>
+                    `);
+                } else {
+                    termsDisplay.empty();
+                }
+            }
+            
+            // Show alert function
+            function showAlert(title, text, icon) {
+                Swal.fire({
+                    title: title,
+                    text: text,
+                    icon: icon,
+                    confirmButtonColor: '#3085d6',
+                });
+            }
+            
+            // Initialize sort indicators
+            function initSortIndicators() {
+                $('.sort-indicator').hide();
+                const header = $(`.sortable-header[data-sort="${currentSort}"]`);
+                if (header.length) {
+                    const indicator = header.find('.sort-indicator');
+                    indicator.show().text(currentOrder === 'ASC' ? '↑' : '↓');
+                }
+            }
+            
+            initSortIndicators();
+
         const sidebarToggle = document.createElement('button');
         sidebarToggle.innerHTML = '<i class="fas fa-bars"></i>';
         sidebarToggle.style.position = 'fixed';
@@ -1054,6 +1425,38 @@ function togglePartnerStatus(form) {
                 }
             });
         }
+
+    // navigation.js
+document.addEventListener('DOMContentLoaded', () => {
+    const currentPage = window.location.pathname.split('/').pop(); // Get current filename (e.g., "partners.php")
+
+    // Highlight active nav-link based on current page or section
+    document.querySelectorAll('nav .nav-link, nav a').forEach(link => {
+        const href = link.getAttribute('href');
+        
+        // Highlight if href matches the current page
+        if (href && currentPage === href) {
+            link.classList.add('active');
+        }
+
+        // SPA-style section toggle for links with data-section (if ever needed again)
+        if (link.dataset.section) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+                link.classList.add('active');
+                const targetSection = document.getElementById(link.dataset.section);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+            });
+        }
+    });
+});
+
     </script>
 </body>
 </html>

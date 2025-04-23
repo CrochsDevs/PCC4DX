@@ -119,6 +119,7 @@ $sundayDate = $sunday->format('Y-m-d');
         <nav>
             <ul>
                 <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="partners.php"><i class="fas fa-users"></i> Partners</a></li>
                 <li><a href="#" class="nav-link" data-section="entry-section"><i class="fas fa-edit"></i> New Entry</a></li>
                 <li><a href="#" class="nav-link" data-section="reports-section"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -215,17 +216,45 @@ $sundayDate = $sunday->format('Y-m-d');
     </div>
 
     <script>
-        // Navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-                
-                link.classList.add('active');
-                document.getElementById(link.dataset.section).classList.add('active');
-            });
+// Navigation
+document.addEventListener('DOMContentLoaded', () => {
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    // Section toggle handler
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const sectionId = link.dataset.section;
+            if (!sectionId) return;
+
+            e.preventDefault();
+
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+            link.classList.add('active');
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
         });
+    });
+
+    // Show section from URL query (e.g., ?section=dashboard-section)
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialSection = urlParams.get('section');
+
+    if (initialSection) {
+        const targetLink = document.querySelector(`.nav-link[data-section="${initialSection}"]`);
+        const targetSection = document.getElementById(initialSection);
+
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+        if (targetLink) targetLink.classList.add('active');
+        if (targetSection) targetSection.classList.add('active');
+    }
+});
+
 
         // Chart Initialization
         const ctx = document.getElementById('productionChart').getContext('2d');

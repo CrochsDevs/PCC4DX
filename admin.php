@@ -189,7 +189,57 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 </div>
             </div>
         </div>
+     
         
+
+      <!-- Announcements Section -->
+      <div id="announcement-section" class="content-section">
+        <div class="container mt-5">
+            <h2 class="dashboard-title"><i class="fas fa-bullhorn"></i> Announcements</h2>
+            <div class="mt-4 mb-3">
+                <!-- Announcement management options -->
+                <a href="create_announcements.php" class="btn btn-success">Add Announcements</a>
+            </div>
+
+            <!-- Announcement List -->
+            <h3 class="mt-4">Announcement List</h3>
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Date Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    include 'db_config.php';
+
+                    try {
+                        $stmt = $conn->prepare("SELECT * FROM announcement ORDER BY created_at DESC");
+                        $stmt->execute();
+
+                        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                            echo "<tr>";
+                            echo "<td>" . htmlspecialchars($row['title']) . "</td>";
+                            echo "<td>" . htmlspecialchars($row['created_at']) . "</td>";
+                            echo "<td>
+                                    <a href='edit-announcement.php?announcement_id=" . $row['announcement_id'] . "' class='btn btn-warning btn-sm me-2'>Edit</a>
+                                    <a href='delete-announcement.php?announcement_id=" . $row['announcement_id'] . "' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure you want to delete this announcement?\")'>Delete</a>
+                                </td>";
+                            echo "</tr>";
+                        }
+                    } catch (PDOException $e) {
+                        echo "<tr><td colspan='3' class='text-danger'>Error fetching announcements: " . $e->getMessage() . "</td></tr>";
+                    }
+                    ?>
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+
         
        <!-- Settings Section -->
 <div id="settings-section" class="content-section">
