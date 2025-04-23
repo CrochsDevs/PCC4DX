@@ -194,9 +194,9 @@
         </div>
     </div>
 </footer>
-
-    <!-- Load Google Maps API -->
-    <script>
+</body>
+<!-- Load Google Maps API -->
+<script>
     (g => {
         var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__";
         var m = document, b = window;
@@ -220,8 +220,7 @@
         key: "AIzaSyC-76TlP4VSPEjMYYUOTNvXFhoDRpZqa54",
         v: "beta"
     });
-    </script>
-    <script>
+
     async function initMap() {
         // Import required libraries
         const { Map } = await google.maps.importLibrary("maps");
@@ -440,11 +439,10 @@
 
     // Initialize the map when the window loads
     window.addEventListener('load', initMap);
-    </script>
-    <script src="js/landing.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
+</script>
+<script src="js/landing.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
         function loadLatestAnnouncements() {
             $.ajax({
                 url: 'fetch_latest_announcements.php',
@@ -461,9 +459,7 @@
         $(document).ready(function () {
             loadLatestAnnouncements();
         });
-    </script>
-
-</body>
+</script>
 <div class="social-sidebar">
     <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
     <a href="#" class="social-icon twitter"><i class="fab fa-twitter"></i></a>

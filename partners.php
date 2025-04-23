@@ -2,59 +2,74 @@
 include('db_config.php');
 session_start();
 
-$centerCode = $_SESSION['center_code'];
-
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add'])) {
-        $coop_type = trim($_POST['coop_type']);
-        $partner_name = trim($_POST['partner_name']);
-        $herd_code = trim($_POST['herd_code']);
-        $contact_person = trim($_POST['contact_person']);
-        $contact_number = trim($_POST['contact_number']);
-        $barangay = trim($_POST['barangay']);
-        $municipality = trim($_POST['municipality']);
-        $province = trim($_POST['province']);
-        $is_active = isset($_POST['is_active']) ? 1 : 0;
-
+class PartnerManager {
+    private $conn;
+    private $centerCode;
+    private $partners = [];
+    private $totalPages = 1;
+    private $totalFilteredPartners = 0;
+    
+    public function __construct($conn) {
+        $this->conn = $conn;
+        $this->centerCode = $_SESSION['center_code'] ?? '';
+    }
+    
+    public function handleRequest() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->handlePostRequest();
+        }
+        
+        $this->getPartners();
+        return $this->partners;
+    }
+    
+    private function handlePostRequest() {
+        if (isset($_POST['add'])) {
+            $this->addPartner();
+        } elseif (isset($_POST['edit'])) {
+            $this->updatePartner();
+        } elseif (isset($_POST['delete'])) {
+            $this->deletePartner();
+        } elseif (isset($_POST['toggle_status'])) {
+            $this->togglePartnerStatus();
+        } elseif (isset($_POST['export'])) {
+            $this->exportPartners();
+        }
+    }
+    
+    private function addPartner() {
+        $data = $this->sanitizeInput($_POST);
+        
         try {
             $query = "INSERT INTO partners (partner_name, herd_code, contact_person, contact_number, barangay, municipality, province, is_active, center_code, coop_type) 
                       VALUES (:partner_name, :herd_code, :contact_person, :contact_number, :barangay, :municipality, :province, :is_active, :center_code, :coop_type)";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_name', $partner_name);
-            $stmt->bindParam(':herd_code', $herd_code);
-            $stmt->bindParam(':contact_person', $contact_person);
-            $stmt->bindParam(':contact_number', $contact_number);
-            $stmt->bindParam(':barangay', $barangay);
-            $stmt->bindParam(':municipality', $municipality);
-            $stmt->bindParam(':province', $province);
-            $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->bindParam(':coop_type', $coop_type);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($query);
             
-            $_SESSION['message'] = "Partner added successfully!";
-            $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']); 
-            exit;
+            $stmt->execute([
+                ':partner_name' => $data['partner_name'],
+                ':herd_code' => $data['herd_code'],
+                ':contact_person' => $data['contact_person'],
+                ':contact_number' => $data['contact_number'],
+                ':barangay' => $data['barangay'],
+                ':municipality' => $data['municipality'],
+                ':province' => $data['province'],
+                ':is_active' => $data['is_active'],
+                ':center_code' => $this->centerCode,
+                ':coop_type' => $data['coop_type']
+            ]);
+            
+            $this->setMessage("Partner added successfully!", "success");
+            $this->redirect();
         } catch (PDOException $e) {
-            $_SESSION['message'] = "Error adding partner: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
-            header("Location: ".$_SERVER['PHP_SELF']);
-            exit;
+            $this->setMessage("Error adding partner: " . $e->getMessage(), "danger");
+            $this->redirect();
         }
-    } elseif (isset($_POST['edit'])) {
+    }
+    
+    private function updatePartner() {
+        $data = $this->sanitizeInput($_POST);
         $partner_id = $_POST['partner_id'];
-        $coop_type = trim($_POST['coop_type']);
-        $partner_name = trim($_POST['partner_name']);
-        $herd_code = trim($_POST['herd_code']);
-        $contact_person = trim($_POST['contact_person']);
-        $contact_number = trim($_POST['contact_number']);
-        $barangay = trim($_POST['barangay']);
-        $municipality = trim($_POST['municipality']);
-        $province = trim($_POST['province']);
-        $is_active = isset($_POST['is_active']) ? 1 : 0;
-
+        
         try {
             $query = "UPDATE partners SET 
                       partner_name = :partner_name, 
@@ -67,72 +82,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       is_active = :is_active,
                       coop_type = :coop_type 
                       WHERE id = :partner_id AND center_code = :center_code";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_name', $partner_name);
-            $stmt->bindParam(':herd_code', $herd_code);
-            $stmt->bindParam(':contact_person', $contact_person);
-            $stmt->bindParam(':contact_number', $contact_number);
-            $stmt->bindParam(':barangay', $barangay);
-            $stmt->bindParam(':municipality', $municipality);
-            $stmt->bindParam(':province', $province);
-            $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
-            $stmt->bindParam(':coop_type', $coop_type);
-            $stmt->bindParam(':partner_id', $partner_id);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($query);
             
-            $_SESSION['message'] = "Partner updated successfully!";
-            $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']); 
-            exit;
+            $stmt->execute([
+                ':partner_name' => $data['partner_name'],
+                ':herd_code' => $data['herd_code'],
+                ':contact_person' => $data['contact_person'],
+                ':contact_number' => $data['contact_number'],
+                ':barangay' => $data['barangay'],
+                ':municipality' => $data['municipality'],
+                ':province' => $data['province'],
+                ':is_active' => $data['is_active'],
+                ':coop_type' => $data['coop_type'],
+                ':partner_id' => $partner_id,
+                ':center_code' => $this->centerCode
+            ]);
+            
+            $this->setMessage("Partner updated successfully!", "success");
+            $this->redirect();
         } catch (PDOException $e) {
-            $_SESSION['message'] = "Error updating partner: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
-            header("Location: ".$_SERVER['PHP_SELF']);
-            exit;
+            $this->setMessage("Error updating partner: " . $e->getMessage(), "danger");
+            $this->redirect();
         }
-    } elseif (isset($_POST['delete'])) {
+    }
+    
+    private function deletePartner() {
         $partner_id = $_POST['partner_id'];
+        
         try {
             $query = "DELETE FROM partners WHERE id = :partner_id AND center_code = :center_code";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_id', $partner_id);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([
+                ':partner_id' => $partner_id,
+                ':center_code' => $this->centerCode
+            ]);
             
-            $_SESSION['message'] = "Partner deleted successfully!";
-            $_SESSION['message_type'] = "success";
+            $this->setMessage("Partner deleted successfully!", "success");
         } catch (PDOException $e) {
-            $_SESSION['message'] = "Error deleting partner: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
+            $this->setMessage("Error deleting partner: " . $e->getMessage(), "danger");
         }
-        header("Location: ".$_SERVER['PHP_SELF']);
-        exit;
-    } elseif (isset($_POST['toggle_status'])) {
+        
+        $this->redirect();
+    }
+    
+    private function togglePartnerStatus() {
         $partner_id = $_POST['partner_id'];
+        
         try {
             $query = "UPDATE partners SET is_active = NOT is_active WHERE id = :partner_id AND center_code = :center_code";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':partner_id', $partner_id);
-            $stmt->bindParam(':center_code', $centerCode);
-            $stmt->execute();
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([
+                ':partner_id' => $partner_id,
+                ':center_code' => $this->centerCode
+            ]);
             
-            $_SESSION['message'] = "Partner status updated!";
-            $_SESSION['message_type'] = "success";
-            header("Location: ".$_SERVER['PHP_SELF']);
+            // Get the new status
+            $query = "SELECT is_active FROM partners WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':id' => $partner_id]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'new_status' => $result['is_active']
+            ]);
             exit;
         } catch (PDOException $e) {
-            $_SESSION['message'] = "Error updating status: " . $e->getMessage();
-            $_SESSION['message_type'] = "danger";
-            header("Location: ".$_SERVER['PHP_SELF']);
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Database error: ' . $e->getMessage()
+            ]);
             exit;
         }
-    } elseif (isset($_POST['export'])) {
+    }
+    
+    private function exportPartners() {
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="partners_export_'.date('Y-m-d').'.csv"');
         $output = fopen("php://output", "w");
         fputcsv($output, ['ID', 'Partner Name', 'Partner Type', 'Herd Code', 'Contact Person', 'Contact Number', 'Barangay', 'Municipality', 'Province', 'Status']);
-        foreach ($partners as $row) {
+        
+        foreach ($this->partners as $row) {
             fputcsv($output, [
                 $row['id'],
                 $row['partner_name'],
@@ -146,201 +178,142 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $row['is_active'] ? 'Active' : 'Inactive'
             ]);
         }
+        
         fclose($output);
         exit;
     }
-}
-
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 10;
-$offset = ($page - 1) * $limit;
-
-// Sorting logic
-$sort = $_GET['sort'] ?? 'partner_name';
-$order = $_GET['order'] ?? 'ASC';
-
-// Count total partners
-$totalQuery = $conn->query("SELECT COUNT(*) FROM partners");
-$totalPartners = $totalQuery->fetchColumn();
-$totalPages = ceil($totalPartners / $limit);
-
-// Fetch paginated partners
-$stmt = $conn->prepare("SELECT * FROM partners ORDER BY $sort $order LIMIT :limit OFFSET :offset");
-$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$sort = $_GET['sort'] ?? 'partner_name';
-$order = $_GET['order'] ?? 'ASC';
-$search = $_GET['search'] ?? '';
-$filter = $_GET['filter'] ?? '';
-
-$validColumns = ['partner_name', 'coop_type', 'herd_code', 'is_active'];
-$sort = in_array($sort, $validColumns) ? $sort : 'partner_name';
-$order = in_array(strtoupper($order), ['ASC', 'DESC']) ? strtoupper($order) : 'ASC';
-
-$query = "SELECT * FROM partners WHERE center_code = :center_code";
-$params = [':center_code' => $centerCode];
-
-if (!empty($search)) {
-    $searchTerms = array_map('trim', explode(',', $search));
-    $searchConditions = [];
     
-    foreach ($searchTerms as $index => $term) {
-        if (strtolower($term) === 'active') {
-            $searchConditions[] = "is_active = 1";
-        } elseif (strtolower($term) === 'inactive') {
-            $searchConditions[] = "is_active = 0";
-        } else {
-            $paramName = ":search$index";
-            $searchConditions[] = "(partner_name LIKE $paramName AND herd_code LIKE $paramName AND contact_person LIKE $paramName AND contact_number LIKE $paramName AND municipality LIKE $paramName AND province LIKE $paramName AND coop_type LIKE $paramName)";
-            $params[$paramName] = "%$term%";
+    private function getPartners() {
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+        
+        // Sorting logic
+        $sort = $_GET['sort'] ?? 'partner_name';
+        $order = $_GET['order'] ?? 'ASC';
+        $search = $_GET['search'] ?? '';
+        $filter = $_GET['filter'] ?? '';
+        
+        $validColumns = ['partner_name', 'coop_type', 'herd_code', 'is_active'];
+        $sort = in_array($sort, $validColumns) ? $sort : 'partner_name';
+        $order = in_array(strtoupper($order), ['ASC', 'DESC']) ? strtoupper($order) : 'ASC';
+        
+        // Build base query - always sort by is_active DESC first to prioritize active partners
+        $baseQuery = "SELECT * FROM partners WHERE center_code = :center_code";
+        $countQuery = "SELECT COUNT(*) FROM partners WHERE center_code = :center_code";
+        $params = [':center_code' => $this->centerCode];
+        
+        // Search handling
+        if (!empty($search)) {
+            $searchTerms = array_map('trim', explode(',', $search));
+            $searchConditions = [];
+            
+            foreach ($searchTerms as $index => $term) {
+                if (strtolower($term) === 'active') {
+                    $searchConditions[] = "is_active = 1";
+                } elseif (strtolower($term) === 'inactive') {
+                    $searchConditions[] = "is_active = 0";
+                } else {
+                    $paramName = ":search$index";
+                    $searchConditions[] = "(partner_name LIKE $paramName OR herd_code LIKE $paramName OR contact_person LIKE $paramName OR contact_number LIKE $paramName OR municipality LIKE $paramName OR province LIKE $paramName OR coop_type LIKE $paramName)";
+                    $params[$paramName] = "%$term%";
+                }
+            }
+            
+            if (!empty($searchConditions)) {
+                $baseQuery .= " AND (" . implode(" OR ", $searchConditions) . ")";
+                $countQuery .= " AND (" . implode(" OR ", $searchConditions) . ")";
+            }
+        }
+        
+        // Filter handling
+        if (!empty($filter)) {
+            $filterTypes = explode(',', $filter);
+            $placeholders = implode(',', array_map(function($i) { 
+                return ":filter$i"; 
+            }, array_keys($filterTypes)));
+            
+            $baseQuery .= " AND coop_type IN ($placeholders)";
+            $countQuery .= " AND coop_type IN ($placeholders)";
+            
+            foreach ($filterTypes as $i => $type) {
+                $params[":filter$i"] = $type;
+            }
+        }
+        
+        // Get total count
+        try {
+            $stmt = $this->conn->prepare($countQuery);
+            $stmt->execute($params);
+            $this->totalFilteredPartners = $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            $this->totalFilteredPartners = 0;
+        }
+        
+        $this->totalPages = ceil($this->totalFilteredPartners / $limit);
+        
+        // Add sorting and pagination - always sort by is_active DESC first, then by the selected column
+        $baseQuery .= " ORDER BY is_active DESC, $sort $order LIMIT :limit OFFSET :offset";
+        $params[':limit'] = $limit;
+        $params[':offset'] = $offset;
+        
+        // Fetch partners
+        try {
+            $stmt = $this->conn->prepare($baseQuery);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->execute();
+            $this->partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $this->setMessage("Error fetching partners: " . $e->getMessage(), "danger");
+            $this->partners = [];
         }
     }
     
-    if (!empty($searchConditions)) {
-        $query .= " AND (" . implode(" OR ", $searchConditions) . ")";
+    private function sanitizeInput($data) {
+        return [
+            'coop_type' => trim($data['coop_type']),
+            'partner_name' => trim($data['partner_name']),
+            'herd_code' => trim($data['herd_code']),
+            'contact_person' => trim($data['contact_person']),
+            'contact_number' => trim($data['contact_number']),
+            'barangay' => trim($data['barangay']),
+            'municipality' => trim($data['municipality']),
+            'province' => trim($data['province']),
+            'is_active' => isset($data['is_active']) ? 1 : 0
+        ];
     }
-}
-
-if (!empty($filter)) {
-    $filterTypes = explode(',', $filter);
-    $placeholders = implode(',', array_map(function($i) { 
-        return ":filter$i"; 
-    }, array_keys($filterTypes)));
     
-    $query .= " AND coop_type IN ($placeholders)";
-    
-    foreach ($filterTypes as $i => $type) {
-        $params[":filter$i"] = $type;
+    private function setMessage($message, $type) {
+        $_SESSION['message'] = $message;
+        $_SESSION['message_type'] = $type;
     }
-}
-
-$query .= " ORDER BY $sort $order";
-
-try {
-    $stmt = $conn->prepare($query);
-    $stmt->execute($params);
-    $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $_SESSION['message'] = "Error fetching partners: " . $e->getMessage();
-    $_SESSION['message_type'] = "danger";
-    $partners = [];
-}
-
-if (isset($_POST['toggle_status'])) {
-    $partner_id = $_POST['partner_id'];
     
-    try {
-        // Toggle the status
-        $query = "UPDATE partners SET is_active = NOT is_active WHERE id = :id AND center_code = :center_code";
-        $stmt = $conn->prepare($query);
-        $stmt->bindParam(':id', $partner_id);
-        $stmt->bindParam(':center_code', $centerCode);
-        $stmt->execute();
-
-        // Get the new status
-        $query = "SELECT is_active FROM partners WHERE id = :id";
-        $stmt = $conn->prepare($query);
-        $stmt->bindParam(':id', $partner_id);
-        $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        // Ensure no output before this
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => true,
-            'new_status' => $result['is_active']
-        ]);
-        exit;
-        
-    } catch (PDOException $e) {
-        header('Content-Type: application/json');
-        http_response_code(500);
-        echo json_encode([
-            'error' => 'Database error: ' . $e->getMessage()
-        ]);
+    private function redirect() {
+        header("Location: ".$_SERVER['PHP_SELF']);
         exit;
     }
+    
+    public function getTotalPages() {
+        return $this->totalPages;
+    }
+    
+    public function getTotalFilteredPartners() {
+        return $this->totalFilteredPartners;
+    }
 }
-// Pagination parameters
+
+// Initialize and handle request
+$partnerManager = new PartnerManager($conn);
+$partners = $partnerManager->handleRequest();
+$totalPages = $partnerManager->getTotalPages();
+$totalFilteredPartners = $partnerManager->getTotalFilteredPartners();
+
+// Get current page and calculate offset
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $limit = 10;
 $offset = ($page - 1) * $limit;
-
-// Build base query
-$baseQuery = "SELECT * FROM partners WHERE center_code = :center_code";
-$countQuery = "SELECT COUNT(*) FROM partners WHERE center_code = :center_code";
-$params = [':center_code' => $centerCode];
-
-// Search handling
-if (!empty($search)) {
-    $searchTerms = array_map('trim', explode(',', $search));
-    $searchConditions = [];
-    
-    foreach ($searchTerms as $index => $term) {
-        if (strtolower($term) === 'active') {
-            $searchConditions[] = "is_active = 1";
-        } elseif (strtolower($term) === 'inactive') {
-            $searchConditions[] = "is_active = 0";
-        } else {
-            $paramName = ":search$index";
-            $searchConditions[] = "(partner_name LIKE $paramName OR herd_code LIKE $paramName OR contact_person LIKE $paramName OR contact_number LIKE $paramName OR municipality LIKE $paramName OR province LIKE $paramName OR coop_type LIKE $paramName)";
-            $params[$paramName] = "%$term%";
-        }
-    }
-    
-    if (!empty($searchConditions)) {
-        $baseQuery .= " AND (" . implode(" OR ", $searchConditions) . ")";
-        $countQuery .= " AND (" . implode(" OR ", $searchConditions) . ")";
-    }
-}
-
-// Filter handling
-if (!empty($filter)) {
-    $filterTypes = explode(',', $filter);
-    $placeholders = implode(',', array_map(function($i) { 
-        return ":filter$i"; 
-    }, array_keys($filterTypes)));
-    
-    $baseQuery .= " AND coop_type IN ($placeholders)";
-    $countQuery .= " AND coop_type IN ($placeholders)";
-    
-    foreach ($filterTypes as $i => $type) {
-        $params[":filter$i"] = $type;
-    }
-}
-
-// Get total count
-try {
-    $stmt = $conn->prepare($countQuery);
-    $stmt->execute($params);
-    $totalFilteredPartners = $stmt->fetchColumn();
-} catch (PDOException $e) {
-    $totalFilteredPartners = 0;
-}
-
-$totalPages = ceil($totalFilteredPartners / $limit);
-
-// Add sorting and pagination
-$baseQuery .= " ORDER BY $sort $order LIMIT :limit OFFSET :offset";
-$params[':limit'] = $limit;
-$params[':offset'] = $offset;
-
-// Fetch partners
-try {
-    $stmt = $conn->prepare($baseQuery);
-    foreach ($params as $key => $value) {
-        $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
-    }
-    $stmt->execute();
-    $partners = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $_SESSION['message'] = "Error fetching partners: " . $e->getMessage();
-    $_SESSION['message_type'] = "danger";
-    $partners = [];
-}
 ?>
 
 <!DOCTYPE html>
@@ -356,7 +329,7 @@ try {
     <link rel="stylesheet" href="css/center.css">
     <link rel="stylesheet" href="css/partners.css"> 
 
-    <style>
+<style>
     .pagination-container {
         margin: 20px 0;
         display: flex;
@@ -404,7 +377,8 @@ try {
         background-color: #f8f9fa;
         border-color: #dee2e6;
     }
-    </style>
+</style>
+
 </head>
 <body>
       <!-- Sidebar -->
@@ -522,7 +496,7 @@ try {
                         <div class="input-group" style="max-width: 500px;">
                             <input type="text" id="searchInput" name="search" class="form-control" 
                                 placeholder="Type search terms separated by commas..." 
-                                value="<?= htmlspecialchars($search) ?>">
+                                value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
                             <div class="input-group-append">
                                 <button id="clearSearch" class="btn btn-outline-secondary" type="button">
                                     <i class="fas fa-times"></i>
@@ -536,11 +510,11 @@ try {
 
                     <div class="filter-buttons">
                         <span style="font-weight: 500;">Filter by type:</span>
-                        <a href="#" class="filter-btn all-btn <?= empty($filter) ? 'active' : '' ?>" data-filter="all">All</a>
+                        <a href="#" class="filter-btn all-btn <?= empty($_GET['filter']) ? 'active' : '' ?>" data-filter="all">All</a>
                         <?php 
                         $types = ['Cooperatives', 'Associations', 'LGU', 'SCU', 'Family_Module', 'Corporation'];
                         foreach ($types as $type): 
-                            $isActive = !empty($filter) && in_array($type, explode(',', $filter));
+                            $isActive = !empty($_GET['filter']) && in_array($type, explode(',', $_GET['filter']));
                         ?>
                             <a href="#" class="filter-btn type-btn <?= $isActive ? 'active' : '' ?>" data-filter="<?= $type ?>">
                                 <?= str_replace('_', ' ', $type) ?>
@@ -550,7 +524,7 @@ try {
                 </div>
 
                 <div id="resultsCount" class="mt-3">
-                    <h4>Showing <?= count($partners) ?> of <?= count($partners) ?> partners</h4>
+                    <h4>Showing <?= count($partners) ?> of <?= $totalFilteredPartners ?> partners</h4>
                 </div>
 
                 <div class="table-responsive">
@@ -559,18 +533,18 @@ try {
                             <tr>
                                 <th class="sortable-header" data-sort="partner_name">
                                     Partner Name
-                                    <?php if ($sort === 'partner_name'): ?>
+                                    <?php if (($_GET['sort'] ?? '') === 'partner_name'): ?>
                                     <span class="sort-indicator">
-                                        <?= $order === 'ASC' ? '↑' : '↓' ?>
+                                        <?= ($_GET['order'] ?? '') === 'ASC' ? '↑' : '↓' ?>
                                     </span>
                                     <?php endif; ?>
                                 </th>
                                 <th>Partner Type</th>
                                 <th class="sortable-header" data-sort="herd_code">
                                     Herd Code
-                                    <?php if ($sort === 'herd_code'): ?>
+                                    <?php if (($_GET['sort'] ?? '') === 'herd_code'): ?>
                                     <span class="sort-indicator">
-                                        <?= $order === 'ASC' ? '↑' : '↓' ?>
+                                        <?= ($_GET['order'] ?? '') === 'ASC' ? '↑' : '↓' ?>
                                     </span>
                                     <?php endif; ?>
                                 </th>
@@ -578,9 +552,9 @@ try {
                                 <th>Location</th>
                                 <th class="sortable-header" data-sort="is_active">
                                     Status
-                                    <?php if ($sort === 'is_active'): ?>
+                                    <?php if (($_GET['sort'] ?? '') === 'is_active'): ?>
                                     <span class="sort-indicator">
-                                        <?= $order === 'ASC' ? '↑' : '↓' ?>
+                                        <?= ($_GET['order'] ?? '') === 'ASC' ? '↑' : '↓' ?>
                                     </span>
                                     <?php endif; ?>
                                 </th>
@@ -593,65 +567,58 @@ try {
                                     <td colspan="7" class="text-center">No partners found. Add your first partner!</td>
                                 </tr>
                             <?php else: ?>
-                                <?php 
-                                // Sort partners - active first
-                                usort($partners, function($a, $b) {
-                                    return $b['is_active'] <=> $a['is_active']; // Descending order for active status
-                                });
-                                
-                                foreach ($partners as $partner): 
-                                ?>
-                                    <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
-                                        <td><?= htmlspecialchars($partner['partner_name']) ?></td>
-                                        <td><?= htmlspecialchars($partner['coop_type']) ?></td>
-                                        <td><?= htmlspecialchars($partner['herd_code']) ?></td>
-                                        <td>
-                                            <div><?= htmlspecialchars($partner['contact_person']) ?></div>
-                                            <small class="text-muted"><?= htmlspecialchars($partner['contact_number']) ?></small>
-                                        </td>
-                                        <td>
-                                            <div><?= htmlspecialchars($partner['barangay']) ?></div>
-                                            <small class="text-muted"><?= htmlspecialchars($partner['municipality']) ?>, <?= htmlspecialchars($partner['province']) ?></small>
-                                        </td>
-                                        <td>
-                                            <form class="toggle-status-form" method="POST">
-                                                <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                <button type="submit" name="toggle_status" class="btn btn-sm status-toggle <?= $partner['is_active'] ? 'btn-success' : 'btn-danger' ?>">
-                                                    <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
-                                                </button>
-                                            </form>
-                                        </td>
-                                        <td>
-                                            <div class="action-buttons" onclick="event.stopPropagation()">
-                                                <button class="btn btn-info btn-sm edit-btn"
-                                                        data-id="<?= $partner['id'] ?>"
-                                                        data-coop="<?= htmlspecialchars($partner['coop_type']) ?>"
-                                                        data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
-                                                        data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
-                                                        data-person="<?= htmlspecialchars($partner['contact_person']) ?>"
-                                                        data-number="<?= htmlspecialchars($partner['contact_number']) ?>"
-                                                        data-barangay="<?= htmlspecialchars($partner['barangay']) ?>"
-                                                        data-municipality="<?= htmlspecialchars($partner['municipality']) ?>"
-                                                        data-province="<?= htmlspecialchars($partner['province']) ?>"
-                                                        data-active="<?= $partner['is_active'] ?>">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');" style="display:inline;">
+                                    <?php foreach ($partners as $partner): ?>
+                                        <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
+                                            <td><?= htmlspecialchars($partner['partner_name']) ?></td>
+                                            <td><?= htmlspecialchars($partner['coop_type']) ?></td>
+                                            <td><?= htmlspecialchars($partner['herd_code']) ?></td>
+                                            <td>
+                                                <div><?= htmlspecialchars($partner['contact_person']) ?></div>
+                                                <small class="text-muted"><?= htmlspecialchars($partner['contact_number']) ?></small>
+                                            </td>
+                                            <td>
+                                                <div><?= htmlspecialchars($partner['barangay']) ?></div>
+                                                <small class="text-muted"><?= htmlspecialchars($partner['municipality']) ?>, <?= htmlspecialchars($partner['province']) ?></small>
+                                            </td>
+                                            <td>
+                                                <form class="toggle-status-form" method="POST">
                                                     <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                    <button type="submit" name="delete" class="btn btn-danger btn-sm delete-btn">
-                                                        <i class="fas fa-trash"></i>
+                                                    <button type="submit" name="toggle_status" class="btn btn-sm status-toggle <?= $partner['is_active'] ? 'btn-success' : 'btn-danger' ?>">
+                                                        <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
                                                     </button>
                                                 </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons" onclick="event.stopPropagation()">
+                                                    <button class="btn btn-info btn-sm edit-btn"
+                                                            data-id="<?= $partner['id'] ?>"
+                                                            data-coop="<?= htmlspecialchars($partner['coop_type']) ?>"
+                                                            data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
+                                                            data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
+                                                            data-person="<?= htmlspecialchars($partner['contact_person']) ?>"
+                                                            data-number="<?= htmlspecialchars($partner['contact_number']) ?>"
+                                                            data-barangay="<?= htmlspecialchars($partner['barangay']) ?>"
+                                                            data-municipality="<?= htmlspecialchars($partner['municipality']) ?>"
+                                                            data-province="<?= htmlspecialchars($partner['province']) ?>"
+                                                            data-active="<?= $partner['is_active'] ?>">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');" style="display:inline;">
+                                                        <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
+                                                        <button type="submit" name="delete" class="btn btn-danger btn-sm delete-btn">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>                            
                     </table>
                 </div>
-            </div>
-            <!-- Pagination Section -->
+        </div>
+
 <!-- Pagination Section -->
 <div class="pagination-container">
     <nav aria-label="Page navigation">
@@ -837,10 +804,10 @@ try {
         const partnersTableBody = document.getElementById('partnersTableBody');
         const toggleStatusForms = document.querySelectorAll('.toggle-status-form');
 
-        let currentSort = '<?= $sort ?>';
-        let currentOrder = '<?= $order ?>';
-        let currentFilter = '<?= $filter ?>';
-        let currentSearch = '<?= $search ?>';
+        let currentSort = '<?= $_GET['sort'] ?? 'partner_name' ?>';
+        let currentOrder = '<?= $_GET['order'] ?? 'ASC' ?>';
+        let currentFilter = '<?= $_GET['filter'] ?? '' ?>';
+        let currentSearch = '<?= $_GET['search'] ?? '' ?>';
         let activeFilters = [];
 
         if (currentFilter && currentFilter !== 'all') {
@@ -1426,7 +1393,7 @@ function togglePartnerStatus(form) {
             });
         }
 
-    // navigation.js
+// navigation.js
 document.addEventListener('DOMContentLoaded', () => {
     const currentPage = window.location.pathname.split('/').pop(); // Get current filename (e.g., "partners.php")
 
