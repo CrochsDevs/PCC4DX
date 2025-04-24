@@ -694,15 +694,15 @@ $offset = ($page - 1) * $limit;
                     </div>
                     <div class="form-group">
                         <label for="contact_person" class="form-label">Contact Person</label>
-                        <input type="text" id="contact_person" name="contact_person" class="form-control" required>
+                        <input type="text" id="contact_person" name="contact_person" class="form-control">
                     </div>
                     <div class="form-group">
                         <label for="contact_number" class="form-label">Contact Number</label>
-                        <input type="text" id="contact_number" name="contact_number" class="form-control" required>
+                        <input type="text" id="contact_number" name="contact_number" class="form-control" >
                     </div>
                     <div class="form-group">
                         <label for="barangay" class="form-label">Barangay</label>
-                        <input type="text" id="barangay" name="barangay" class="form-control" required>
+                        <input type="text" id="barangay" name="barangay" class="form-control" >
                     </div>
                     <div class="form-group">
                         <label for="municipality" class="form-label">Municipality</label>
@@ -758,15 +758,15 @@ $offset = ($page - 1) * $limit;
                     </div>
                     <div class="form-group">
                         <label for="edit_person" class="form-label">Contact Person</label>
-                        <input type="text" id="edit_person" name="contact_person" class="form-control" required>
+                        <input type="text" id="edit_person" name="contact_person" class="form-control">
                     </div>
                     <div class="form-group">
                         <label for="edit_number" class="form-label">Contact Number</label>
-                        <input type="text" id="edit_number" name="contact_number" class="form-control" required>
+                        <input type="text" id="edit_number" name="contact_number" class="form-control">
                     </div>
                     <div class="form-group">
                         <label for="edit_barangay" class="form-label">Barangay</label>
-                        <input type="text" id="edit_barangay" name="barangay" class="form-control" required>
+                        <input type="text" id="edit_barangay" name="barangay" class="form-control">
                     </div>
                     <div class="form-group">
                         <label for="edit_municipality" class="form-label">Municipality</label>
