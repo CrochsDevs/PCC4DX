@@ -466,331 +466,45 @@ $offset = ($page - 1) * $limit;
             </div>
         </div>
 
-        <?php if (isset($_SESSION['message'])): ?>
-            <div class="alert alert-<?= $_SESSION['message_type'] === 'success' ? 'success' : 'danger' ?>">
-                <i class="fas fa-<?= $_SESSION['message_type'] === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
-                <span><?= $_SESSION['message'] ?></span>
-            </div>
-            <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
-        <?php endif; ?>
-
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Partners List</h2>
-                <div>
-                    <button id="createBtn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Partner
-                    </button>
-                    <form method="POST" style="display: inline-block;">
-                        <button type="submit" name="export" class="btn btn-success">
-                            <i class="fas fa-file-export"></i> Export
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card-body">
-                <div class="search-filter-bar">
-
-                    <form id="searchForm" class="d-flex gap-2" style="flex-grow: 1;">
-                        <div class="input-group" style="max-width: 500px;">
-                            <input type="text" id="searchInput" name="search" class="form-control" 
-                                placeholder="Type search terms separated by commas..." 
-                                value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-                            <div class="input-group-append">
-                                <button id="clearSearch" class="btn btn-outline-secondary" type="button">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <small class="text-muted">Add commas to narrow your search (e.g., "coop, active")</small>
-                    </form>
-
-                    <div id="searchTermsDisplay" class="search-terms-display mt-2"></div>
-
-                    <div class="filter-buttons">
-                        <span style="font-weight: 500;">Filter by type:</span>
-                        <a href="#" class="filter-btn all-btn <?= empty($_GET['filter']) ? 'active' : '' ?>" data-filter="all">All</a>
-                        <?php 
-                        $types = ['Cooperatives', 'Associations', 'LGU', 'SCU', 'Family_Module', 'Corporation'];
-                        foreach ($types as $type): 
-                            $isActive = !empty($_GET['filter']) && in_array($type, explode(',', $_GET['filter']));
-                        ?>
-                            <a href="#" class="filter-btn type-btn <?= $isActive ? 'active' : '' ?>" data-filter="<?= $type ?>">
-                                <?= str_replace('_', ' ', $type) ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <div id="resultsCount" class="mt-3">
-                    <h4>Showing <?= count($partners) ?> of <?= $totalFilteredPartners ?> partners</h4>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th class="sortable-header" data-sort="partner_name">
-                                    Partner Name
-                                    <?php if (($_GET['sort'] ?? '') === 'partner_name'): ?>
-                                    <span class="sort-indicator">
-                                        <?= ($_GET['order'] ?? '') === 'ASC' ? '↑' : '↓' ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </th>
-                                <th>Partner Type</th>
-                                <th class="sortable-header" data-sort="herd_code">
-                                    Herd Code
-                                    <?php if (($_GET['sort'] ?? '') === 'herd_code'): ?>
-                                    <span class="sort-indicator">
-                                        <?= ($_GET['order'] ?? '') === 'ASC' ? '↑' : '↓' ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </th>
-                                <th>Contact</th>
-                                <th>Location</th>
-                                <th class="sortable-header" data-sort="is_active">
-                                    Status
-                                    <?php if (($_GET['sort'] ?? '') === 'is_active'): ?>
-                                    <span class="sort-indicator">
-                                        <?= ($_GET['order'] ?? '') === 'ASC' ? '↑' : '↓' ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="partnersTableBody">
-                            <?php if (empty($partners)): ?>
-                                <tr>
-                                    <td colspan="7" class="text-center">No partners found. Add your first partner!</td>
-                                </tr>
-                            <?php else: ?>
-                                    <?php foreach ($partners as $partner): ?>
-                                        <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
-                                            <td><?= htmlspecialchars($partner['partner_name']) ?></td>
-                                            <td><?= htmlspecialchars($partner['coop_type']) ?></td>
-                                            <td><?= htmlspecialchars($partner['herd_code']) ?></td>
-                                            <td>
-                                                <div><?= htmlspecialchars($partner['contact_person']) ?></div>
-                                                <small class="text-muted"><?= htmlspecialchars($partner['contact_number']) ?></small>
-                                            </td>
-                                            <td>
-                                                <div><?= htmlspecialchars($partner['barangay']) ?></div>
-                                                <small class="text-muted"><?= htmlspecialchars($partner['municipality']) ?>, <?= htmlspecialchars($partner['province']) ?></small>
-                                            </td>
-                                            <td>
-                                                <form class="toggle-status-form" method="POST">
-                                                    <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                    <button type="submit" name="toggle_status" class="btn btn-sm status-toggle <?= $partner['is_active'] ? 'btn-success' : 'btn-danger' ?>">
-                                                        <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons" onclick="event.stopPropagation()">
-                                                    <button class="btn btn-info btn-sm edit-btn"
-                                                            data-id="<?= $partner['id'] ?>"
-                                                            data-coop="<?= htmlspecialchars($partner['coop_type']) ?>"
-                                                            data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
-                                                            data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
-                                                            data-person="<?= htmlspecialchars($partner['contact_person']) ?>"
-                                                            data-number="<?= htmlspecialchars($partner['contact_number']) ?>"
-                                                            data-barangay="<?= htmlspecialchars($partner['barangay']) ?>"
-                                                            data-municipality="<?= htmlspecialchars($partner['municipality']) ?>"
-                                                            data-province="<?= htmlspecialchars($partner['province']) ?>"
-                                                            data-active="<?= $partner['is_active'] ?>">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');" style="display:inline;">
-                                                        <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                        <button type="submit" name="delete" class="btn btn-danger btn-sm delete-btn">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>                            
-                    </table>
-                </div>
-        </div>
-
-<!-- Pagination Section -->
-<div class="pagination-container">
-    <nav aria-label="Page navigation">
-        <ul class="pagination">
-
-            <!-- Previous Button -->
-            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                <a class="page-link" 
-                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
-                   aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-
-            <!-- Page Numbers -->
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                    <a class="page-link" 
-                       href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>">
-                        <?= $i ?>
-                    </a>
-                </li>
-            <?php endfor; ?>
-
-            <!-- Next Button -->
-            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                <a class="page-link" 
-                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
-                   aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-
-        </ul>
-    </nav>
+             <!-- Entry Section -->
+             <div id="entry-section" class="content-section">
+            <div class="dashboard-card">
+                <h2>New Milk Entry</h2>
+                <form method="POST" class="entry-form">
+                <div class="form-group">
+    <label class="form-label">Start Date (Monday)</label>
+    <input type="date" name="start_date" class="form-input" value="<?= $mondayDate ?>" readonly>
+</div>
+<div class="form-group">
+    <label class="form-label">End Date (Sunday)</label>
+    <input type="date" name="end_date" class="form-input" value="<?= $sundayDate ?>" readonly>
 </div>
 
-<!-- Pagination Summary -->
-<div class="text-center text-muted small">
-    Showing <?= ($offset + 1) ?> to <?= min($offset + $limit, $totalFilteredPartners) ?> of <?= $totalFilteredPartners ?> entries
-</div>
-
-        </div>
-    </div>
-
-    <div id="createModal" class="modal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3 class="modal-title">Add New Partner</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <form method="POST">
-                <div class="modal-body">
                     <div class="form-group">
-                        <label for="coop_type" class="drop-down">Partner Type</label>
-                        <select id="coop_type" name="coop_type" class="form-control" required>
-                            <option value="">-- Select Partner Type --</option>
-                            <option value="Cooperatives">Cooperatives</option>
-                            <option value="Associations">Associations</option>
-                            <option value="LGU">LGU</option>
-                            <option value="SCU">SCU</option>
-                            <option value="Family_Module">Family Module</option>
-                            <option value="Corporation">Corporation</option>
+                        <label class="form-label">Cooperative</label>
+                        <select class="form-input" name="cooperative" required>
+                            <option value="">Select Cooperative</option>
+                            <?php foreach ($partners as $partner): ?>
+                                <option value="<?= $partner['id'] ?>">
+                                    <?= htmlspecialchars($partner['partner_name']) ?> 
+                                    (<?= htmlspecialchars($partner['coop_type']) ?>)
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="partner_name" class="form-label">Partner Name</label>
-                        <input type="text" id="partner_name" name="partner_name" class="form-control" required>
+                        <label class="form-label">Value (kg)</label>
+                        <input type="number" step="0.01" name="quantity" class="form-input" required>
                     </div>
                     <div class="form-group">
-                        <label for="herd_code" class="form-label">Herd Code</label>
-                        <input type="text" id="herd_code" name="herd_code" class="form-control" required>
+                        <label class="form-label">Price (Peso)</label>
+                        <input type="number" step="0.01" name="volume" class="form-input" required>
                     </div>
-                    <div class="form-group">
-                        <label for="contact_person" class="form-label">Contact Person</label>
-                        <input type="text" id="contact_person" name="contact_person" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contact_number" class="form-label">Contact Number</label>
-                        <input type="text" id="contact_number" name="contact_number" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="barangay" class="form-label">Barangay</label>
-                        <input type="text" id="barangay" name="barangay" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="municipality" class="form-label">Municipality</label>
-                        <input type="text" id="municipality" name="municipality" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="province" class="form-label">Province</label>
-                        <input type="text" id="province" name="province" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" id="is_active" name="is_active" class="form-check-input" checked>
-                            <label for="is_active" class="form-check-label">Active Partner</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger modal-cancel">Cancel</button>
-                    <button type="submit" name="add" class="btn btn-primary">Save Partner</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="editModal" class="modal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Partner</h3>
-                <button class="modal-close">&times;</button>
+                   
+                    <button type="submit" name="add_milk" class="submit-btn">Submit Entry</button>
+                </form>
             </div>
-            <form method="POST">
-                <input type="hidden" id="edit_id" name="partner_id">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="edit_coop_type" class="drop-down">Partner Type</label>
-                        <select id="edit_coop_type" name="coop_type" class="form-control" required>
-                            <option value="">-- Select Partner Type --</option>
-                            <option value="Cooperatives">Cooperatives</option>
-                            <option value="Associations">Associations</option>
-                            <option value="LGU">LGU</option>
-                            <option value="SCU">SCU</option>
-                            <option value="Family_Module">Family Module</option>
-                            <option value="Corporation">Corporation</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_name" class="form-label">Partner Name</label>
-                        <input type="text" id="edit_name" name="partner_name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_herd" class="form-label">Herd Code</label>
-                        <input type="text" id="edit_herd" name="herd_code" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_person" class="form-label">Contact Person</label>
-                        <input type="text" id="edit_person" name="contact_person" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_number" class="form-label">Contact Number</label>
-                        <input type="text" id="edit_number" name="contact_number" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_barangay" class="form-label">Barangay</label>
-                        <input type="text" id="edit_barangay" name="barangay" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_municipality" class="form-label">Municipality</label>
-                        <input type="text" id="edit_municipality" name="municipality" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_province" class="form-label">Province</label>
-                        <input type="text" id="edit_province" name="province" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" id="edit_active" name="is_active" class="form-check-input">
-                            <label for="edit_active" class="form-check-label">Active Partner</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger modal-cancel">Cancel</button>
-                    <button type="submit" name="edit" class="btn btn-primary">Update Partner</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+        </div>  
 <script>
         const createBtn = document.getElementById('createBtn');
         const createModal = document.getElementById('createModal');

@@ -120,7 +120,7 @@ $sundayDate = $sunday->format('Y-m-d');
             <ul>
                 <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="partners.php"><i class="fas fa-users"></i> Partners</a></li>
-                <li><a href="#" class="nav-link" data-section="entry-section"><i class="fas fa-edit"></i> New Entry</a></li>
+                <li><a href="new_entry.php"><i class="fas fa-users"></i> New Entry  </a></li>
                 <li><a href="#" class="nav-link" data-section="reports-section"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>

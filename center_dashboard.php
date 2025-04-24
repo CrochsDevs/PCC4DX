@@ -48,7 +48,7 @@ $centerCode = $_SESSION['center_code'];
             <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
             <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
             <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
-            <li><a href="logout.php" class="logout-btn" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            <li><a href="logout.php" class="logout-btn" id="logoutLink" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </div>
                 
@@ -349,27 +349,38 @@ $centerCode = $_SESSION['center_code'];
         });
     }
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('logoutLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        const url = this.href;
-        
-        Swal.fire({
-            title: 'Logout Confirmation',
-            text: "Are you sure you want to logout?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, logout!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
+/*** Logout Confirmation ***/
+function confirmLogout(event) {
+    event.preventDefault();
+    const url = event.currentTarget.href;
+    
+    Swal.fire({
+        title: 'Logout Confirmation',
+        text: "Are you sure you want to logout?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, logout!',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            popup: 'custom-swal-popup',
+            confirmButton: 'custom-confirm-btn',
+            cancelButton: 'custom-cancel-btn'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Add loading state
+            const logoutBtn = event.currentTarget;
+            logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+            
+            // Simulate logout delay
+            setTimeout(() => {
                 window.location.href = url;
-            }
-        });
+            }, 1500);
+        }
     });
-
+}
     document.getElementById('partners-link').addEventListener('click', function (e) {
     e.preventDefault();
     document.getElementById('loader-overlay').style.display = 'flex';

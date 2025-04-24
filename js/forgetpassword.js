@@ -1,52 +1,101 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const forms = {
-        verifyIdentity: document.getElementById('verifyIdentityForm'),
-        resetPassword: document.getElementById('resetPasswordForm'),
-        complete: document.getElementById('completeForm')
-    };
+document.addEventListener('DOMContentLoaded', () => {
+    const forms = document.querySelectorAll('.gov-form');
+    let currentStep = 0;
+    let recoveryData = {};
 
-    // Show password toggle functionality
-    const togglePasswordButtons = document.querySelectorAll('.toggle-password');
-    togglePasswordButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const input = this.previousElementSibling;
-            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-            input.setAttribute('type', type);
-            this.classList.toggle('fa-eye-slash');
+    function showStep(stepIndex) {
+        forms.forEach((form, index) => {
+            form.classList.toggle('active', index === stepIndex);
+        });
+        currentStep = stepIndex;
+    }
+
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-password').forEach(icon => {
+        icon.addEventListener('click', (e) => {
+            const input = e.target.previousElementSibling;
+            input.type = input.type === 'password' ? 'text' : 'password';
+            e.target.classList.toggle('fa-eye-slash');
         });
     });
 
-    // Form submission handlers
-    if (forms.verifyIdentity) {
-        forms.verifyIdentity.addEventListener('submit', function(e) {
-            e.preventDefault();
-            this.classList.remove('active');
-            forms.resetPassword.classList.add('active');
-            
-            // Update progress steps
-            document.querySelectorAll('.progress-step')[0].classList.add('completed');
-            document.querySelectorAll('.progress-step')[1].classList.add('active');
-        });
-    }
+    // Step 1: Verify Identity
+    document.getElementById('verifyIdentityForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            email: document.getElementById('govEmail').value,
+            employee_id: document.getElementById('govEmployeeID').value,
+            captcha: document.querySelector('.captcha-container input').value
+        };
 
-    if (forms.resetPassword) {
-        forms.resetPassword.addEventListener('submit', function(e) {
-            e.preventDefault();
-            this.classList.remove('active');
-            forms.complete.classList.add('active');
+        try {
+            const response = await fetch('verify_identity.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
             
-            // Update progress steps
-            document.querySelectorAll('.progress-step')[1].classList.add('completed');
-            document.querySelectorAll('.progress-step')[2].classList.add('active');
-        });
-    }
+            const result = await response.json();
+            
+            if (result.success) {
+                recoveryData = payload;
+                showStep(1);
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
 
-    // Resend code link
-    const resendLink = document.querySelector('.resend-code');
-    if (resendLink) {
-        resendLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            alert('Verification code has been resent to your email.');
-        });
-    }
+    // Step 2: Reset Password
+    document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            ...recoveryData,
+            verification_code: document.getElementById('verificationCode').value,
+            new_password: document.getElementById('newPassword').value,
+            confirm_password: document.getElementById('confirmPassword').value
+        };
+
+        try {
+            const response = await fetch('reset_password.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showStep(2);
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+
+    // Resend code functionality
+    document.querySelector('.resend-code').addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('verify_identity.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(recoveryData)
+            });
+            
+            const result = await response.json();
+            alert(result.success ? 'New code sent!' : result.message);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to resend code');
+        }
+    });
 });

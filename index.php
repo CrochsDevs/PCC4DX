@@ -110,19 +110,37 @@
         </div>
     </section>
 
-    <!-- Maps -->
-    <section class="Maps">
-    <div id="map-container">
-        <div id="map"></div>
-        <div id="info-panel">
-            <div class="panel-header">Center Details</div>
-            <div class="panel-details">
-                <div id="center-name"></div>
-                <div id="center-location" class="panel-location"></div>
-                <div id="center-contact" class="contact-info"></div>
-            </div>
+  <!-- About Section -->
+  <section class="about-section">
+    <div class="container">
+        <div class="about-content">
+            <h2 class="section-title">About 4DX</h2>
+            <p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities.</p>
+            <a href="#" class="btn-outline">Read More About Us</a>
+        </div>
+        <div class="about-images">
+        <div class="image-grid">
+    <div class="image-container">
+        <img src="images/milkfeeding.jpg" alt="milkpi">
+        <div class="hover-text">Milk Feeding</div>
+    </div>
+    <div class="image-container">
+        <img src="images/calf.jpeg" alt="calf">
+        <div class="hover-text">Calf</div>
+    </div>
+    <div class="image-container">
+        <img src="images/AI.jpg" alt="AI">
+        <div class="hover-text">Artificial Insemination</div>
+    </div>
+    <div class="image-container">
+        <img src="images/milkprodaksyon.jpg" alt="milkpro">
+        <div class="hover-text">Milk Production</div>
+    </div>
+    </div>
+
         </div>
     </div>
+</section>
 
 
 
