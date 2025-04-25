@@ -403,8 +403,8 @@ $offset = ($page - 1) * $limit;
     <nav>
         <ul>
             <li><a href="milk_production.php?section=dashboard-section" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="new_entry.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="new_entry.php" class="nav-link "><i class="fas fa-users"></i> New Entry</a></li>
             <li><a href="milk_production.php?section=reports-section" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>

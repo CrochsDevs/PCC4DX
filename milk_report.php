@@ -12,11 +12,18 @@ class MilkEntryManager {
     }
     
     public function handleSubmission() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
-            $this->validateEntry();
-            $this->saveEntry();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_POST['submit_entry'])) {
+                $this->validateEntry();
+                $this->saveEntry();
+            } elseif (isset($_POST['delete_entry'])) {
+                $this->deleteEntry($_POST['entry_id']);
+            }
         }
-        return $this->getActivePartners();
+        return [
+            'partners' => $this->getActivePartners(),
+            'entries' => $this->getAllEntries()
+        ];
     }
 
     private function validateEntry() {
@@ -36,7 +43,6 @@ class MilkEntryManager {
 
     private function saveEntry() {
         try {
-            // Calculate dates
             $startDate = new DateTime($_POST['entry_date']);
             $endDate = clone $startDate;
             $endDate->modify('+6 days');
@@ -46,21 +52,31 @@ class MilkEntryManager {
                 'end_date' => $endDate->format('Y-m-d'),
                 'partner_id' => $_POST['cooperative'],
                 'quantity' => $_POST['quantity'],
-                'volume' => $_POST['price'], // Using volume field for price per kg
+                'price_per_kg' => $_POST['price'],
                 'total' => $_POST['quantity'] * $_POST['price'],
                 'status' => 'Pending',
                 'center_code' => $this->centerCode
             ];
 
-            $stmt = $this->conn->prepare("INSERT INTO milk_production
-                (entry_date, end_date, partner_id, quantity, volume, total, status, center_code)
-                VALUES (:entry_date, :end_date, :partner_id, :quantity, :volume, :total, :status, :center_code)");
+            $stmt = $this->conn->prepare("INSERT INTO milk_production 
+                (entry_date, end_date, partner_id, quantity, price_per_kg, total, status, center_code)
+                VALUES (:entry_date, :end_date, :partner_id, :quantity, :price_per_kg, :total, :status, :center_code)");
 
             $stmt->execute($data);
-            
             $this->setMessage("Entry saved successfully!", "success");
         } catch (PDOException $e) {
             $this->setMessage("Error: " . $e->getMessage(), "danger");
+        }
+        $this->redirect();
+    }
+
+    private function deleteEntry($id) {
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM milk_production WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $this->setMessage("Entry deleted successfully!", "success");
+        } catch (PDOException $e) {
+            $this->setMessage("Error deleting entry: " . $e->getMessage(), "danger");
         }
         $this->redirect();
     }
@@ -71,6 +87,22 @@ class MilkEntryManager {
                 FROM partners 
                 WHERE center_code = :center_code AND is_active = 1
                 ORDER BY partner_name");
+            $stmt->execute([':center_code' => $this->centerCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
+    private function getAllEntries() {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT mp.*, p.partner_name 
+                FROM milk_production mp
+                JOIN partners p ON mp.partner_id = p.id
+                WHERE mp.center_code = :center_code
+                ORDER BY mp.entry_date DESC
+            ");
             $stmt->execute([':center_code' => $this->centerCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -91,24 +123,9 @@ class MilkEntryManager {
 
 // Initialize and process form
 $entryManager = new MilkEntryManager($conn);
-$partners = $entryManager->handleSubmission();
-
-// Get existing entries for display
-try {
-    $stmt = $conn->prepare("
-        SELECT mp.*, p.partner_name 
-        FROM milk_production mp
-        JOIN partners p ON mp.partner_id = p.id
-        WHERE mp.center_code = :center_code
-        ORDER BY mp.entry_date DESC
-    ");
-    $stmt->execute([':center_code' => $_SESSION['center_code']]);
-    $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $entries = [];
-    $_SESSION['message'] = "Error fetching entries: " . $e->getMessage();
-    $_SESSION['message_type'] = "danger";
-}
+$data = $entryManager->handleSubmission();
+$partners = $data['partners'];
+$entries = $data['entries'];
 ?>
 
 <!DOCTYPE html>
@@ -124,182 +141,124 @@ try {
     <link rel="stylesheet" href="css/center.css">
     <link rel="stylesheet" href="css/partners.css"> 
     <style>
-      
+        :root {
+            --primary: #0056b3;
+            --primary-hover: #004080;
+            --background: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+            --border: #dee2e6;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
 
+        .production-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 30px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
 
-      :root {
+        .entry-form {
+            margin-bottom: 40px;
+        }
 
-    --background: #f8f9fa; /* Background color */
-    --card-bg: #ffffff; /* Card background */
-    --text: #212529; /* Text color */
-    --border: #dee2e6; /* Border color */
-    --focus-border: #0056b3; /* Focus border color */
-    --alert-success: #d4edda; /* Success alert */
-    --alert-danger: #f8d7da; /* Danger alert */
-}
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--background);
-    color: var(--text);
-    margin: 0;
-    padding: 0;
-}
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary);
+        }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    background-color: var(--background);
-    padding: 20px;
-}
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
 
-.entry-form {
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 30px;
-    transition: box-shadow 0.3s ease;
-}
+        .form-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+        }
 
-.entry-form:hover {
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-}
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
 
-.form-group {
-    margin-bottom: 20px;
-}
+        .entries-table th,
+        .entries-table td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
 
-.form-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--primary);
-}
+        .entries-table th {
+            background-color: var(--primary);
+            color: white;
+        }
 
-.form-input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    font-size: 16px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
 
-.form-input:focus {
-    border-color: var(--focus-border);  /* Focus border color */
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.2);  /* Light shadow around the focused input */
-}
+        .status-pending {
+            background-color: var(--warning);
+            color: #000;
+        }
 
-.entries-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--card-bg);
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
-}
+        .status-approved {
+            background-color: var(--success);
+            color: white;
+        }
 
-.entries-table th,
-.entries-table td {
-    padding: 14px 18px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    font-size: 16px;
-}
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
 
-.entries-table th {
-    background-color: var(--primary);
-    color: white;
-    font-weight: bold;
-}
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
 
-.entries-table tr:hover {
-    background-color: #f1f1f1;
-}
+        .btn-delete {
+            background-color: var(--danger);
+            color: white;
+        }
 
-.status-pending {
-    color: #ffc107;
-    font-weight: bold;
-}
-
-.status-approved {
-    color: #28a745;
-    font-weight: bold;
-}
-
-.status-rejected {
-    color: #dc3545;
-    font-weight: bold;
-}
-
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 5px;
-    font-weight: 500;
-}
-
-.alert-success {
-    background-color: var(--alert-success);
-    color: #155724;
-}
-
-.alert-danger {
-    background-color: var(--alert-danger);
-    color: #721c24;
-}
-
-/* Media Queries */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-
-    .entry-form {
-        padding: 20px;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    .form-input {
-        padding: 10px;
-    }
-
-    .entries-table th, .entries-table td {
-        padding: 10px;
-    }
-
-    .status-pending, .status-approved, .status-rejected {
-        font-size: 14px;
-    }
-}
-
-@media (max-width: 480px) {
-    .entry-form {
-        padding: 15px;
-    }
-
-    .form-input {
-        padding: 8px;
-        font-size: 14px;
-    }
-
-    .entries-table th, .entries-table td {
-        padding: 8px;
-    }
-}
-
-
+        @media (max-width: 768px) {
+            .production-container {
+                padding: 20px;
+            }
+            
+            .entries-table th,
+            .entries-table td {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
+     <!-- Sidebar -->
+     <div class="sidebar">
        <!-- User Profile Section -->
         <div class="user-profile">
             <div class="profile-picture">
@@ -321,8 +280,8 @@ body {
         <ul>
             <li><a href="milk_production.php?section=dashboard-section" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
             <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="new_entry.php" class="nav-link active "><i class="fas fa-users"></i> New Entry</a></li>
-            <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+            <li><a href="new_entry.php" class="nav-link  "><i class="fas fa-users"></i> New Entry</a></li>
+            <li><a href="milk_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> Reports</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </nav>
@@ -381,53 +340,52 @@ body {
                 </div>
             </div>
         </div>
-    <div class="container">
-        <?php if(isset($_SESSION['message'])): ?>
-            <div class="alert alert-<?= $_SESSION['message_type'] ?>">
-                <?= $_SESSION['message'] ?>
-                <?php unset($_SESSION['message'], $_SESSION['message_type']); ?>
-            </div>
-        <?php endif; ?>
 
-        <div class="entry-form">
-            <h2>New Milk Entry</h2>
-            <br>
-            <form method="POST">
-                <div class="form-group">
-                    <label class="form-label">Start Date (Monday)</label>
-                    <input type="date" name="entry_date" class="form-input" required>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">Partners </label>
-                    <select class="form-input" name="cooperative" required>
-                        <option value="">Select Partners</option>
-                        <?php foreach ($partners as $partner): ?>
-                            <option value="<?= $partner['id'] ?>">
-                                <?= htmlspecialchars($partner['partner_name']) ?> 
-                                (<?= htmlspecialchars($partner['coop_type']) ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Quantity (kg)</label>
-                    <input type="number" step="0.01" name="quantity" class="form-input" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Price per kg (₱)</label>
-                    <input type="number" step="0.01" name="price" class="form-input" required>
-                </div>
-
-                <button type="submit" name="submit_entry" class="form-input" style="background-color: var(--primary); color: white; cursor: pointer;">
-                    Submit Entry
-                </button>
-            </form>
+            <h2>Production Entries</h2>
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th>Week Start</th>
+                        <th>Week End</th>
+                        <th>Cooperative</th>
+                        <th>Quantity (kg)</th>
+                        <th>Price/kg</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($entries as $entry): ?>
+                    <tr>
+                        <td><?= week('M d, Y', strtotime($entry['e'])) ?></td>
+                        <td><?= date('M d, Y', strtotime($entry['entry_date'])) ?></td>
+                        <td><?= date('M d, Y', strtotime($entry['end_date'])) ?></td>
+                        <td><?= htmlspecialchars($entry['partner_name']) ?></td>
+                        <td><?= number_format($entry['quantity'], 2) ?></td>
+                        <td>₱<?= number_format($entry['volume'], 2) ?></td>
+                        <td>₱<?= number_format($entry['total'], 2) ?></td>
+                        <td>
+                            <span class="status-badge <?= $entry['status'] === 'Approved' ? 'status-approved' : 'status-pending' ?>">
+                                <?= $entry['status'] ?>
+                            </span>
+                        </td>
+                        <td>
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
+                                <button type="submit" name="delete_entry" class="btn btn-delete" 
+                                    onclick="return confirm('Are you sure you want to delete this entry?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
-
-     
+    </div>
 
     <script>
         // Date Validation
