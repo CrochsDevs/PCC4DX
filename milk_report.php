@@ -240,51 +240,6 @@ foreach ($entries as $entry) {
         </div>
 
 
-<<<<<<< HEAD
-            <h2>Production Entries</h2>
-            <table class="entries-table">
-                <thead>
-                    <tr>
-                        <th>Week Start</th>
-                        <th>Week End</th>
-                        <th>Cooperative</th>
-                        <th>Quantity (kg)</th>
-                        <th>Price/kg</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($entries as $entry): ?>
-                    <tr>
-
-                        <td><?= date('M d, Y', strtotime($entry['entry_date'])) ?></td>
-                        <td><?= date('M d, Y', strtotime($entry['end_date'])) ?></td>
-                        <td><?= htmlspecialchars($entry['partner_name']) ?></td>
-                        <td><?= number_format($entry['quantity'], 2) ?></td>
-                        <td>₱<?= number_format($entry['volume'], 2) ?></td>
-                        <td>₱<?= number_format($entry['total'], 2) ?></td>
-                        <td>
-                            <span class="status-badge <?= $entry['status'] === 'Approved' ? 'status-approved' : 'status-pending' ?>">
-                                <?= $entry['status'] ?>
-                            </span>
-                        </td>
-                        <td>
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
-                                <button type="submit" name="delete_entry" class="btn btn-delete" 
-                                    onclick="return confirm('Are you sure you want to delete this entry?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-=======
         <h2>Production Entries</h2>
         <table class="entries-table">
             <thead>
@@ -339,7 +294,6 @@ foreach ($entries as $entry) {
             </tbody>
         </table>
     </div>
->>>>>>> 738816b3cc3e4916a7b08a067f6049415a9cd314
     </div>
 
     <script>
