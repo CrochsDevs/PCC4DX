@@ -52,15 +52,15 @@ class MilkEntryManager {
                 'end_date' => $endDate->format('Y-m-d'),
                 'partner_id' => $_POST['cooperative'],
                 'quantity' => $_POST['quantity'],
-                'price_per_kg' => $_POST['price'],
+                'volume' => $_POST['price'],
                 'total' => $_POST['quantity'] * $_POST['price'],
                 'status' => 'Pending',
                 'center_code' => $this->centerCode
             ];
 
             $stmt = $this->conn->prepare("INSERT INTO milk_production 
-                (entry_date, end_date, partner_id, quantity, price_per_kg, total, status, center_code)
-                VALUES (:entry_date, :end_date, :partner_id, :quantity, :price_per_kg, :total, :status, :center_code)");
+                (entry_date, end_date, partner_id, quantity, volume, total, status, center_code)
+                VALUES (:entry_date, :end_date, :partner_id, :quantity, :volume, :total, :status, :center_code)");
 
             $stmt->execute($data);
             $this->setMessage("Entry saved successfully!", "success");
@@ -126,6 +126,18 @@ $entryManager = new MilkEntryManager($conn);
 $data = $entryManager->handleSubmission();
 $partners = $data['partners'];
 $entries = $data['entries'];
+
+// Calculate totals
+$totalQuantity = 0;
+$totalTotal = 0;
+$totalPrice = 0;
+$count = 0;
+foreach ($entries as $entry) {
+    $totalQuantity += $entry['quantity'];
+    $totalTotal += $entry['total'];
+    $totalPrice += $entry['volume']; 
+    $count ++; 
+}
 ?>
 
 <!DOCTYPE html>
@@ -140,121 +152,7 @@ $entries = $data['entries'];
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="css/center.css">
     <link rel="stylesheet" href="css/partners.css"> 
-    <style>
-        :root {
-            --primary: #0056b3;
-            --primary-hover: #004080;
-            --background: #f8f9fa;
-            --card-bg: #ffffff;
-            --text: #212529;
-            --border: #dee2e6;
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
-        }
-
-        .production-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 30px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .entry-form {
-            margin-bottom: 40px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-input:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
-        }
-
-        .entries-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 30px;
-        }
-
-        .entries-table th,
-        .entries-table td {
-            padding: 14px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .entries-table th {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-
-        .status-pending {
-            background-color: var(--warning);
-            color: #000;
-        }
-
-        .status-approved {
-            background-color: var(--success);
-            color: white;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .btn-delete {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .production-container {
-                padding: 20px;
-            }
-            
-            .entries-table th,
-            .entries-table td {
-                padding: 10px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/milk_report.css"> 
 </head>
 <body>
      <!-- Sidebar -->
@@ -342,6 +240,7 @@ $entries = $data['entries'];
         </div>
 
 
+<<<<<<< HEAD
             <h2>Production Entries</h2>
             <table class="entries-table">
                 <thead>
@@ -385,6 +284,62 @@ $entries = $data['entries'];
                 </tbody>
             </table>
         </div>
+=======
+        <h2>Production Entries</h2>
+        <table class="entries-table">
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Week Start</th>
+                    <th>Week End</th>
+                    <th>Cooperative</th>
+                    <th>Quantity (kg)</th>
+                    <th>Price/kg</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background-color:rgb(198, 198, 198); font-weight: bold;">
+                    <td colspan="4"> Total: <?= number_format($count) ?> </td>
+                    <td><?= number_format($totalQuantity, 2) ?></td>
+                    <td>₱<?= number_format($totalPrice, 2) ?></td> 
+                    <td>₱<?= number_format($totalTotal, 2) ?></td>
+                    <td colspan="2"></td>
+                </tr>
+                <?php foreach ($entries as $entry): ?>
+                <tr>
+                    <td><?= date('o-\WW', strtotime($entry['entry_date'])) ?></td>
+                    <td><?= date('M d, Y', strtotime($entry['entry_date'])) ?></td>
+                    <td><?= date('M d, Y', strtotime($entry['end_date'])) ?></td>
+                    <td><?= htmlspecialchars($entry['partner_name']) ?></td>
+                    <td><?= number_format($entry['quantity'], 2) ?></td>
+                    <td>₱<?= number_format($entry['volume'], 2) ?></td>
+                    <td>₱<?= number_format($entry['total'], 2) ?></td>
+                    <td>
+                        <span class="status-badge <?= $entry['status'] === 'Approved' ? 'status-approved' : 'status-pending' ?>">
+                            <?= $entry['status'] ?>
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
+                            <button type="submit" name="delete_entry" class="btn btn-delete" 
+                                onclick="return confirm('Are you sure you want to delete this entry?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        <a href="edit_entry.php?id=<?= $entry['id'] ?>" class="btn btn-edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+>>>>>>> 738816b3cc3e4916a7b08a067f6049415a9cd314
     </div>
 
     <script>
