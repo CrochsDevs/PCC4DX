@@ -19,6 +19,10 @@
 -- Table structure for table `additional_information`
 --
 
+create database pcc_auth_system;
+
+use pcc_auth_system;
+
 DROP TABLE IF EXISTS `additional_information`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
