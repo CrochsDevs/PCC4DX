@@ -404,7 +404,7 @@ $offset = ($page - 1) * $limit;
         <ul>
             <li><a href="milk_production.php?section=dashboard-section" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
             <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="new_entry.php" class="nav-link "><i class="fas fa-users"></i> New Entry</a></li>
+            <li><a href="new_entry.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="milk_production.php?section=reports-section" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -694,15 +694,15 @@ $offset = ($page - 1) * $limit;
                     </div>
                     <div class="form-group">
                         <label for="contact_person" class="form-label">Contact Person</label>
-                        <input type="text" id="contact_person" name="contact_person" class="form-control">
+                        <input type="text" id="contact_person" name="contact_person" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="contact_number" class="form-label">Contact Number</label>
-                        <input type="text" id="contact_number" name="contact_number" class="form-control" >
+                        <input type="text" id="contact_number" name="contact_number" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="barangay" class="form-label">Barangay</label>
-                        <input type="text" id="barangay" name="barangay" class="form-control" >
+                        <input type="text" id="barangay" name="barangay" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="municipality" class="form-label">Municipality</label>
@@ -758,15 +758,15 @@ $offset = ($page - 1) * $limit;
                     </div>
                     <div class="form-group">
                         <label for="edit_person" class="form-label">Contact Person</label>
-                        <input type="text" id="edit_person" name="contact_person" class="form-control">
+                        <input type="text" id="edit_person" name="contact_person" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="edit_number" class="form-label">Contact Number</label>
-                        <input type="text" id="edit_number" name="contact_number" class="form-control">
+                        <input type="text" id="edit_number" name="contact_number" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="edit_barangay" class="form-label">Barangay</label>
-                        <input type="text" id="edit_barangay" name="barangay" class="form-control">
+                        <input type="text" id="edit_barangay" name="barangay" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="edit_municipality" class="form-label">Municipality</label>
