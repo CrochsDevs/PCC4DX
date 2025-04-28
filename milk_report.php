@@ -179,6 +179,7 @@ foreach ($entries as $entry) {
 
         <nav>
             <ul>
+               <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
                 <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
                 <li><a href="new_entry.php" class="nav-link  "><i class="fas fa-users"></i> New Entry</a></li>
@@ -188,6 +189,7 @@ foreach ($entries as $entry) {
         </nav>
     </div>
     <div>
+        
     <div class="main-content">
         <div class="header">
             <div class="header-left">
@@ -242,10 +244,6 @@ foreach ($entries as $entry) {
             </div>
         </div>
 
-<<<<<<< HEAD
-=======
-
->>>>>>> afd51a4263604fb0c2f18af073ea1b70b5d243d1
         <h2>Production Entries</h2>
         <table class="entries-table">
             <thead>

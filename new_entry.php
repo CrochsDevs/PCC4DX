@@ -320,7 +320,8 @@ body {
 
     <nav>
         <ul>
-            <li><a href="milk_production.php?section=dashboard-section" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+             <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
+            <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
             <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
             <li><a href="new_entry.php" class="nav-link active "><i class="fas fa-users"></i> New Entry</a></li>
             <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>

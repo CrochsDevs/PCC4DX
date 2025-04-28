@@ -13,6 +13,137 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/map.css">
+
+    <style>
+/* General styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+}
+
+/* About Section */
+.about-section {
+    display: flex;
+    justify-content: space-between;
+    padding: 40px 0;
+}
+
+.about-content {
+    flex: 1;
+    padding-right: 30px; /* Adds space between text and images */
+}
+
+.section-title {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.about-content p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.btn-outline {
+    display: inline-block;
+    background-color: transparent;
+    color: #007bff;
+    border: 2px solid #007bff;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.btn-outline:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Images Grid */
+.about-images {
+    flex: 1;
+    margin-left: 30px; /* Adds space between text and images */
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns for images */
+    gap: 20px;
+}
+
+.image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-container:hover img {
+    transform: scale(1.1);
+}
+
+.hover-text {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 1rem;
+    display: none;
+}
+
+.image-container:hover .hover-text {
+    display: block;
+}
+
+/* Responsive Layout - Adjust grid layout for small screens */
+@media (max-width: 1200px) {
+    .image-grid {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns for medium screens */
+    }
+}
+
+@media (max-width: 992px) {
+    .image-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for smaller screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .about-section {
+        flex-direction: column;
+        align-items: center; /* Center the content */
+    }
+
+    .about-content, .about-images {
+        flex: none;
+        width: 100%;
+        margin-bottom: 30px;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+}
+
+
+    </style>
  
 </head>
 <body>
@@ -111,36 +242,37 @@
     </section>
 
   <!-- About Section -->
-  <section class="about-section">
-    <div class="container">
-        <div class="about-content">
-            <h2 class="section-title">About 4DX</h2>
-            <p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities.</p>
-            <a href="#" class="btn-outline">Read More About Us</a>
-        </div>
-        <div class="about-images">
-        <div class="image-grid">
-    <div class="image-container">
-        <img src="images/milkfeeding.jpg" alt="milkpi">
-        <div class="hover-text">Milk Feeding</div>
-    </div>
-    <div class="image-container">
-        <img src="images/calf.jpeg" alt="calf">
-        <div class="hover-text">Calf</div>
-    </div>
-    <div class="image-container">
-        <img src="images/AI.jpg" alt="AI">
-        <div class="hover-text">Artificial Insemination</div>
-    </div>
-    <div class="image-container">
-        <img src="images/milkprodaksyon.jpg" alt="milkpro">
-        <div class="hover-text">Milk Production</div>
-    </div>
+<section class="about-section">
+  <div class="container">
+    <div class="about-content">
+      <h2 class="section-title">About 4DX</h2>
+      <p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities.</p>
+      <a href="#" class="btn-outline">Read More About Us</a>
     </div>
 
+    <div class="about-images">
+      <div class="image-grid">
+        <div class="image-container">
+          <img src="images/milkfeeding.jpg" alt="milkpi">
+          <div class="hover-text">Milk Feeding</div>
         </div>
+        <div class="image-container">
+          <img src="images/calf.jpeg" alt="calf">
+          <div class="hover-text">Calf</div>
+        </div>
+        <div class="image-container">
+          <img src="images/AI.jpg" alt="AI">
+          <div class="hover-text">Artificial Insemination</div>
+        </div>
+        <div class="image-container">
+          <img src="images/milkprodaksyon.jpg" alt="milkpro">
+          <div class="hover-text">Milk Production</div>
+        </div>
+      </div>
     </div>
+  </div>
 </section>
+
 
 
 

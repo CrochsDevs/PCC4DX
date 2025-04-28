@@ -123,7 +123,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <p>Report on milk feeding programs and nutritional supplements for calves.</p>
         </a>
 
-        <a href="milk_production.php" class="service-card">
+        <a href="milk_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
         <p>Report on carabao milk production metrics and quality.</p>
         </a>

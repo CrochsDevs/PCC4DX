@@ -23,7 +23,7 @@ class MilkDashboard {
         $offset = ($page - 1) * $perPage;
         
         $query = "SELECT 
-                      mp.*, 
+                    mp.*, 
                     p.partner_name,
                     WEEK(mp.entry_date, 3) as week_number,
                     DATE_FORMAT(mp.entry_date, '%b %d, %Y') as formatted_entry_date,
@@ -423,14 +423,13 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
                 <?php endif; ?>
             </div>
             <div class="profile-info">
-                <h5 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h5>
+                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
                 <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
             </div>
         </div>
 
         <nav>
             <ul>
-                <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
                 <li><a href="milk_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
                 <li><a href="new_entry.php" class="nav-link"><i class="fas fa-plus-circle"></i> New Entry</a></li>
@@ -487,7 +486,21 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
                 </div>
             </div>
             
-    
+            <div class="col-md-3">
+                <div class="stat-card card mb-4 border-left-success">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 text-success">
+                                <i class="fas fa-peso-sign fa-2x"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">Total Revenue</h6>
+                                <h3 class="mb-0"><?= $totalValue ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="col-md-3">
                 <div class="stat-card card mb-4 border-left-info">
@@ -497,24 +510,8 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
                                 <i class="fas fa-cow fa-2x"></i>
                             </div>
                             <div>
-                                <h6 class="text-muted mb-1">Total Milk Traded</h6>
+                                <h6 class="text-muted mb-1">Total Volume</h6>
                                 <h3 class="mb-0"><?= $totalVolume ?></h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="stat-card card mb-4 border-left-success">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="me-3 text-success">
-                                <i class="fas fa-peso-sign fa-2x"></i>
-                            </div>
-                            <div>
-                                <h6 class="text-muted mb-1">Total Milk Value</h6>
-                                <h3 class="mb-0"><?= $totalValue ?></h3>
                             </div>
                         </div>
                     </div>
