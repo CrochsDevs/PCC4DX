@@ -45,16 +45,17 @@ class MilkEntryManager {
                 'entry_date' => $startDate->format('Y-m-d'),
                 'end_date' => $endDate->format('Y-m-d'),
                 'partner_id' => $_POST['cooperative'],
+                'milk_produce' => $_POST['milk_produce'],
                 'quantity' => $_POST['quantity'],
-                'volume' => $_POST['price'], // Using volume field for price per kg
+                'volume' => $_POST['price'], 
                 'total' => $_POST['quantity'] * $_POST['price'],
                 'status' => 'Pending',
                 'center_code' => $this->centerCode
             ];
 
             $stmt = $this->conn->prepare("INSERT INTO milk_production
-                (entry_date, end_date, partner_id, quantity, volume, total, status, center_code)
-                VALUES (:entry_date, :end_date, :partner_id, :quantity, :volume, :total, :status, :center_code)");
+                (entry_date, end_date, partner_id, milk_produce, quantity, volume, total, status, center_code)
+                VALUES (:entry_date, :end_date, :partner_id, :milk_produce, :quantity, :volume, :total, :status, :center_code)");
 
             $stmt->execute($data);
             
@@ -412,7 +413,12 @@ body {
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Quantity (kg)</label>
+                    <label class="form-label">Milk Produce (kg)</label>
+                    <input type="number" step="0.01" name="milk_produce" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Milk Traded (kg)</label>
                     <input type="number" step="0.01" name="quantity" class="form-input" required>
                 </div>
 

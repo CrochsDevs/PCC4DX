@@ -51,6 +51,7 @@ class MilkEntryManager {
                 'entry_date' => $startDate->format('Y-m-d'),
                 'end_date' => $endDate->format('Y-m-d'),
                 'partner_id' => $_POST['cooperative'],
+                'milk_produce' => $_POST['milk_produce'],
                 'quantity' => $_POST['quantity'],
                 'volume' => $_POST['price'],
                 'total' => $_POST['quantity'] * $_POST['price'],
@@ -59,8 +60,8 @@ class MilkEntryManager {
             ];
 
             $stmt = $this->conn->prepare("INSERT INTO milk_production 
-                (entry_date, end_date, partner_id, quantity, volume, total, status, center_code)
-                VALUES (:entry_date, :end_date, :partner_id, :quantity, :volume, :total, :status, :center_code)");
+                (entry_date, end_date, partner_id, milk_produce, quantity, volume, total, status, center_code)
+                VALUES (:entry_date, :end_date, :partner_id, :milk_produce, :quantity, :volume, :total, :status, :center_code)");
 
             $stmt->execute($data);
             $this->setMessage("Entry saved successfully!", "success");
@@ -128,14 +129,16 @@ $partners = $data['partners'];
 $entries = $data['entries'];
 
 // Calculate totals
+$totalmilk_produce = 0;
 $totalQuantity = 0;
 $totalTotal = 0;
 $totalPrice = 0;
 $count = 0;
 foreach ($entries as $entry) {
+    $totalmilk_produce +=$entry['milk_produce'];
     $totalQuantity += $entry['quantity'];
     $totalTotal += $entry['total'];
-    $totalPrice += $entry['volume']; 
+    $totalPrice += $entry['volume'];  
     $count ++; 
 }
 ?>
@@ -174,15 +177,15 @@ foreach ($entries as $entry) {
         </div>
     </div>
 
-    <nav>
-        <ul>
-            <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="new_entry.php" class="nav-link  "><i class="fas fa-users"></i> New Entry</a></li>
-            <li><a href="milk_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> Reports</a></li>
-            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </nav>
+        <nav>
+            <ul>
+                <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
+                <li><a href="new_entry.php" class="nav-link  "><i class="fas fa-users"></i> New Entry</a></li>
+                <li><a href="milk_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
     </div>
     <div>
     <div class="main-content">
@@ -239,52 +242,6 @@ foreach ($entries as $entry) {
             </div>
         </div>
 
-
-<<<<<<< HEAD
-            <h2>Production Entries</h2>
-            <table class="entries-table">
-                <thead>
-                    <tr>
-                        <th>Week Start</th>
-                        <th>Week End</th>
-                        <th>Cooperative</th>
-                        <th>Quantity (kg)</th>
-                        <th>Price/kg</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($entries as $entry): ?>
-                    <tr>
-
-                        <td><?= date('M d, Y', strtotime($entry['entry_date'])) ?></td>
-                        <td><?= date('M d, Y', strtotime($entry['end_date'])) ?></td>
-                        <td><?= htmlspecialchars($entry['partner_name']) ?></td>
-                        <td><?= number_format($entry['quantity'], 2) ?></td>
-                        <td>₱<?= number_format($entry['volume'], 2) ?></td>
-                        <td>₱<?= number_format($entry['total'], 2) ?></td>
-                        <td>
-                            <span class="status-badge <?= $entry['status'] === 'Approved' ? 'status-approved' : 'status-pending' ?>">
-                                <?= $entry['status'] ?>
-                            </span>
-                        </td>
-                        <td>
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
-                                <button type="submit" name="delete_entry" class="btn btn-delete" 
-                                    onclick="return confirm('Are you sure you want to delete this entry?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-=======
         <h2>Production Entries</h2>
         <table class="entries-table">
             <thead>
@@ -293,7 +250,8 @@ foreach ($entries as $entry) {
                     <th>Week Start</th>
                     <th>Week End</th>
                     <th>Cooperative</th>
-                    <th>Quantity (kg)</th>
+                    <th>Milk Produce (kg)</th>
+                    <th>Milk Trade (kg)</th>
                     <th>Price/kg</th>
                     <th>Total</th>
                     <th>Status</th>
@@ -303,43 +261,45 @@ foreach ($entries as $entry) {
             <tbody>
                 <tr style="background-color:rgb(198, 198, 198); font-weight: bold;">
                     <td colspan="4"> Total: <?= number_format($count) ?> </td>
+                    <td><?= number_format($totalmilk_produce, 2) ?></td>
                     <td><?= number_format($totalQuantity, 2) ?></td>
                     <td>₱<?= number_format($totalPrice, 2) ?></td> 
                     <td>₱<?= number_format($totalTotal, 2) ?></td>
                     <td colspan="2"></td>
                 </tr>
                 <?php foreach ($entries as $entry): ?>
-                <tr>
-                    <td><?= date('o-\WW', strtotime($entry['entry_date'])) ?></td>
-                    <td><?= date('M d, Y', strtotime($entry['entry_date'])) ?></td>
-                    <td><?= date('M d, Y', strtotime($entry['end_date'])) ?></td>
-                    <td><?= htmlspecialchars($entry['partner_name']) ?></td>
-                    <td><?= number_format($entry['quantity'], 2) ?></td>
-                    <td>₱<?= number_format($entry['volume'], 2) ?></td>
-                    <td>₱<?= number_format($entry['total'], 2) ?></td>
-                    <td>
-                        <span class="status-badge <?= $entry['status'] === 'Approved' ? 'status-approved' : 'status-pending' ?>">
-                            <?= $entry['status'] ?>
-                        </span>
-                    </td>
-                    <td>
-                        <form method="POST" style="display: inline;">
-                            <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
-                            <button type="submit" name="delete_entry" class="btn btn-delete" 
-                                onclick="return confirm('Are you sure you want to delete this entry?')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                        <a href="edit_entry.php?id=<?= $entry['id'] ?>" class="btn btn-edit">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                    </td>
-                </tr>
+                    <tr>
+    <td><?= date('o-\WW', strtotime($entry['entry_date'])) ?></td>
+    <td><?= date('M d, Y', strtotime($entry['entry_date'])) ?></td>
+    <td><?= date('M d, Y', strtotime($entry['end_date'])) ?></td>
+    <td><?= htmlspecialchars($entry['partner_name']) ?></td>
+    <td><?= number_format($entry['milk_produce'] ?? 0, 2) ?></td> <!-- Ensure non-null value -->
+    <td><?= number_format($entry['quantity'] ?? 0, 2) ?></td> <!-- Ensure non-null value -->
+    <td>₱<?= number_format($entry['volume'] ?? 0, 2) ?></td> <!-- Ensure non-null value -->
+    <td>₱<?= number_format($entry['total'] ?? 0, 2) ?></td> <!-- Ensure non-null value -->
+    <td>
+        <span class="status-badge <?= $entry['status'] === 'Approved' ? 'status-approved' : 'status-pending' ?>">
+            <?= $entry['status'] ?>
+        </span>
+    </td>
+    <td>
+        <form method="POST" style="display: inline;">
+            <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
+            <button type="submit" name="delete_entry" class="btn btn-delete" 
+                onclick="return confirm('Are you sure you want to delete this entry?')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+        <a href="edit_entry.php?id=<?= $entry['id'] ?>" class="btn btn-edit">
+            <i class="fas fa-edit"></i>
+        </a>
+    </td>
+</tr>
+
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
->>>>>>> 738816b3cc3e4916a7b08a067f6049415a9cd314
     </div>
 
     <script>
