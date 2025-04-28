@@ -242,6 +242,10 @@ foreach ($entries as $entry) {
             </div>
         </div>
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> afd51a4263604fb0c2f18af073ea1b70b5d243d1
         <h2>Production Entries</h2>
         <table class="entries-table">
             <thead>
