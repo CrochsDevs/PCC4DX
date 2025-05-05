@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PCC | All Announcements</title>
+    <title>PCC | Programs and Profiles</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Fonts & Icons -->
@@ -14,44 +14,59 @@
     <link rel="stylesheet" href="css/index.css">
 
     <style>
-        /* Grid Styling for Announcements */
+        /* Grid Styling for Programs */
         .news-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 50px;
+            grid-template-columns: repeat(6, 3fr); 
+            gap: 30px;
             margin-top: 30px;
         }
 
-        /* News Card Styling */
+        /* Program Card Styling */
         .news-card {
             background-color: #fff;
-            padding: 20px;
+            display: flex; /* Horizontal layout */
+            align-items: center;
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
+            max-width: 450px;
+            margin: 0 auto;
         }
 
         .news-card:hover {
             transform: translateY(-5px);
         }
 
-        .news-card h4 {
-            font-size: 18px;
-            margin-bottom: 10px;
+        .news-card img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 20px;
+            flex-shrink: 0;
         }
 
-        .news-card p {
+        .news-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .news-content h4 {
+            font-size: 18px;
+            margin: 0;
+            color: #003366;
+        }
+
+        .news-content p {
             font-size: 14px;
             color: #555;
-        }
-
-        .news-card .date {
-            font-size: 12px;
-            color: #999;
-            margin-top: 15px;
-            display: block;
+            margin-top: 4px;
         }
     </style>
+
 </head>
 <body>
 
@@ -76,8 +91,8 @@
             <ul>
                 <li><a href="index.php">Home</a></li>
                 <li><a href="#">About</a></li>
-                <li><a href="programs.php">Programs</a></li>
-                <li><a href="announcements.php" class="active">News</a></li>
+                <li><a href="programs.php" class="active">Programs</a></li> 
+                <li><a href="announcements.php">News</a></li>
                 <li><a href="#">Contact</a></li>
                 <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Login</a></li>
             </ul>
@@ -86,12 +101,12 @@
     </div>
 </header>
 
-<!-- All Announcements Section -->
+<!-- Programs Section -->
 <section class="news-section" style="padding-top: 60px;">
     <div class="container">
-        <h2 class="section-title">All Announcements</h2>
-        <div class="news-grid" id="announcementGrid">
-            <!-- Loaded via AJAX -->
+        <h2 class="section-title">Our Programs & Staff</h2>
+        <div class="news-grid" id="programsGrid">
+            <!-- Loaded dynamically -->
         </div>
     </div>
 </section>
@@ -161,20 +176,20 @@
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-function loadAllAnnouncements() {
+function loadAllPrograms() {
     $.ajax({
-        url: 'fetch_all_announcements.php',
+        url: 'fetch_all_programs.php',
         method: 'GET',
         success: function (response) {
-            $('#announcementGrid').html(response);
+            $('#programsGrid').html(response);
         },
         error: function () {
-            $('#announcementGrid').html('<p>Error loading announcements.</p>');
+            $('#programsGrid').html('<p>Error loading programs.</p>');
         }
     });
 }
 $(document).ready(function () {
-    loadAllAnnouncements();
+    loadAllPrograms();
 });
 </script>
 

@@ -1,63 +1,276 @@
 <?php
 session_start();
 require 'auth_check.php';
+require 'db_config.php';
 
-// Prevent headquarters users from accessing center dashboard
 if ($_SESSION['user']['center_type'] === 'Headquarters') {
     header('Location: access_denied.php');
     exit;
 }
+
+$centerCode = $_SESSION['user']['center_code'];
+
+class MilkDashboard {
+    private $conn;
+    private $centerCode;
+
+    public function __construct($conn, $centerCode) {
+        $this->conn = $conn;
+        $this->centerCode = $centerCode;
+    }
+
+    public function getProductionData($page = 1, $perPage = 10, $search = '', $month = null, $week = null) {
+        $offset = ($page - 1) * $perPage;
+        
+        $query = "SELECT 
+                      mp.*, 
+                    p.partner_name,
+                    WEEK(mp.entry_date, 3) as week_number,
+                    DATE_FORMAT(mp.entry_date, '%b %d, %Y') as formatted_entry_date,
+                    IFNULL(DATE_FORMAT(mp.end_date, '%b %d, %Y'), 'N/A') as formatted_end_date
+                  FROM milk_production mp
+                  JOIN partners p ON mp.partner_id = p.id
+                  WHERE mp.center_code = :centerCode";
+        
+        $params = [':centerCode' => $this->centerCode];
+        
+        if (!empty($search)) {
+            $query .= " AND (
+                p.partner_name LIKE :search OR
+                mp.status LIKE :search OR
+                mp.quantity LIKE :search OR
+                mp.volume LIKE :search OR
+                mp.total LIKE :search OR
+                DATE_FORMAT(mp.entry_date, '%b %d, %Y') LIKE :search OR
+                DATE_FORMAT(mp.end_date, '%b %d, %Y') LIKE :search
+            )";
+            $params[':search'] = "%$search%";
+        }
+        
+        if ($month) {
+            $query .= " AND DATE_FORMAT(mp.entry_date, '%Y-%m') = :month";
+            $params[':month'] = $month;
+        }
+        
+        if ($week !== null) {
+            $query .= " AND WEEK(mp.entry_date, 3) = :week";
+            $params[':week'] = $week;
+        }
+        
+        $query .= " ORDER BY mp.entry_date DESC
+                  LIMIT :offset, :perPage";
+        
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getTotalRecords($search = '', $month = null, $week = null) {
+        $query = "SELECT COUNT(*) as total
+                  FROM milk_production mp
+                  JOIN partners p ON mp.partner_id = p.id
+                  WHERE mp.center_code = :centerCode";
+        
+        $params = [':centerCode' => $this->centerCode];
+        
+        if (!empty($search)) {
+            $query .= " AND (
+                p.partner_name LIKE :search OR
+                mp.status LIKE :search OR
+                mp.quantity LIKE :search OR
+                mp.volume LIKE :search OR
+                mp.total LIKE :search OR
+                DATE_FORMAT(mp.entry_date, '%b %d, %Y') LIKE :search OR
+                DATE_FORMAT(mp.end_date, '%b %d, %Y') LIKE :search
+            )";
+            $params[':search'] = "%$search%";
+        }
+        
+        if ($month) {
+            $query .= " AND DATE_FORMAT(mp.entry_date, '%Y-%m') = :month";
+            $params[':month'] = $month;
+        }
+        
+        if ($week !== null) {
+            $query .= " AND WEEK(mp.entry_date, 3) = :week";
+            $params[':week'] = $week;
+        }
+        
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
+
+    public function getWeeksInMonth($month) {
+        $query = "SELECT DISTINCT WEEK(entry_date, 3) as week_number 
+                  FROM milk_production 
+                  WHERE center_code = :centerCode 
+                  AND DATE_FORMAT(entry_date, '%Y-%m') = :month 
+                  ORDER BY week_number";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([
+            ':centerCode' => $this->centerCode,
+            ':month' => $month
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
+    public function getSummaryStats($month = null, $week = null) {
+        $query = "SELECT 
+                    SUM(quantity) as total_quantity,
+                    SUM(volume) as total_volume,
+                    SUM(total) as total_value,
+                    COUNT(DISTINCT partner_id) as partner_count,
+                    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_count
+                  FROM milk_production
+                  WHERE center_code = :centerCode";
+        
+        $params = [':centerCode' => $this->centerCode];
+        
+        if ($month) {
+            $query .= " AND DATE_FORMAT(entry_date, '%Y-%m') = :month";
+            $params[':month'] = $month;
+        }
+        
+        if ($week !== null) {
+            $query .= " AND WEEK(entry_date, 3) = :week";
+            $params[':week'] = $week;
+        }
+
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getMonthlyTrends() {
+        $query = "SELECT 
+                    DATE_FORMAT(entry_date, '%Y-%m') as month,
+                    DATE_FORMAT(entry_date, '%b %Y') as month_display,
+                    SUM(quantity) as quantity,
+                    SUM(total) as value
+                  FROM milk_production
+                  WHERE center_code = :centerCode
+                  GROUP BY DATE_FORMAT(entry_date, '%Y-%m')
+                  ORDER BY month DESC
+                  LIMIT 12";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':centerCode', $this->centerCode, PDO::PARAM_STR);
+        $stmt->execute();
+        return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    public function getPartnerDistribution() {
+        $query = "SELECT 
+                    p.partner_name,
+                    SUM(mp.quantity) as total_quantity,
+                    SUM(mp.total) as total_value
+                  FROM milk_production mp
+                  JOIN partners p ON mp.partner_id = p.id
+                  WHERE mp.center_code = :centerCode
+                  GROUP BY p.partner_name
+                  ORDER BY total_value DESC
+                  LIMIT 5";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':centerCode', $this->centerCode, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+// Get parameters
+$selectedMonth = $_GET['month'] ?? date('Y-m');
+$searchTerm = $_GET['search'] ?? '';
+$currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$perPage = 10;
+
+// Initialize dashboard
+$dashboard = new MilkDashboard($conn, $centerCode);
+
+// Get weeks in selected month
+$weeksInMonth = $dashboard->getWeeksInMonth($selectedMonth);
+$totalWeeks = count($weeksInMonth);
+$selectedWeek = $weeksInMonth[$currentPage - 1] ?? null;
+
+// Get data
+$productionData = $dashboard->getProductionData($currentPage, $perPage, $searchTerm, $selectedMonth, $selectedWeek);
+$totalRecords = $dashboard->getTotalRecords($searchTerm, $selectedMonth, $selectedWeek);
+$summaryStats = $dashboard->getSummaryStats($selectedMonth, $selectedWeek);
+$monthlyTrends = $dashboard->getMonthlyTrends();
+$partnerDistribution = $dashboard->getPartnerDistribution();
+
+// Calculate total pages
+$totalPages = ceil($totalRecords / $perPage);
+
+// Format data for display
+$totalQuantity = number_format($summaryStats['total_quantity'] ?? 0, 2);
+$totalVolume = number_format($summaryStats['total_volume'] ?? 0, 2) . ' L';
+$totalValue = '₱' . number_format($summaryStats['total_value'] ?? 0, 2);
+$partnerCount = $summaryStats['partner_count'] ?? 0;
+$pendingCount = $summaryStats['pending_count'] ?? 0;
+
+// Prepare chart data
+$chartLabels = array_column($monthlyTrends, 'month_display');
+$chartQuantities = array_column($monthlyTrends, 'quantity');
+$chartValues = array_column($monthlyTrends, 'value');
+$partnerLabels = array_column($partnerDistribution, 'partner_name');
+$partnerValues = array_column($partnerDistribution, 'total_value');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Milk Production Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root {
-            --primary: #0056b3;
-            --primary-light: #3a7fc5;
-            --secondary: #ffc107;
-            --secondary-light: #ffd54f;
-            --dark: #2d3748;
-            --light: #f8f9fa;
-            --danger: #e53e3e;
-            --danger-light: #feb2b2;
-            --success: #38a169;
-            --success-light: #9ae6b4;
-            --gray: #718096;
-            --gray-light: #e2e8f0;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            --primary: #2A5C82;
+            --primary-light: #3A6C92;
+            --secondary: #5CACEE;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
         }
 
         body {
-            background-color: #f7fafc;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            min-height: 100vh;
-            color: var(--dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            margin-left: 280px;
         }
-        
+
         /* Sidebar Styles */
         .sidebar {
-            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: linear-gradient(180deg, #0056b3 0%, #3a7fc5 100%);
             color: white;
             padding: 2rem 1.5rem;
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 10;
+            z-index: 1000;
+            overflow-y: auto;
         }
-        
+
         .sidebar h2 {
             text-align: center;
             margin-bottom: 2.5rem;
@@ -67,20 +280,21 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             font-size: 1.5rem;
             letter-spacing: 0.5px;
         }
-        
+
         .sidebar ul {
             list-style: none;
+            padding-left: 0;
         }
-        
+
         .sidebar li {
             margin-bottom: 1.25rem;
             transition: transform 0.2s;
         }
-        
+
         .sidebar li:hover {
             transform: translateX(5px);
         }
-        
+
         .sidebar a {
             display: flex;
             align-items: center;
@@ -91,24 +305,48 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             transition: all 0.3s ease;
             font-weight: 500;
         }
-        
+
         .sidebar a i {
             margin-right: 1rem;
             font-size: 1.1rem;
             width: 24px;
             text-align: center;
         }
-        
+
         .sidebar a:hover {
             background: rgba(255, 255, 255, 0.15);
             color: white;
         }
-        
+
         .sidebar a.active {
-            background: var(--secondary);
+            background: #ffc107;
             color: var(--primary);
             font-weight: 600;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-profile {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .profile-picture {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--secondary);
+        }
+
+        .profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .logout-btn {
@@ -122,552 +360,204 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
             text-decoration: none;
             font-weight: 500;
             transition: all 0.3s;
+            margin-top: 2rem;
         }
-        
+
         .logout-btn:hover {
             background-color: #c53030;
             transform: translateY(-2px);
         }
-        
-        /* Main Content Styles */
-        .main-content {
-            padding: 2.5rem;
-            overflow-y: auto;
-        }
-        
-        /* Header Styles */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--gray-light);
-            position: relative;
-        }
-        
-        .header-left, .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        .notification-container {
-            position: relative;
-        }
-        
-        .notification-btn {
-            background: none;
-            border: none;
-            color: var(--dark);
-            font-size: 1.25rem;
-            cursor: pointer;
-            position: relative;
-            padding: 0.5rem;
-            border-radius: 50%;
-            transition: all 0.3s;
-        }
-        
-        .notification-btn:hover {
-            background: var(--gray-light);
-            transform: translateY(-2px);
-        }
-        
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger);
+
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: bold;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
-        .notification-dropdown {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            width: 350px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(10px);
-            transition: all 0.3s;
-        }
-        
-        .notification-container:hover .notification-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .notification-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--gray-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .notification-header h4 {
-            margin: 0;
-            font-size: 1rem;
-            color: var(--dark);
-        }
-        
-        .mark-all-read {
-            color: var(--primary);
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-        
-        .notification-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .notification-item {
-            display: flex;
-            padding: 1rem;
-            gap: 1rem;
-            text-decoration: none;
-            color: var(--dark);
-            border-bottom: 1px solid var(--gray-light);
-            transition: all 0.2s;
-        }
-        
-        .notification-item:hover {
-            background: rgba(0, 86, 179, 0.05);
-        }
-        
-        .notification-item.unread {
-            background: rgba(0, 86, 179, 0.03);
-        }
-        
-        .notification-icon {
-            font-size: 1.25rem;
-            color: var(--primary);
-        }
-        
-        .notification-icon .text-success {
-            color: var(--success);
-        }
-        
-        .notification-icon .text-danger {
-            color: var(--danger);
-        }
-        
-        .notification-content {
-            flex: 1;
-        }
-        
-        .notification-content p {
-            margin: 0 0 0.25rem 0;
-            font-size: 0.9rem;
-        }
-        
-        .notification-content small {
-            color: var(--gray);
-            font-size: 0.8rem;
-        }
-        
-        .notification-footer {
-            padding: 0.75rem 1rem;
-            text-align: center;
-            border-top: 1px solid var(--gray-light);
-        }
-        
-        .notification-footer a {
-            color: var(--primary);
-            font-size: 0.85rem;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        /* Dashboard Styles */
-        .dashboard-title {
-            margin-bottom: 1.75rem;
-            color: var(--primary);
-            font-size: 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-        
-        .dashboard-title i {
-            margin-right: 0.75rem;
-            color: var(--secondary);
-        }
-        
-        .dashboard-description {
-            color: var(--gray);
-            margin-bottom: 2rem;
-            font-size: 1.05rem;
-            max-width: 800px;
-            line-height: 1.6;
-        }
-        
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 1.5rem;
-        }
-        
-        .dashboard-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+
+        .stat-card {
+            border-left: 4px solid;
             transition: all 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        .dashboard-card.notifications {
-            min-height: 180px; /* Slightly shorter */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        
-        .dashboard-card:hover {
+        .stat-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
         }
-        
-        .card-title {
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-        
-        .card-title i {
-            margin-right: 0.75rem;
-            font-size: 1.2rem;
-        }
-        /* Add to your CSS file */
-        .card-link {
-            display: block;
-            color: inherit;
-            text-decoration: none;
-            
-            height: 100%;
-            padding: 0; 
-        }
 
-        .card-link:hover {
-            color: inherit;
-        }
-
-        .dashboard-card {
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-        }
-        
         .chart-container {
-            position: relative;
-            height: 200px;
-            width: 100%;
-            margin-bottom: 1.5rem;
-        }
-        
-        .chart-info {
-            margin-top: 1.5rem;
-        }
-        
-        .chart-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .chart-stats .actual {
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: var(--dark);
-        }
-        
-        .chart-stats .target {
-            color: var(--gray);
-            font-size: 0.95rem;
-            background: var(--gray-light);
-            padding: 0.3rem 0.75rem;
-            border-radius: 20px;
-        }
-        
-        .chart-change {
-            font-size: 0.95rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            font-weight: 500;
-        }
-        
-        .chart-change i {
-            margin-right: 0.5rem;
-        }
-        
-        .chart-change.positive {
-            background-color: rgba(56, 161, 105, 0.1);
-            color: var(--success);
-        }
-        
-        .chart-change.negative {
-            background-color: rgba(229, 62, 62, 0.1);
-            color: var(--danger);
-        }
-        
-        /* User Profile Styles */
-        .user-profile {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            margin-bottom: 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .profile-picture {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1rem;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid var(--secondary);
-        }
-        
-        .profile-picture img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .profile-info {
-            color: white;
-        }
-        
-        .user-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        
-        .user-email {
-            font-size: 0.85rem;
-            opacity: 0.9;
-            word-break: break-word;
-        }
-        
-        /* Content Sections */
-        .content-section {
-            display: none;
-        }
-        
-        .content-section.active {
-            display: block;
-        }
-        
-        /* Services Section */
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-        
-        .service-card {
             background: white;
             border-radius: 10px;
-            padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        
-        .service-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+        .data-table {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        .card-title i {
-            margin-right: 20px;
-            font-size: 1.2em;
-            width: 24px;
-            text-align: center;
+
+        .badge-pending {
+            background-color: #fff3cd;
+            color: #856404;
         }
-        
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            body {
-                grid-template-columns: 240px 1fr;
-            }
-            
-            .sidebar {
-                padding: 1.5rem 1rem;
-            }
-            
-            .main-content {
-                padding: 2rem;
-            }
+
+        .badge-completed {
+            background-color: #d4edda;
+            color: #155724;
         }
-        
-        @media (max-width: 768px) {
-            body {
-                grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                display: none;
-            }
-            
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
+
+        #loadingSpinner {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
+    <!-- Fixed Sidebar -->
     <div class="sidebar">
-       <!-- User Profile Section -->
-<div class="user-profile">
-    <div class="profile-picture">
-        <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-            <!-- Display the uploaded profile image -->
-            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-        <?php else: ?>
-            <!-- Fallback to the generated avatar -->
-            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-        <?php endif; ?>
-    </div>
-    <div class="profile-info">
-        <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-    </div>
-</div>
-
-        <ul>
-            <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> AI Report </a></li>
-            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
-        </ul>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-left">
-                    <h1>Milk Feeding</h1>
+        <div class="user-profile">
+            <div class="profile-picture">
+                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+                <?php else: ?>
+                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+                <?php endif; ?>
             </div>
-            
-            <div class="header-right">
-                <div class="notification-container">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <div class="notification-dropdown">
-                        <div class="notification-header">
-                            <h4>Notifications</h4>
-                            <span class="mark-all-read">Mark all as read</span>
-                        </div>
-                        <div class="notification-list">
-                            <a href="#" class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-users text-primary"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>5 new farmers registered today</p>
-                                    <small>2 hours ago</small>
-                                </div>
-                            </a>
-                            <a href="#" class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-paw text-success"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>New carabao health report available</p>
-                                    <small>5 hours ago</small>
-                                </div>
-                            </a>
-                            <a href="#" class="notification-item">
-                                <div class="notification-icon">
-                                    <i class="fas fa-exclamation-triangle text-danger"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>3 pending requests need approval</p>
-                                    <small>Yesterday</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="notification-footer">
-                            <a href="#">View all notifications</a>
-                        </div>
-                    </div>
-                </div>
-                
-                <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <div class="profile-info">
+                <h5 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h5>
+                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
             </div>
         </div>
-        
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="content-section active">
-            <h2 class="dashboard-title"><i class="fas fa-chart-line"></i> Performance Dashboard</h2>
-            <p class="dashboard-description">Monitor and manage all PCC Headquarters operations. Track key metrics and performance indicators to ensure efficient service delivery.</p>
-            
-            <div class="dashboard-grid">
-                <!-- Farmers Card -->
-               
 
-                <!-- Carabaos Card -->
-               
-
-                <!-- Services Card -->
-                
-
-                <!-- Requests Card -->
-                
-            </div>
-        </div>
-        
-        <!-- Services Section -->
-<div id="services-section" class="content-section">
-    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
-    <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
-    
-   
-</div>
-
-        <!-- Settings Section -->
-        <div id="settings-section" class="content-section">
-            <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
-            <p class="dashboard-description">Configure system settings and user preferences.</p>
-            
-            
-
-            
-            
-           
-        </div>
+        <nav>
+            <ul>
+                <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
+                <li><a href="milkfeeding_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
+                <li><a href="new_entry.php" class="nav-link"><i class="fas fa-plus-circle"></i> New Entry</a></li>
+                <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
     </div>
-<script src="js/admin.js"></script>
+
+
+
+    <script>
+        // Trend Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($chartLabels) ?>,
+                datasets: [
+                    {
+                        label: 'Quantity (kg)',
+                        data: <?= json_encode($chartQuantities) ?>,
+                        backgroundColor: 'rgba(42, 92, 130, 0.7)',
+                        borderColor: 'rgba(42, 92, 130, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Value (₱)',
+                        data: <?= json_encode($chartValues) ?>,
+                        backgroundColor: 'rgba(92, 172, 238, 0.7)',
+                        borderColor: 'rgba(92, 172, 238, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Quantity (kg)' }
+                    },
+                    y1: {
+                        position: 'right',
+                        beginAtZero: true,
+                        title: { display: true, text: 'Value (₱)' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+
+        // Partner Chart
+        const partnerCtx = document.getElementById('partnerChart').getContext('2d');
+        new Chart(partnerCtx, {
+            type: 'doughnut',
+            data: {
+                labels: <?= json_encode($partnerLabels) ?>,
+                datasets: [{
+                    data: <?= json_encode($partnerValues) ?>,
+                    backgroundColor: [
+                        'rgba(42, 92, 130, 0.7)',
+                        'rgba(92, 172, 238, 0.7)',
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(220, 53, 69, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ₱${context.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Month selector change handler
+        $('#monthSelect').change(function() {
+            const month = $(this).val();
+            window.location.href = `?month=${month}&page=1&search=<?= urlencode($searchTerm) ?>`;
+        });
+
+        // AJAX Search Functionality
+        $(document).ready(function() {
+            $('#searchInput').on('keyup', function() {
+                const searchTerm = $(this).val().trim();
+                const month = $('#monthSelect').val();
+                
+                if(searchTerm.length > 2 || searchTerm.length === 0) {
+                    $('#loadingSpinner').show();
+                    
+                    $.ajax({
+                        url: 'search_entries.php',
+                        method: 'POST',
+                        data: { 
+                            search: searchTerm,
+                            month: month,
+                            centerCode: '<?= $centerCode ?>'
+                        },
+                        success: function(response) {
+                            $('#entriesTableBody').html(response);
+                            $('#loadingSpinner').hide();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(error);
+                            $('#entriesTableBody').html('<tr><td colspan="7" class="text-center">Error loading data</td></tr>');
+                            $('#loadingSpinner').hide();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>

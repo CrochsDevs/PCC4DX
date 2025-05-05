@@ -241,9 +241,9 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root {
-            --primary: #2A5C82;
-            --primary-light: #3A6C92;
-            --secondary: #5CACEE;
+            --primary: #0056b3;
+            --primary-light:#0056b3;
+            --secondary:rgb(0, 58, 106);
             --success: #28a745;
             --info: #17a2b8;
             --warning: #ffc107;
@@ -263,12 +263,12 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
             top: 0;
             bottom: 0;
             width: 280px;
-            background: linear-gradient(180deg, #0056b3 0%, #3a7fc5 100%);
+            background: linear-gradient(180deg, #0056b3 0%,rgb(0, 80, 159) 100%);
             color: white;
             padding: 2rem 1.5rem;
             box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            overflow-y: auto;
+      
         }
 
         .sidebar h2 {
@@ -339,14 +339,21 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
             height: 80px;
             margin: 0 auto 1rem;
             border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid var(--secondary);
+            
+            border: 3px solid #ffc107;
+            border-radius: 50%;
         }
+        .user-email {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    word-break: break-word;
+}
 
         .profile-picture img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border-radius: 50%;
         }
 
         .logout-btn {
@@ -409,6 +416,28 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
         #loadingSpinner {
             display: none;
         }
+        /* Add these to your existing CSS */
+.profile-info {
+    max-width: 200px; /* Adjust based on your sidebar width */
+    width: 100%;
+}
+.chart-legend {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -433,7 +462,6 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
                 <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
                 <li><a href="milk_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
-                <li><a href="new_entry.php" class="nav-link"><i class="fas fa-plus-circle"></i> New Entry</a></li>
                 <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>

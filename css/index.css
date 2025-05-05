@@ -364,9 +364,10 @@
   .news-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 50px;
+    gap: 5px; /* Reduced gap between items */
     margin-top: 30px;
 }
+
 
   
   
@@ -858,4 +859,9 @@
     .about-images .image-grid {
         grid-template-columns: 1fr; /* Stack images vertically on smaller screens */
     }
+}
+
+.about-readmore {
+    text-align: center;
+    margin-top: 0;
 }

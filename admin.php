@@ -48,6 +48,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 <ul>
     <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
     <li><a href="#" class="nav-link" data-section="announcement-section"><i class="fas fa-bullhorn"></i> Announcement</a></li>
+    <li><a href="#" class="nav-link" data-section="programs-section"><i class="fas fa-user-friends"></i> Programs</a></li>
     <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-syringe"></i> AI Insemination</a></li>
     <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-cow"></i> Calf Drop</a></li>
     <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-wine-bottle"></i> Milk Feeding</a></li>
@@ -191,6 +192,58 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
         </div>
      
         
+
+                <!-- Programs Section -->
+        <div id="programs-section" class="content-section">
+            <div class="container mt-5">
+                <h2 class="dashboard-title"><i class="fas fa-user-friends"></i> Programs</h2>
+                <div class="mt-4 mb-3">
+                    <!-- Programs management -->
+                    <a href="create_program.php" class="btn btn-success">Add Program</a>
+                </div>
+
+                <!-- Programs List -->
+                <h3 class="mt-4">Program Profiles</h3>
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Profile</th>
+                            <th>Name</th>
+                            <th>Title</th>
+                            <th>Date Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        include 'db_config.php';
+
+                        try {
+                            $stmt = $conn->prepare("SELECT * FROM programs ORDER BY created_at DESC");
+                            $stmt->execute();
+
+                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                $profileImage = $row['profile_image'] ? 'uploads/programs/' . htmlspecialchars($row['profile_image']) : 'images/default-profile.png';
+                                echo "<tr>";
+                                echo "<td><img src='" . $profileImage . "' style='width: 60px; height: 60px; object-fit: cover; border-radius: 50%;'></td>";
+                                echo "<td>" . htmlspecialchars($row['name']) . "</td>";
+                                echo "<td>" . htmlspecialchars($row['title']) . "</td>";
+                                echo "<td>" . htmlspecialchars(date('F j, Y', strtotime($row['created_at']))) . "</td>";
+                                echo "<td>
+                                        <a href='edit-program.php?id=" . $row['id'] . "' class='btn btn-warning btn-sm me-2'>Edit</a>
+                                        <a href='delete-program.php?id=" . $row['id'] . "' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure you want to delete this program profile?\")'>Delete</a>
+                                    </td>";
+                                echo "</tr>";
+                            }
+                        } catch (PDOException $e) {
+                            echo "<tr><td colspan='5' class='text-danger'>Error fetching programs: " . $e->getMessage() . "</td></tr>";
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
 
       <!-- Announcements Section -->
       <div id="announcement-section" class="content-section">

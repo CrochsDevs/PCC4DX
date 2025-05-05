@@ -118,7 +118,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <p>Report on artificial insemination services for carabaos.</p>
         </a>
 
-        <a href="milk_feeding.php" class="service-card">
+        <a href="milkfeeding_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
         <p>Report on milk feeding programs and nutritional supplements for calves.</p>
         </a>
