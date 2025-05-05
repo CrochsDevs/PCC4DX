@@ -37,6 +37,7 @@ body {
 .about-content {
     flex: 1;
     padding-right: 30px; /* Adds space between text and images */
+    margin: 50px;
 }
 
 .section-title {
@@ -56,9 +57,10 @@ body {
     background-color: transparent;
     color: #007bff;
     border: 2px solid #007bff;
-    padding: 10px 20px;
+    width: 400px;
     text-decoration: none;
     border-radius: 5px;
+    
 }
 
 .btn-outline:hover {
@@ -134,7 +136,8 @@ body {
     .about-content, .about-images {
         flex: none;
         width: 100%;
-        margin-bottom: 30px;
+       
+        
     }
 
     .section-title {
@@ -167,16 +170,8 @@ body {
         <nav class="main-nav">
             <ul>
                 <li><a href="#" class="active">Home</a></li>
-                <li><a href="#">About</a></li>
-            
-                <li class="dropdown">
-                    <a href="#">Programs<i class="fas fa-chevron-down"></i></a>
-                    <ul class="dropdown-menu">
-                        <li><a href="https://www.pcc.gov.ph/genetic-improvement/"><i class="fas fa-dna"></i> Genetic Improvement</a></li>
-                        <li><a href="https://www.pcc.gov.ph/enterprise-development/"><i class="fas fa-briefcase"></i> Carabao-based Enterprise Development</a></li>
-                        <li><a href="https://www.pcc.gov.ph/research-for-development/"><i class="fas fa-flask"></i> Research for Development</a></li>
-                    </ul>
-                </li>
+                <li><a href="#">About</a></li>           
+                <li><a href="programs.php">Programs</a></li>
 
                 <li><a href="announcements.php">News</a></li> 
                 <li><a href="#">Contact</a></li>
@@ -241,40 +236,44 @@ body {
         </div>
     </section>
 
-  <!-- About Section -->
+<!-- About Section -->
 <section class="about-section">
-  <div class="container">
-    <div class="about-content">
-      <h2 class="section-title">About 4DX</h2>
-      <p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities.</p>
+  <!-- Left: Text Content -->
+  <div class="about-content">
+    <h2 class="section-title">About 4DX</h2>
+    <p><p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities. In line with its mission, 4DX actively collaborates with local government units, academic institutions, and farming cooperatives to ensure that carabao-related interventions reach even the most remote and underserved rural areas. Its efforts extend to providing continuous training for farmers, promoting the adoption of climate-smart agricultural practices, and improving market access for dairy and meat products derived from carabaos. </p>
+    </p>
+
+    <!-- ✅ Move button here -->
+    <div class="section-footer about-readmore">
+        <a href="#" class="btn-outline">Read more</a>
     </div>
 
-    <div class="about-images">
-      <div class="image-grid">
-        <div class="image-container">
-          <img src="images/milkfeeding.jpg" alt="milkpi">
-          <div class="hover-text">Milk Feeding</div>
-        </div>
-        <div class="image-container">
-          <img src="images/calf.jpeg" alt="calf">
-          <div class="hover-text">Calf</div>
-        </div>
-        <div class="image-container">
-          <img src="images/AI.jpg" alt="AI">
-          <div class="hover-text">Artificial Insemination</div>
-        </div>
-        <div class="image-container">
-          <img src="images/milkprodaksyon.jpg" alt="milkpro">
-          <div class="hover-text">Milk Production</div>
-        </div>
-        <div class="section-footer" style="text-align: center;">
-    <a href="#" class="btn-outline">Read more</a>
-</div>
+  </div>
 
+  <!-- Right: Image Grid -->
+  <div class="about-images">
+    <div class="image-grid">
+      <div class="image-container">
+        <img src="images/milkfeeding.jpg" alt="milkpi">
+        <div class="hover-text">Milk Feeding</div>
+      </div>
+      <div class="image-container">
+        <img src="images/calf.jpeg" alt="calf">
+        <div class="hover-text">Calf</div>
+      </div>
+      <div class="image-container">
+        <img src="images/AI.jpg" alt="AI">
+        <div class="hover-text">Artificial Insemination</div>
+      </div>
+      <div class="image-container">
+        <img src="images/milkprodaksyon.jpg" alt="milkpro">
+        <div class="hover-text">Milk Production</div>
       </div>
     </div>
   </div>
 </section>
+
 
 
 
