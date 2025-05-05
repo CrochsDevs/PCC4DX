@@ -432,7 +432,7 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
             <ul>
                 <li><a href="milk_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
-                <li><a href="new_entry.php" class="nav-link"><i class="fas fa-plus-circle"></i> New Entry</a></li>
+                <li><a href="mp_entry.php" class="nav-link "><i class="fas fa-users"></i> New Entry</a></li>
                 <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>

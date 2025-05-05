@@ -133,6 +133,7 @@ $currentMondayStr = $currentMonday->format('Y-m-d');
     <link rel="stylesheet" href="css/center.css">
     <link rel="stylesheet" href="css/partners.css"> 
     <style>
+<<<<<<< HEAD:new_entry.php
         :root {
             --primary: #0056b3;
             --background: #f8f9fa;
@@ -259,6 +260,174 @@ $currentMondayStr = $currentMonday->format('Y-m-d');
             .form-input {
                 padding: 10px;
             }
+=======
+      
+      :root {
+
+        --background: #f8f9fa; /* Background color */
+        --card-bg: #ffffff; /* Card background */
+        --text: #212529; /* Text color */
+        --border: #dee2e6; /* Border color */
+        --focus-border: #0056b3; /* Focus border color */
+        --alert-success: #d4edda; /* Success alert */
+        --alert-danger: #f8d7da; /* Danger alert */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--background);
+            padding: 20px;
+        }
+
+        .entry-form {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .entry-form:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--focus-border);  /* Focus border color */
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.2);  /* Light shadow around the focused input */
+        }
+
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .entries-table th,
+        .entries-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 16px;
+        }
+
+        .entries-table th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+
+        .entries-table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .status-pending {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .status-approved {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-rejected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: var(--alert-success);
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: var(--alert-danger);
+            color: #721c24;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .entry-form {
+                padding: 20px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-input {
+                padding: 10px;
+            }
+
+            .entries-table th, .entries-table td {
+                padding: 10px;
+            }
+
+            .status-pending, .status-approved, .status-rejected {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .entry-form {
+                padding: 15px;
+            }
+
+            .form-input {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            .entries-table th, .entries-table td {
+                padding: 8px;
+            }
+>>>>>>> 1b2875462e4a0a475a35d9c746aee1d51dc2790d:mp_entry.php
         }
 
         @media (max-width: 480px) {
@@ -291,6 +460,7 @@ $currentMondayStr = $currentMonday->format('Y-m-d');
             </div>
         </div>
 
+<<<<<<< HEAD:new_entry.php
         <nav>
             <ul>
                 <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
@@ -301,6 +471,18 @@ $currentMondayStr = $currentMonday->format('Y-m-d');
                 <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
+=======
+    <nav>
+        <ul>
+             <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
+            <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="partners.php" class="nav-link "><i class="fas fa-users"></i> Partners</a></li>
+            <li><a href="mp_entry.php" class="nav-link active "><i class="fas fa-users"></i> New Entry</a></li>
+            <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+>>>>>>> 1b2875462e4a0a475a35d9c746aee1d51dc2790d:mp_entry.php
     </div>
     
     <div class="main-content">
@@ -406,6 +588,7 @@ $currentMondayStr = $currentMonday->format('Y-m-d');
                         <input type="number" step="0.01" name="volume" class="form-input" required>
                     </div>
 
+<<<<<<< HEAD:new_entry.php
                     <button type="submit" name="submit_entry" id="submitBtn" class="btn-submit">
                         <i class="fas fa-save"></i> Submit Entry
                     </button>
@@ -413,6 +596,15 @@ $currentMondayStr = $currentMonday->format('Y-m-d');
             </div>
         </div>
     </div>
+=======
+                <button type="submit" name="submit_entry" class="form-input" style="background-color: var(--primary); color: white; cursor: pointer;">
+                    Submit Entry
+                </button>
+            </form>
+    </div>
+
+     
+>>>>>>> 1b2875462e4a0a475a35d9c746aee1d51dc2790d:mp_entry.php
 
     <script>
    document.getElementById('entryForm').addEventListener('submit', function(e) {

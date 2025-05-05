@@ -1,546 +1,161 @@
 <?php
 session_start();
 require 'auth_check.php';
+include('db_config.php');
 
 // Prevent headquarters users from accessing center dashboard
 if ($_SESSION['user']['center_type'] === 'Headquarters') {
     header('Location: access_denied.php');
     exit;
 }
+
+class CalfDropManager {
+    private $db;
+    private $centerCode;
+    
+    public function __construct($db, $centerCode) {
+        $this->db = $db;
+        $this->centerCode = $centerCode;
+    }
+    
+    public function saveRecord($data) {
+        $query = "INSERT INTO calf_drop (ai, bep, ih, private, center, date) 
+                  VALUES (:ai, :bep, :ih, :private, :center, :date)";
+        $stmt = $this->db->prepare($query);
+        
+        return $stmt->execute([
+            ':ai' => $data['ai'],
+            ':bep' => $data['bep'],
+            ':ih' => $data['ih'],
+            ':private' => $data['private'],
+            ':center' => $this->centerCode,
+            ':date' => $data['date']
+        ]);
+    }
+    
+    public function validateInput($data) {
+        $errors = [];
+        
+        if (!is_numeric($data['ai']) || $data['ai'] < 0) {
+            $errors[] = "AI must be a positive number";
+        }
+        
+        if (!is_numeric($data['bep']) || $data['bep'] < 0) {
+            $errors[] = "BEP must be a positive number";
+        }
+        
+        if (!is_numeric($data['ih']) || $data['ih'] < 0) {
+            $errors[] = "IH must be a positive number";
+        }
+        
+        if (!is_numeric($data['private']) || $data['private'] < 0) {
+            $errors[] = "Private must be a positive number";
+        }
+        
+        return $errors;
+    }
+}
+
+$centerCode = $_SESSION['center_code'];
+$calfDropManager = new CalfDropManager($conn, $centerCode);
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
+    $data = [
+        'ai' => $_POST['ai'] ?? 0,
+        'bep' => $_POST['bep'] ?? 0,
+        'ih' => $_POST['ih'] ?? 0,
+        'private' => $_POST['private'] ?? 0,
+        'date' => date('Y-m-d')
+    ];
+    
+    $errors = $calfDropManager->validateInput($data);
+    
+    if (empty($errors)) {
+        $success = $calfDropManager->saveRecord($data);
+        if ($success) {
+            $_SESSION['success_message'] = "Record saved successfully!";
+            // header("Location: ".$_SERVER['PHP_SELF']);
+            // exit;
+            echo "<script>sessionStorage.setItem('showSuccess', '1'); window.location.href = '".$_SERVER['PHP_SELF']."';</script>";
+            exit;
+        } else {
+            $errors[] = "Failed to save record. Please try again.";
+        }
+    }
+    
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/milk_report.css">
+    <link rel="stylesheet" href="css/calf.css">
     <style>
-        :root {
-            --primary: #0056b3;
-            --primary-light: #3a7fc5;
-            --secondary: #ffc107;
-            --secondary-light: #ffd54f;
-            --dark: #2d3748;
-            --light: #f8f9fa;
-            --danger: #e53e3e;
-            --danger-light: #feb2b2;
-            --success: #38a169;
-            --success-light: #9ae6b4;
-            --gray: #718096;
-            --gray-light: #e2e8f0;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body {
-            background-color: #f7fafc;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            min-height: 100vh;
-            color: var(--dark);
-        }
-        
-        /* Sidebar Styles */
-        .sidebar {
-            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 2rem 1.5rem;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 10;
-        }
-        
-        .sidebar h2 {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-weight: 600;
-            font-size: 1.5rem;
-            letter-spacing: 0.5px;
-        }
-        
-        .sidebar ul {
-            list-style: none;
-        }
-        
-        .sidebar li {
-            margin-bottom: 1.25rem;
-            transition: transform 0.2s;
-        }
-        
-        .sidebar li:hover {
-            transform: translateX(5px);
-        }
-        
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            padding: 0.9rem 1.25rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .sidebar a i {
-            margin-right: 1rem;
-            font-size: 1.1rem;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .sidebar a:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-        
-        .sidebar a.active {
-            background: var(--secondary);
-            color: var(--primary);
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .logout-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background-color: red;
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .logout-btn:hover {
-            background-color: #c53030;
-            transform: translateY(-2px);
-        }
-        
-        /* Main Content Styles */
-        .main-content {
-            padding: 2.5rem;
-            overflow-y: auto;
-        }
-        
-        /* Header Styles */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--gray-light);
-            position: relative;
-        }
-        
-        .header-left, .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        .notification-container {
-            position: relative;
-        }
-        
-        .notification-btn {
-            background: none;
-            border: none;
-            color: var(--dark);
-            font-size: 1.25rem;
-            cursor: pointer;
-            position: relative;
-            padding: 0.5rem;
-            border-radius: 50%;
-            transition: all 0.3s;
-        }
-        
-        .notification-btn:hover {
-            background: var(--gray-light);
-            transform: translateY(-2px);
-        }
-        
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-        
-        .notification-dropdown {
-            position: absolute;
-            right: 0;
-            top: 100%;
-            width: 350px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(10px);
-            transition: all 0.3s;
-        }
-        
-        .notification-container:hover .notification-dropdown {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .notification-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--gray-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .notification-header h4 {
-            margin: 0;
-            font-size: 1rem;
-            color: var(--dark);
-        }
-        
-        .mark-all-read {
-            color: var(--primary);
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-        
-        .notification-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .notification-item {
-            display: flex;
-            padding: 1rem;
-            gap: 1rem;
-            text-decoration: none;
-            color: var(--dark);
-            border-bottom: 1px solid var(--gray-light);
-            transition: all 0.2s;
-        }
-        
-        .notification-item:hover {
-            background: rgba(0, 86, 179, 0.05);
-        }
-        
-        .notification-item.unread {
-            background: rgba(0, 86, 179, 0.03);
-        }
-        
-        .notification-icon {
-            font-size: 1.25rem;
-            color: var(--primary);
-        }
-        
-        .notification-icon .text-success {
-            color: var(--success);
-        }
-        
-        .notification-icon .text-danger {
-            color: var(--danger);
-        }
-        
-        .notification-content {
-            flex: 1;
-        }
-        
-        .notification-content p {
-            margin: 0 0 0.25rem 0;
-            font-size: 0.9rem;
-        }
-        
-        .notification-content small {
-            color: var(--gray);
-            font-size: 0.8rem;
-        }
-        
-        .notification-footer {
-            padding: 0.75rem 1rem;
-            text-align: center;
-            border-top: 1px solid var(--gray-light);
-        }
-        
-        .notification-footer a {
-            color: var(--primary);
-            font-size: 0.85rem;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        /* Dashboard Styles */
-        .dashboard-title {
-            margin-bottom: 1.75rem;
-            color: var(--primary);
-            font-size: 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-        
-        .dashboard-title i {
-            margin-right: 0.75rem;
-            color: var(--secondary);
-        }
-        
-        .dashboard-description {
-            color: var(--gray);
-            margin-bottom: 2rem;
-            font-size: 1.05rem;
-            max-width: 800px;
-            line-height: 1.6;
-        }
-        
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-top: 1.5rem;
-        }
-        
-        .dashboard-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        .dashboard-card.notifications {
-            min-height: 180px; /* Slightly shorter */
-        }
-
-        
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-title {
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-        
-        .card-title i {
-            margin-right: 0.75rem;
-            font-size: 1.2rem;
-        }
-        /* Add to your CSS file */
-        .card-link {
-            display: block;
-            color: inherit;
-            text-decoration: none;
-            
-            height: 100%;
-            padding: 0; 
-        }
-
-        .card-link:hover {
-            color: inherit;
-        }
-
-        .dashboard-card {
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 200px;
-            width: 100%;
-            margin-bottom: 1.5rem;
-        }
-        
-        .chart-info {
-            margin-top: 1.5rem;
-        }
-        
-        .chart-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .chart-stats .actual {
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: var(--dark);
-        }
-        
-        .chart-stats .target {
-            color: var(--gray);
-            font-size: 0.95rem;
-            background: var(--gray-light);
-            padding: 0.3rem 0.75rem;
-            border-radius: 20px;
-        }
-        
-        .chart-change {
-            font-size: 0.95rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            font-weight: 500;
-        }
-        
-        .chart-change i {
-            margin-right: 0.5rem;
-        }
-        
-        .chart-change.positive {
-            background-color: rgba(56, 161, 105, 0.1);
-            color: var(--success);
-        }
-        
-        .chart-change.negative {
-            background-color: rgba(229, 62, 62, 0.1);
-            color: var(--danger);
-        }
-        
-        /* User Profile Styles */
-        .user-profile {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            margin-bottom: 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .profile-picture {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1rem;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid var(--secondary);
-        }
-        
-        .profile-picture img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .profile-info {
-            color: white;
-        }
-        
-        .user-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        
-        .user-email {
-            font-size: 0.85rem;
-            opacity: 0.9;
-            word-break: break-word;
-        }
-        
-        /* Content Sections */
-        .content-section {
+        /* Modal */
+        .modal {
             display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
         }
-        
-        .content-section.active {
-            display: block;
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        
-        /* Services Section */
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
+        .modal-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
-        
-        .service-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+        .modal-footer {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+            text-align: right;
         }
-        
-        .service-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
-        .card-title i {
-            margin-right: 20px;
-            font-size: 1.2em;
-            width: 24px;
-            text-align: center;
+        .summary-total {
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
         }
-        
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            body {
-                grid-template-columns: 240px 1fr;
-            }
-            
-            .sidebar {
-                padding: 1.5rem 1rem;
-            }
-            
-            .main-content {
-                padding: 2rem;
-            }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
         }
-        
-        @media (max-width: 768px) {
-            body {
-                grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                display: none;
-            }
-            
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
+        .btn-confirm {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-cancel {
+            background-color: #dc3545;
+            color: white;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -548,27 +163,29 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <!-- Sidebar -->
     <div class="sidebar">
        <!-- User Profile Section -->
-<div class="user-profile">
-    <div class="profile-picture">
-        <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-            <!-- Display the uploaded profile image -->
-            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-        <?php else: ?>
-            <!-- Fallback to the generated avatar -->
-            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-        <?php endif; ?>
-    </div>
-    <div class="profile-info">
-        <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-    </div>
-</div>
+        <div class="user-profile">
+            <div class="profile-picture">
+                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+                <?php else: ?>
+                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+                <?php endif; ?>
+            </div>
+            <div class="profile-info">
+                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+            </div>
+        </div>
 
-        <ul>
-            <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> AI Report </a></li>
-            <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
-        </ul>
+        <nav>
+            <ul>
+                <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
+                <li><a href="cd_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="calf_drop.php" class="nav-link active"><i class="fas fa-plus-circle"></i> Calf Drop</a></li>
+                <li><a href="cd_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
     </div>
 
     <!-- Main Content -->
@@ -576,9 +193,9 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                    <h1>Calf Drop</h1>
+                <h1>Calf Drop</h1>
             </div>
-            
+            <!-- Notification Section -->   
             <div class="header-right">
                 <div class="notification-container">
                     <button class="notification-btn">
@@ -630,44 +247,143 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         </div>
         
         <!-- Dashboard Section -->
-        <div id="dashboard-section" class="content-section active">
-            <h2 class="dashboard-title"><i class="fas fa-chart-line"></i> Performance Dashboard</h2>
-            <p class="dashboard-description">Monitor and manage all PCC Headquarters operations. Track key metrics and performance indicators to ensure efficient service delivery.</p>
+        <div class="container">
+            <?php if (!empty($_SESSION['success_message'])): ?>
+                <div class="alert alert-success">
+                    <?= $_SESSION['success_message'] ?>
+                </div>
+                <?php unset($_SESSION['success_message']); ?>
+            <?php endif; ?>
             
-            <div class="dashboard-grid">
-                <!-- Farmers Card -->
-               
-
-                <!-- Carabaos Card -->
-               
-
-                <!-- Services Card -->
-                
-
-                <!-- Requests Card -->
-                
-            </div>
-        </div>
-        
-        <!-- Services Section -->
-<div id="services-section" class="content-section">
-    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
-    <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
-    
-   
-</div>
-
-        <!-- Settings Section -->
-        <div id="settings-section" class="content-section">
-            <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
-            <p class="dashboard-description">Configure system settings and user preferences.</p>
+            <?php if (!empty($errors)): ?>
+                <div class="alert alert-danger">
+                    <?php foreach ($errors as $error): ?>
+                        <p><?= $error ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
             
-            
+            <div class="entry-form">
+                <h2>Daily Calf Drop</h2>
+                <br>
+                <form id="calfDropForm" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">AI</label>
+                        <input type="number" step="1" name="ai" id="ai" class="form-input" value="0" min="0">
+                    </div>
 
-            
-            
-           
+                    <div class="form-group">
+                        <label class="form-label">BEP</label>
+                        <input type="number" step="1" name="bep" id="bep" class="form-input" value="0" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">IH</label>
+                        <input type="number" step="1" name="ih" id="ih" class="form-input" value="0" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Private</label>
+                        <input type="number" step="1" name="private" id="private" class="form-input" value="0" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" id="date" class="form-input" value="<?= date('Y-m-d') ?>">
+                    </div>
+
+                    <button type="button" id="submitBtn" class="form-input" style="background-color: var(--primary); color: white; cursor: pointer;">
+                        Submit Entry
+                    </button>
+                </form>
+            </div>      
         </div>
     </div>
-<script src="js/admin.js"></script>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Calf Drop Entry</h3>
+            </div>
+            <div class="modal-body">
+                <div id="summaryContent">
+                    <!-- Summary will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
+                <button type="button" class="btn btn-confirm" id="confirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Show confirmation modal when submit button is clicked
+            $('#submitBtn').click(function(e) {
+                e.preventDefault();
+                
+                // Get form values
+                const ai = parseInt($('#ai').val()) || 0;
+                const bep = parseInt($('#bep').val()) || 0;
+                const ih = parseInt($('#ih').val()) || 0;
+                const privateVal = parseInt($('#private').val()) || 0;
+                const date = $('#date').val();
+                const total = ai + bep + ih + privateVal;
+                
+                // Build summary HTML
+                let summaryHtml = `
+                    <div class="summary-item"><span>AI:</span><span>${ai}</span></div>
+                    <div class="summary-item"><span>BEP:</span><span>${bep}</span></div>
+                    <div class="summary-item"><span>IH:</span><span>${ih}</span></div>
+                    <div class="summary-item"><span>Private:</span><span>${privateVal}</span></div>
+                    <div class="summary-item"><span>Date:</span><span>${date}</span></div>
+                    <div class="summary-total"><span>Total Calves:</span><span>${total}</span></div>
+                `;
+                
+                // Insert summary into modal
+                $('#summaryContent').html(summaryHtml);
+                
+                // Show modal
+                $('#confirmationModal').show();
+            });
+            
+            // Handle cancel button
+            $('#cancelBtn').click(function() {
+                $('#confirmationModal').hide();
+            });
+            
+            // Handle confirm button
+            $('#confirmBtn').click(function() {
+                // Submit the form
+                $('#calfDropForm').append('<input type="hidden" name="submit_entry" value="1">');
+                $('#calfDropForm').submit();
+            });
+            
+            // Close modal when clicking outside
+            $(window).click(function(e) {
+                if (e.target === $('#confirmationModal')[0]) {
+                    $('#confirmationModal').hide();
+                }
+            });
+        });
+
+        // Sweet alert
+        document.addEventListener("DOMContentLoaded", function() {
+            if (sessionStorage.getItem('showSuccess') === '1') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Calf Drop entry saved successfully.',
+                    confirmButtonColor: '#28a745'
+                });
+                sessionStorage.removeItem('showSuccess');
+            }
+        });
+
+
+    </script>
+</body>
 </html>

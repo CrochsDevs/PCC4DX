@@ -58,9 +58,6 @@ $centerCode = $_SESSION['center_code'];
         <div class="header">
             <div class="header-left">
                     <h1>Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
-                    <?php 
-                    echo $centerCode;
-                    ?>
             </div>
             <!-- Notification Section -->
             <div class="header-right">
