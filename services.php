@@ -128,7 +128,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <p>Report on carabao milk production metrics and quality.</p>
         </a>
 
-        <a href="calf_drop.php" class="service-card">
+        <a href="cd_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
         <p>Report on successful births and calf health monitoring programs.</p>
         </a>
