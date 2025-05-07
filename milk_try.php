@@ -432,7 +432,6 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
             <ul>
                 <li><a href="milk_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="partners.php" class="nav-link"><i class="fas fa-users"></i> Partners</a></li>
-                <li><a href="mp_entry.php" class="nav-link "><i class="fas fa-users"></i> New Entry</a></li>
                 <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -560,97 +559,6 @@ $partnerValues = array_column($partnerDistribution, 'total_value');
             </div>
         </div>
 
-        <!-- Production Entries -->
-        <div class="card data-table mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Production Entries for Week <?= $selectedWeek ?? 'N/A' ?></h5>
-                <div class="input-group" style="width: 300px;">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" id="searchInput" class="form-control" 
-                           placeholder="Search entries..." value="<?= htmlspecialchars($searchTerm) ?>">
-                </div>
-            </div>
-            <div class="card-body">
-                <div id="loadingSpinner" class="text-center my-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Entry Date</th>
-                                <th>End Date</th>
-                                <th>Quantity (kg)</th>
-                                <th>Volume (L)</th>
-                                <th>Total Value</th>
-                                <th>Partner</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="entriesTableBody">
-                            <?php foreach ($productionData as $entry): ?>
-                            <tr>
-                                <td><?= $entry['formatted_entry_date'] ?></td>
-                                <td><?= $entry['formatted_end_date'] ?></td>
-                                <td><?= number_format($entry['quantity'], 2) ?></td>
-                                <td><?= number_format($entry['volume'], 2) ?></td>
-                                <td>₱<?= number_format($entry['total'], 2) ?></td>
-                                <td><?= htmlspecialchars($entry['partner_name']) ?></td>
-                                <td>
-                                    <span class="badge <?= $entry['status'] === 'Pending' ? 'badge-pending' : 'badge-completed' ?>">
-                                        <?= htmlspecialchars($entry['status']) ?>
-                                    </span>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer">
-                <nav aria-label="Table navigation">
-                    <ul class="pagination justify-content-center mb-0">
-                        <li class="page-item <?= $currentPage == 1 ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?month=<?= $selectedMonth ?>&page=<?= $currentPage - 1 ?>&search=<?= urlencode($searchTerm) ?>" tabindex="-1">Previous</a>
-                        </li>
-                        
-                        <?php 
-                        // Show limited pagination links
-                        $startPage = max(1, $currentPage - 2);
-                        $endPage = min($totalPages, $currentPage + 2);
-                        
-                        if ($startPage > 1) {
-                            echo '<li class="page-item"><a class="page-link" href="?month='.$selectedMonth.'&page=1&search='.urlencode($searchTerm).'">1</a></li>';
-                            if ($startPage > 2) {
-                                echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                            }
-                        }
-                        
-                        for ($i = $startPage; $i <= $endPage; $i++): ?>
-                            <li class="page-item <?= $i == $currentPage ? 'active' : '' ?>">
-                                <a class="page-link" href="?month=<?= $selectedMonth ?>&page=<?= $i ?>&search=<?= urlencode($searchTerm) ?>">
-                                    <?= $i ?>
-                                </a>
-                            </li>
-                        <?php endfor;
-                        
-                        if ($endPage < $totalPages) {
-                            if ($endPage < $totalPages - 1) {
-                                echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                            }
-                            echo '<li class="page-item"><a class="page-link" href="?month='.$selectedMonth.'&page='.$totalPages.'&search='.urlencode($searchTerm).'">'.$totalPages.'</a></li>';
-                        }
-                        ?>
-                        
-                        <li class="page-item <?= $currentPage == $totalPages ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?month=<?= $selectedMonth ?>&page=<?= $currentPage + 1 ?>&search=<?= urlencode($searchTerm) ?>">Next</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
     </div>
 
     <script>
