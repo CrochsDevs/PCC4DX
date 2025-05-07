@@ -32,19 +32,25 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     padding-left: 20px;
   }
 
-  .dropdown-menu.show {
+  .dropdown.open .dropdown-menu {
     display: block;
+  }
+
+  .nav-link {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
   }
 </style>
     
     <script>
   document.addEventListener("DOMContentLoaded", function () {
     const dropdownToggle = document.querySelector(".dropdown-toggle");
-    const dropdownMenu = document.querySelector(".dropdown-menu");
+    const dropdown = dropdownToggle.closest(".dropdown");
 
     dropdownToggle.addEventListener("click", function (e) {
-      e.preventDefault();
-      dropdownMenu.classList.toggle("show");
+      e.preventDefault(); // Prevent "#" from jumping
+      dropdown.classList.toggle("open");
     });
   });
 </script>
@@ -71,21 +77,42 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 </div>
 
 <ul>
-    <li><a href="#" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+    <li><a href="#" class="nav-link" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
     <li><a href="#" class="nav-link" data-section="announcement-section"><i class="fas fa-bullhorn"></i> Announcement</a></li>
     <li class="dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-section="services-section" data-toggle="dropdown">
-    <i class="fas fa-user-friends"></i> Services <i class="fas fa-caret-down"></i>
-  </a>
-  <ul class="dropdown-menu">
-    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-syringe"></i> AI Insemination</a></li>
-    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-cow"></i> Calf Drop</a></li>
-    <li><a href="#" class="nav-link" data-section="services-section"><i class="fas fa-wine-bottle"></i> Milk Feeding</a></li>
-    <li><a href="admin_milk_production.php" class="nav-link"  data-section="services-section"><i class="fas fa-flask"></i> Milk Production</a></li>
-  </ul>
+  <ul>
+  <li class="dropdown">
+    <a href="#" class="nav-link dropdown-toggle">
+      <i class="fas fa-user-friends"></i> Services <i class="fas fa-caret-down"></i>
+    </a>
+    <ul class="dropdown-menu">
+      <li>
+        <a href="admin_ai_insemination.php" class="nav-link">
+          <i class="fas fa-syringe"></i> AI Insemination
+        </a>
+      </li>
+      <li>
+        <a href="admin_calf_drop.php" class="nav-link">
+          <i class="fas fa-cow"></i> Calf Drop
+        </a>
+      </li>
+      <li>
+        <a href="admin_milk_feeding.php" class="nav-link">
+          <i class="fas fa-wine-bottle"></i> Milk Feeding
+        </a>
+      </li>
+      <li>
+        <a href="admin_milk_production.php" class="nav-link active">
+          <i class="fas fa-flask"></i> Milk Production
+        </a>
+      </li>
+    </ul>
+  </li>
+</ul>
+
 </li>
 <li><a href="#" class="nav-link" data-section="programs-section"><i class="fas fa-user-friends"></i> Programs</a></li>
-    <li><a href="#" class="nav-link" data-section="settings-section"><i class="fas fa-cog"></i> Settings</a></li>
+    <li><a href="#" class="nav-link"  data-section="settings-section"><i class="fas fa-cog"></i> Settings</a></li>
 </ul>
     </div>
 
