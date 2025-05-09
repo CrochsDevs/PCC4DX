@@ -338,10 +338,10 @@ try {
     </div>
 
     <nav>
-         <ul>
+        <ul>
             <li><a href="services.php" class="nav-link"><i class="fas fa-arrow-left"></i> Back to Quickfacts</a></li>
-            <li><a href="milkfeeding_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="milk_feeding_dswd_report.php" class="nav-link "><i class="fas fa-handshake"></i> DSWD Program Report</a></li>
+            <li><a href="milkfeeding_dashboard.php" class="nav-link "><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="milk_feeding_dswd_report.php" class="nav-link active"><i class="fas fa-handshake"></i> DSWD Program Report</a></li>
             <li><a href="milk_feeding_deped_report.php" class="nav-link "><i class="fas fa-file-alt"></i> DepEd Program Report</a></li>
             <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>

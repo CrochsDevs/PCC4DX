@@ -683,18 +683,7 @@ select[name="mfp"] option[value="No"] {
 
                 <br>
                 <br>
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="openEditModal()">
-                        <i class="fas fa-edit"></i> Edit Partner
-                    </button>
-                    <form method="POST" action="delete_partner.php" class="delete-form">
-                        <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Delete Partner
-                        </button>
-                    </form>
-                </div>
+            
             </div>
         </main>
 

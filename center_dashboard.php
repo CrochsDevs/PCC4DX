@@ -207,10 +207,13 @@ $centerCode = $_SESSION['center_code'];
         <p>Report on carabao milk production metrics and quality.</p>
         </a>
 
-    <a href="calf_drop.php" class="service-card">
-      <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-      <p>Report on successful births and calf health monitoring programs.</p>
-    </a>
+        <a href="calf_drop.php" class="service-card">
+        <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
+        <p>Report on successful births and calf health monitoring programs.</p>
+        </a>
+
+
+        </a>
   </div>
 </div>
 
