@@ -148,13 +148,13 @@ $sundayDate = $sunday->format('Y-m-d');
                 <h2>New Milk Entry</h2>
                 <form method="POST" class="entry-form">
                 <div class="form-group">
-    <label class="form-label">Start Date (Monday)</label>
-    <input type="date" name="start_date" class="form-input" value="<?= $mondayDate ?>" readonly>
-</div>
-<div class="form-group">
-    <label class="form-label">End Date (Sunday)</label>
-    <input type="date" name="end_date" class="form-input" value="<?= $sundayDate ?>" readonly>
-</div>
+                <label class="form-label">Start Date (Monday)</label>
+                <input type="date" name="start_date" class="form-input" value="<?= $mondayDate ?>" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">End Date (Sunday)</label>
+                <input type="date" name="end_date" class="form-input" value="<?= $sundayDate ?>" readonly>
+            </div>
 
                     <div class="form-group">
                         <label class="form-label">Cooperative</label>

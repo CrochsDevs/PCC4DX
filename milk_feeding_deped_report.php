@@ -778,7 +778,6 @@ if ($showArchived) {
                                 <th>Region</th>
                                 <th>Province</th>
                                 <th>SDO</th>
-                                <th>School Name</th>
                                 <th>Beneficiaries</th>
                                 <th>Start Date</th>
                                 <th>Completion Date</th>
@@ -801,7 +800,6 @@ if ($showArchived) {
                                 <td><?= htmlspecialchars($entry['region']) ?></td>
                                 <td><?= htmlspecialchars($entry['province']) ?></td>
                                 <td><?= htmlspecialchars($entry['sdo']) ?></td>
-                                <td><?= htmlspecialchars($entry['school_name']) ?></td>
                                 <td><?= number_format($entry['beneficiaries']) ?></td>
                                 <td><?= date('M d, Y', strtotime($entry['date_started'])) ?></td>
                                 <td><?= date('M d, Y', strtotime($entry['date_complete'])) ?></td>
