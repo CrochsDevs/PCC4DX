@@ -374,26 +374,20 @@
                 labels: centers.map(c => c.name),
                 datasets: [
                     {
-                        label: 'Target',
-                        data: centers.map(c => c.target),
-                        backgroundColor: 'rgba(156, 163, 175, 0.7)',
-                        borderColor: 'rgba(156, 163, 175, 1)',
-                        borderWidth: 1
-                    },
-                    {
                         label: 'Actual',
                         data: centers.map(c => c.actual),
-                        backgroundColor: centers.map(c => 
-                            parseFloat(c.percent) > 90 ? 'rgba(16, 185, 129, 0.7)' : 
-                            parseFloat(c.percent) < 70 ? 'rgba(239, 68, 68, 0.7)' : 
-                            'rgba(59, 130, 246, 0.7)'
-                        ),
-                        borderColor: centers.map(c => 
-                            parseFloat(c.percent) > 90 ? 'rgba(16, 185, 129, 1)' : 
-                            parseFloat(c.percent) < 70 ? 'rgba(239, 68, 68, 1)' : 
-                            'rgba(59, 130, 246, 1)'
-                        ),
-                        borderWidth: 1
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)', // Green for Actual
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        stack: 'stack1', // Stack group 1 (Actual)
+                    },
+                    {
+                        label: 'Remaining',
+                        data: centers.map(c => c.target - c.actual),
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)', // Red for Remaining
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1,
+                        stack: 'stack1', // Stack group 1 (Remaining)
                     }
                 ]
             },
@@ -411,7 +405,7 @@
                                 label += context.parsed.y.toLocaleString();
                                 
                                 if (context.datasetIndex === 1) {
-                                    label += ` (${center.percent})`;
+                                    label += ` (Remaining: ${ (center.target - center.actual).toLocaleString() })`;
                                 }
                                 return label;
                             }
@@ -421,9 +415,10 @@
                 scales: {
                     y: {
                         beginAtZero: true,
+                        stacked: true, // Ensures bars stack on top of each other
                         ticks: {
                             callback: function(value) {
-                                return value.toLocaleString();
+                                return value.toLocaleString(); // Format numbers with commas
                             }
                         }
                     }

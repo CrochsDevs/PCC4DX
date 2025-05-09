@@ -9,7 +9,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     exit;
 }
 
-class ReportManager {
+class AIReportManager {
     private $db;
     private $centerCode;
     
@@ -19,9 +19,8 @@ class ReportManager {
     }
     
     public function getReports($year = null, $month = null, $week = null, $date = null) {
-        $query = "SELECT *, 
-                  (ai + bep + ih + private) as total 
-                  FROM calf_drop 
+        $query = "SELECT aiID, aiServices, date 
+                  FROM ai_services 
                   WHERE center = :center";
         $params = [':center' => $this->centerCode];
         
@@ -53,22 +52,17 @@ class ReportManager {
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
         // Calculate totals
-        $totals = ['ai' => 0, 'bep' => 0, 'ih' => 0, 'private' => 0, 'total' => 0];
+        $total = 0;
         foreach ($reports as $row) {
-            $totals['ai'] += $row['ai'];
-            $totals['bep'] += $row['bep'];
-            $totals['ih'] += $row['ih'];
-            $totals['private'] += $row['private'];
-            $totals['total'] += $row['total'];
+            $total += $row['aiServices'];
         }
     
-        return ['reports' => $reports, 'totals' => $totals];
+        return ['reports' => $reports, 'total' => $total];
     }
-    
     
     public function getAvailableYears() {
         $query = "SELECT DISTINCT YEAR(date) as year 
-                  FROM calf_drop 
+                  FROM ai_services 
                   WHERE center = :center 
                   ORDER BY year DESC";
         $stmt = $this->db->prepare($query);
@@ -79,7 +73,7 @@ class ReportManager {
     
     public function getAvailableWeeks($year, $month) {
         $query = "SELECT DISTINCT WEEK(date, 3) as week 
-                  FROM calf_drop 
+                  FROM ai_services 
                   WHERE center = :center 
                   AND YEAR(date) = :year 
                   AND MONTH(date) = :month
@@ -97,7 +91,7 @@ class ReportManager {
 }
 
 $centerCode = $_SESSION['center_code'];
-$reportManager = new ReportManager($conn, $centerCode);
+$reportManager = new AIReportManager($conn, $centerCode);
 
 // Handle AJAX requests
 if (isset($_GET['ajax'])) {
@@ -134,7 +128,7 @@ $year = isset($_GET['year']) ? $_GET['year'] : null;
 $month = isset($_GET['month']) ? $_GET['month'] : null;
 $week = isset($_GET['week']) ? $_GET['week'] : null;
 
-$reportManager = new ReportManager($conn, $centerCode);
+$reportManager = new AIReportManager($conn, $centerCode);
 $reports = $reportManager->getReports($year, $month, $week);
 
 ?>
@@ -144,7 +138,7 @@ $reports = $reportManager->getReports($year, $month, $week);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Reports</title>
+    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> AI Reports</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -160,7 +154,6 @@ $reports = $reportManager->getReports($year, $month, $week);
         .week-grey {
             background-color: #f0f0f0;
         }
- 
     </style>
 </head>
 <body>
@@ -184,9 +177,9 @@ $reports = $reportManager->getReports($year, $month, $week);
         <nav>
             <ul>
                 <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
-                <li><a href="cd_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                <li><a href="calf_drop.php" class="nav-link"><i class="fas fa-plus-circle"></i> Calf Drop</a></li>
-                <li><a href="cd_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="ai_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="ai.php" class="nav-link"><i class="fas fa-syringe"></i> AI Services</a></li>
+                <li><a href="ai_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
@@ -197,7 +190,7 @@ $reports = $reportManager->getReports($year, $month, $week);
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <h1>Calf Drop Reports</h1>
+                <h1>AI Services Reports</h1>
             </div>
             <div class="header-right">
                 <div class="notification-container">
@@ -251,19 +244,17 @@ $reports = $reportManager->getReports($year, $month, $week);
         <!-- Reports Section -->
         <div class="container">
             <div class="filter-container">
-
-            <div class="year-filter">
-                <div class="filter-header">
-                    <div class="filter-title">Year</div>
-                    <div class="export-btn-container">
-                        <button id="exportToExcel" class="export-btn">Export</button>
+                <div class="year-filter">
+                    <div class="filter-header">
+                        <div class="filter-title">Year</div>
+                        <div class="export-btn-container">
+                            <button id="exportToExcel" class="export-btn">Export</button>
+                        </div>
+                    </div>
+                    <div class="filter-options" id="yearFilter">
+                        <!-- Years will be populated by JavaScript -->
                     </div>
                 </div>
-                <div class="filter-options" id="yearFilter">
-                    <!-- Years will be populated by JavaScript -->
-                </div>
-            </div>
-
 
                 <div class="month-filter">
                     <div class="filter-title">Month</div>
@@ -312,7 +303,7 @@ $reports = $reportManager->getReports($year, $month, $week);
             // Load available years
             function loadYears() {
                 $.ajax({
-                    url: 'cd_report.php?ajax=get_years',
+                    url: 'ai_report.php?ajax=get_years',
                     type: 'GET',
                     data: { center: centerCode },
                     success: function(years) {
@@ -343,7 +334,7 @@ $reports = $reportManager->getReports($year, $month, $week);
                 $('#reportResults').empty();
                 
                 $.ajax({
-                    url: 'cd_report.php?ajax=get_reports',
+                    url: 'ai_report.php?ajax=get_reports',
                     type: 'GET',
                     data: { 
                         center: centerCode,
@@ -361,53 +352,40 @@ $reports = $reportManager->getReports($year, $month, $week);
                                     <tr>
                                         <th>Date</th>
                                         <th>Day</th>
-                                        <th>AI</th>
-                                        <th>BEP</th>
-                                        <th>IH</th>
-                                        <th>Private</th>
-                                        <th>Total</th>
+                                        <th>AI Services</th>
                                     </tr>
-                                            <tr class="total-row" style="background-color:rgb(125, 139, 139);">
-                                                <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong></strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.ai}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.bep}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.ih}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.private}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.total}</strong></td>
-                                            </tr>
-                                    </thead>
-                                    <tbody>`;
+                                    <tr class="total-row" style="background-color:rgb(125, 139, 139);">
+                                        <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
+                                        <td style="color: black; font-weight: bold;"></td>
+                                        <td style="color: black; font-weight: bold;"><strong>${data.total}</strong></td>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
                             
-                                    let previousWeek = null;
-                                    let toggleColor = false;
+                            let previousWeek = null;
+                            let toggleColor = false;
 
-                                    data.reports.forEach(row => {
-                                        const dateObj = new Date(row.date);
-                                        const firstJan = new Date(dateObj.getFullYear(), 0, 1);
-                                        const pastDaysOfYear = (dateObj - firstJan) / 86400000;
-                                        const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
+                            data.reports.forEach(row => {
+                                const dateObj = new Date(row.date);
+                                const firstJan = new Date(dateObj.getFullYear(), 0, 1);
+                                const pastDaysOfYear = (dateObj - firstJan) / 86400000;
+                                const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
 
-                                        if (week !== previousWeek) {
-                                            toggleColor = !toggleColor;
-                                            previousWeek = week;
-                                        }
+                                if (week !== previousWeek) {
+                                    toggleColor = !toggleColor;
+                                    previousWeek = week;
+                                }
 
-                                        const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                                const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
 
-                                        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
-
-                                        html += `
-                                        <tr class="${rowClass}">
-                                            <td>${row.date}</td>
-                                            <td>${dayOfWeek}</td>
-                                            <td>${row.ai}</td>
-                                            <td>${row.bep}</td>
-                                            <td>${row.ih}</td>
-                                            <td>${row.private}</td>
-                                            <td>${row.total}</td>
-                                        </tr>`;
-                                    });
+                                html += `
+                                <tr class="${rowClass}">
+                                    <td>${row.date}</td>
+                                    <td>${dayOfWeek}</td>
+                                    <td>${row.aiServices}</td>
+                                </tr>`;
+                            });
 
                             html += `</tbody></table>`;
                             $('#reportResults').html(html);
@@ -421,7 +399,7 @@ $reports = $reportManager->getReports($year, $month, $week);
             // Load available weeks for a month
             function loadWeeks(year, month) {
                 $.ajax({
-                    url: 'cd_report.php?ajax=get_weeks',
+                    url: 'ai_report.php?ajax=get_weeks',
                     type: 'GET',
                     data: { 
                         center: centerCode,
@@ -500,21 +478,16 @@ $reports = $reportManager->getReports($year, $month, $week);
                     weekNumber = currentWeek;
                 }
 
-                // Updated CSV header to include "Day"
-                let csvContent = "Date,Day,AI,BEP,IH,Private,Total\n";
+                let csvContent = "Date,Day,AI Services\n";
 
                 const centerName = centerCode;
                 const totalsRow = $('.report-table .total-row');
                 if (totalsRow.length) {
                     const totalsCells = totalsRow.find('td');
                     const totals = [
-                        `Total ${centerName}`,      // Date column becomes center + Total
-                        "",                         // No day for total row
-                        totalsCells.eq(1).text().trim(), // AI
-                        totalsCells.eq(2).text().trim(), // BEP
-                        totalsCells.eq(3).text().trim(), // IH
-                        totalsCells.eq(4).text().trim(), // Private
-                        totalsCells.eq(5).text().trim()  // Total
+                        `Total ${centerName}`,
+                        "",
+                        totalsCells.eq(2).text().trim()  // AI Services total
                     ];
                     csvContent += totals.join(',') + '\n';
                 }
@@ -523,22 +496,16 @@ $reports = $reportManager->getReports($year, $month, $week);
                     const cells = $(this).find('td');
                     let date = cells.eq(0).text().trim();
 
-                    // Fallback if date is malformed
                     if (date === '#####') {
                         date = today.toISOString().split('T')[0];
                     }
 
-                    // Get day of week from date
                     const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
 
                     const row = [
-                        date,                        // Date
-                        dayOfWeek,                  // Day
-                        cells.eq(2).text().trim(),  // AI
-                        cells.eq(3).text().trim(),  // BEP
-                        cells.eq(4).text().trim(),  // IH
-                        cells.eq(5).text().trim(),  // Private
-                        cells.eq(6).text().trim()   // Total
+                        date,
+                        dayOfWeek,
+                        cells.eq(2).text().trim()  // AI Services
                     ];
                     csvContent += row.join(',') + '\n';
                 });
@@ -546,15 +513,13 @@ $reports = $reportManager->getReports($year, $month, $week);
                 const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
                 const link = document.createElement('a');
                 link.setAttribute('href', encodedUri);
-                link.setAttribute('download', `CalfDrop_${centerCode}_Week${weekNumber}_${dateStr}.csv`);
+                link.setAttribute('download', `AI_Services_${centerCode}_Week${weekNumber}_${dateStr}.csv`);
                 document.body.appendChild(link);
 
                 link.click();
                 document.body.removeChild(link);
             });
-
-});
-
+        });
     </script>
 </body>
 </html>
