@@ -229,7 +229,7 @@ class MilkDashboard {
 
     public function getMonthlyTarget($month) {
         $query = "SELECT target_volume, target_value 
-                  FROM targets 
+                  FROM mp_target
                   WHERE center_code = :centerCode 
                   AND target_month = :month";
         
@@ -243,7 +243,7 @@ class MilkDashboard {
     
     public function getWeeklyTarget($month, $week) {
         $query = "SELECT target_volume, target_value 
-                  FROM targets 
+                  FROM mp_target 
                   WHERE center_code = :centerCode 
                   AND target_month = :month
                   AND target_week = :week";
@@ -905,10 +905,7 @@ $totalPages = ceil($totalRecords / $perPage);
                     Week <?= $week ?>
                 </a>
             <?php endforeach; ?>
-            <a href="?month=<?= $selectedMonth ?>" 
-               class="week-btn <?= !isset($_GET['week']) ? 'active' : '' ?>">
-                All Weeks
-            </a>
+          
         </div>
         <?php endif; ?>
 

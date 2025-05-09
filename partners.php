@@ -319,7 +319,7 @@ $offset = ($page - 1) * $limit;
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cooperative Partners Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -327,89 +327,289 @@ $offset = ($page - 1) * $limit;
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="css/center.css">
-    <link rel="stylesheet" href="css/partners.css"> 
-
-<style>
-    .pagination-container {
-        margin: 20px 0;
-        display: flex;
-        justify-content: center;
-    }
-
-    .pagination {
-        display: flex;
-        list-style: none;
-        padding-left: 0;
-        flex-wrap: wrap;
-    }
-
-    .page-item {
-        margin: 2px;
-    }
-
-    .page-link {
-        display: block;
-        color: #004080;
-        background-color: #fff;
-        border: 1px solid #dee2e6;
-        padding: 6px 12px;
-        text-decoration: none;
-        min-width: 40px;
-        text-align: center;
-        border-radius: 4px;
-        transition: 0.3s ease;
-    }
-
-    .page-item.active .page-link {
-        background-color: #004080;
-        border-color: #004080;
-        color: white;
-    }
-
-    .page-link:hover {
-        color: #002b5c;
-        background-color: #e9ecef;
-    }
-
-    .page-item.disabled .page-link {
-        color: #6c757d;
-        pointer-events: none;
-        background-color: #f8f9fa;
-        border-color: #dee2e6;
-    }
-</style>
-
+    <link rel="stylesheet" href="css/partners.css">
+    <style>
+        /* Search Bar Styles */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 400px;
+            transform: translate(0, 10px)
+        }
+        
+        #searchInput {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 500px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        #searchInput:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
+            outline: none;
+        }
+        
+        #clearSearch {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            display: none;
+        }
+        
+        #clearSearch:hover {
+            color: #666;
+        }
+        
+        .search-terms-display {
+            margin-top: 8px;
+        }
+        
+        .search-term {
+            display: inline-block;
+            background-color: #e9f5ff;
+            color: #0056b3;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .search-term.narrow-term {
+            background-color: #f0f0f0;
+            color: #555;
+        }
+        
+        /* Filter Buttons */
+        .filter-buttons {
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-buttons span {
+            margin-right: 10px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: #f5f5f5;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover, .filter-btn.active {
+            background-color: #0056b3;
+            color: white;
+            border-color: #0056b3;
+        }
+        
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+        
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .sortable-header {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px !important;
+        }
+        
+        .sort-indicator {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Pagination */
+        .pagination-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .pagination {
+            display: flex;
+            list-style: none;
+            padding-left: 0;
+            flex-wrap: wrap;
+        }
+        
+        .page-item {
+            margin: 2px;
+        }
+        
+        .page-link {
+            display: block;
+            color: #004080;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            padding: 6px 12px;
+            text-decoration: none;
+            min-width: 40px;
+            text-align: center;
+            border-radius: 4px;
+            transition: 0.3s ease;
+        }
+        
+        .page-item.active .page-link {
+            background-color: #004080;
+            border-color: #004080;
+            color: white;
+        }
+        
+        .page-link:hover {
+            color: #002b5c;
+            background-color: #e9ecef;
+        }
+        
+        .page-item.disabled .page-link {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        /* Results Count */
+        #resultsCount {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        /* Highlight for search matches */
+        .highlight {
+            background-color: #fff3cd;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+        
+        /* Mobile Sidebar Toggle */
+        .sidebar-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-toggle {
+                display: flex;
+            }
+        }
+    </style>
 </head>
 <body>
-      <!-- Sidebar -->
+    <!-- Sidebar -->
     <div class="sidebar">
-       <!-- User Profile Section -->
+        <!-- User Profile Section -->
         <div class="user-profile">
             <div class="profile-picture">
                 <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <!-- Display the uploaded profile image -->
                     <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
                 <?php else: ?>
-                    <!-- Fallback to the generated avatar -->
                     <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
                 <?php endif; ?>
             </div>
-        <div class="profile-info">
-            <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-            <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+            <div class="profile-info">
+                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+            </div>
         </div>
-    </div>
 
-    <nav>
-        <ul>
-            <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
-            <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
-            <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
-            <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </nav>
-
+        <nav>
+            <ul>
+                <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
+                <li><a href="milk_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="partners.php" class="nav-link active"><i class="fas fa-users"></i> Partners</a></li>
+                <li><a href="milk_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="logout.php" class="logout-btn" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </nav>
     </div>
 
     <div class="main-content">
@@ -478,9 +678,6 @@ $offset = ($page - 1) * $limit;
             <div class="card-header">
                 <h2 class="card-title">Partners List</h2>
                 <div>
-                    <button id="createBtn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Partner
-                    </button>
                     <form method="POST" style="display: inline-block;">
                         <button type="submit" name="export" class="btn btn-success">
                             <i class="fas fa-file-export"></i> Export
@@ -491,25 +688,22 @@ $offset = ($page - 1) * $limit;
 
             <div class="card-body">
                 <div class="search-filter-bar">
-
-                    <form id="searchForm" class="d-flex gap-2" style="flex-grow: 1;">
-                        <div class="input-group" style="max-width: 500px;">
-                            <input type="text" id="searchInput" name="search" class="form-control" 
-                                placeholder="Type search terms separated by commas..." 
-                                value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-                            <div class="input-group-append">
+                    <div class="search-container">
+                        <form id="searchForm" class="d-flex gap-2" style="flex-grow: 1;">
+                            <div class="search-input-container">
+                                <input type="text" id="searchInput" name="search" class="form-control" 
+                                    placeholder="Search partners (name, code, location, type)..."
+                                    value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
                                 <button id="clearSearch" class="btn btn-outline-secondary" type="button">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                        </div>
-                        <small class="text-muted">Add commas to narrow your search (e.g., "coop, active")</small>
-                    </form>
-
-                    <div id="searchTermsDisplay" class="search-terms-display mt-2"></div>
+                        </form>
+                        <div id="searchTermsDisplay" class="search-terms-display"></div>
+                    </div>
 
                     <div class="filter-buttons">
-                        <span style="font-weight: 500;">Filter by type:</span>
+                        <span>Filter by type:</span>
                         <a href="#" class="filter-btn all-btn <?= empty($_GET['filter']) ? 'active' : '' ?>" data-filter="all">All</a>
                         <?php 
                         $types = ['Cooperatives', 'Associations', 'LGU', 'SCU', 'Family_Module', 'Corporation'];
@@ -558,506 +752,164 @@ $offset = ($page - 1) * $limit;
                                     </span>
                                     <?php endif; ?>
                                 </th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="partnersTableBody">
                             <?php if (empty($partners)): ?>
                                 <tr>
-                                    <td colspan="7" class="text-center">No partners found. Add your first partner!</td>
+                                    <td colspan="6" class="text-center">No partners found. Add your first partner!</td>
                                 </tr>
                             <?php else: ?>
-                                    <?php foreach ($partners as $partner): ?>
-                                        <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
-                                            <td><?= htmlspecialchars($partner['partner_name']) ?></td>
-                                            <td><?= htmlspecialchars($partner['coop_type']) ?></td>
-                                            <td><?= htmlspecialchars($partner['herd_code']) ?></td>
-                                            <td>
-                                                <div><?= htmlspecialchars($partner['contact_person']) ?></div>
-                                                <small class="text-muted"><?= htmlspecialchars($partner['contact_number']) ?></small>
-                                            </td>
-                                            <td>
-                                                <div><?= htmlspecialchars($partner['barangay']) ?></div>
-                                                <small class="text-muted"><?= htmlspecialchars($partner['municipality']) ?>, <?= htmlspecialchars($partner['province']) ?></small>
-                                            </td>
-                                            <td>
-                                                <form class="toggle-status-form" method="POST">
-                                                    <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                    <button type="submit" name="toggle_status" class="btn btn-sm status-toggle <?= $partner['is_active'] ? 'btn-success' : 'btn-danger' ?>">
-                                                        <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons" onclick="event.stopPropagation()">
-                                                    <button class="btn btn-info btn-sm edit-btn"
-                                                            data-id="<?= $partner['id'] ?>"
-                                                            data-coop="<?= htmlspecialchars($partner['coop_type']) ?>"
-                                                            data-name="<?= htmlspecialchars($partner['partner_name']) ?>"
-                                                            data-herd="<?= htmlspecialchars($partner['herd_code']) ?>"
-                                                            data-person="<?= htmlspecialchars($partner['contact_person']) ?>"
-                                                            data-number="<?= htmlspecialchars($partner['contact_number']) ?>"
-                                                            data-barangay="<?= htmlspecialchars($partner['barangay']) ?>"
-                                                            data-municipality="<?= htmlspecialchars($partner['municipality']) ?>"
-                                                            data-province="<?= htmlspecialchars($partner['province']) ?>"
-                                                            data-active="<?= $partner['is_active'] ?>">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this partner?');" style="display:inline;">
-                                                        <input type="hidden" name="partner_id" value="<?= $partner['id'] ?>">
-                                                        <button type="submit" name="delete" class="btn btn-danger btn-sm delete-btn">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
+                                <?php foreach ($partners as $partner): ?>
+                                    <tr class="clickable-row" data-href="select.php?partner_id=<?= $partner['id'] ?>" style="cursor: pointer;">
+                                        <td><?= htmlspecialchars($partner['partner_name']) ?></td>
+                                        <td><?= htmlspecialchars($partner['coop_type']) ?></td>
+                                        <td><?= htmlspecialchars($partner['herd_code']) ?></td>
+                                        <td>
+                                            <div><?= htmlspecialchars($partner['contact_person']) ?></div>
+                                            <small class="text-muted"><?= htmlspecialchars($partner['contact_number']) ?></small>
+                                        </td>
+                                        <td>
+                                            <div><?= htmlspecialchars($partner['barangay']) ?></div>
+                                            <small class="text-muted"><?= htmlspecialchars($partner['municipality']) ?>, <?= htmlspecialchars($partner['province']) ?></small>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge <?= $partner['is_active'] ? 'status-active' : 'status-inactive' ?>">
+                                                <?= $partner['is_active'] ? 'Active' : 'Inactive' ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>                            
                     </table>
                 </div>
-        </div>
 
-<!-- Pagination Section -->
-<div class="pagination-container">
-    <nav aria-label="Page navigation">
-        <ul class="pagination">
+                <!-- Pagination Section -->
+                <div class="pagination-container">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            <!-- Previous Button -->
+                            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                                <a class="page-link" 
+                                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
+                                   aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
 
-            <!-- Previous Button -->
-            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                <a class="page-link" 
-                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
-                   aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
+                            <!-- Page Numbers -->
+                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                    <a class="page-link" 
+                                       href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>">
+                                        <?= $i ?>
+                                    </a>
+                                </li>
+                            <?php endfor; ?>
 
-            <!-- Page Numbers -->
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                    <a class="page-link" 
-                       href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>">
-                        <?= $i ?>
-                    </a>
-                </li>
-            <?php endfor; ?>
+                            <!-- Next Button -->
+                            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                                <a class="page-link" 
+                                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
+                                   aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
 
-            <!-- Next Button -->
-            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                <a class="page-link" 
-                   href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
-                   aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-
-        </ul>
-    </nav>
-</div>
-
-<!-- Pagination Summary -->
-<div class="text-center text-muted small">
-    Showing <?= ($offset + 1) ?> to <?= min($offset + $limit, $totalFilteredPartners) ?> of <?= $totalFilteredPartners ?> entries
-</div>
-
+                <!-- Pagination Summary -->
+                <div class="text-center text-muted small">
+                    Showing <?= ($offset + 1) ?> to <?= min($offset + $limit, $totalFilteredPartners) ?> of <?= $totalFilteredPartners ?> entries
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="createModal" class="modal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3 class="modal-title">Add New Partner</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <form method="POST">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="coop_type" class="drop-down">Partner Type</label>
-                        <select id="coop_type" name="coop_type" class="form-control" required>
-                            <option value="">-- Select Partner Type --</option>
-                            <option value="Cooperatives">Cooperatives</option>
-                            <option value="Associations">Associations</option>
-                            <option value="LGU">LGU</option>
-                            <option value="SCU">SCU</option>
-                            <option value="Family_Module">Family Module</option>
-                            <option value="Corporation">Corporation</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="partner_name" class="form-label">Partner Name</label>
-                        <input type="text" id="partner_name" name="partner_name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="herd_code" class="form-label">Herd Code</label>
-                        <input type="text" id="herd_code" name="herd_code" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contact_person" class="form-label">Contact Person</label>
-                        <input type="text" id="contact_person" name="contact_person" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contact_number" class="form-label">Contact Number</label>
-                        <input type="text" id="contact_number" name="contact_number" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="barangay" class="form-label">Barangay</label>
-                        <input type="text" id="barangay" name="barangay" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="municipality" class="form-label">Municipality</label>
-                        <input type="text" id="municipality" name="municipality" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="province" class="form-label">Province</label>
-                        <input type="text" id="province" name="province" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" id="is_active" name="is_active" class="form-check-input" checked>
-                            <label for="is_active" class="form-check-label">Active Partner</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger modal-cancel">Cancel</button>
-                    <button type="submit" name="add" class="btn btn-primary">Save Partner</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
 
-    <div id="editModal" class="modal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Partner</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <form method="POST">
-                <input type="hidden" id="edit_id" name="partner_id">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="edit_coop_type" class="drop-down">Partner Type</label>
-                        <select id="edit_coop_type" name="coop_type" class="form-control" required>
-                            <option value="">-- Select Partner Type --</option>
-                            <option value="Cooperatives">Cooperatives</option>
-                            <option value="Associations">Associations</option>
-                            <option value="LGU">LGU</option>
-                            <option value="SCU">SCU</option>
-                            <option value="Family_Module">Family Module</option>
-                            <option value="Corporation">Corporation</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_name" class="form-label">Partner Name</label>
-                        <input type="text" id="edit_name" name="partner_name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_herd" class="form-label">Herd Code</label>
-                        <input type="text" id="edit_herd" name="herd_code" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_person" class="form-label">Contact Person</label>
-                        <input type="text" id="edit_person" name="contact_person" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_number" class="form-label">Contact Number</label>
-                        <input type="text" id="edit_number" name="contact_number" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_barangay" class="form-label">Barangay</label>
-                        <input type="text" id="edit_barangay" name="barangay" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_municipality" class="form-label">Municipality</label>
-                        <input type="text" id="edit_municipality" name="municipality" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_province" class="form-label">Province</label>
-                        <input type="text" id="edit_province" name="province" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" id="edit_active" name="is_active" class="form-check-input">
-                            <label for="edit_active" class="form-check-label">Active Partner</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger modal-cancel">Cancel</button>
-                    <button type="submit" name="edit" class="btn btn-primary">Update Partner</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-<script>
-        const createBtn = document.getElementById('createBtn');
-        const createModal = document.getElementById('createModal');
-        const editModal = document.getElementById('editModal');
-        const modalCloses = document.querySelectorAll('.modal-close');
-        const editBtns = document.querySelectorAll('.edit-btn');
-        const searchForm = document.getElementById('searchForm');
-        const searchInput = document.getElementById('searchInput');
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        const sortableHeaders = document.querySelectorAll('.sortable-header');
-        const partnersTableBody = document.getElementById('partnersTableBody');
-        const toggleStatusForms = document.querySelectorAll('.toggle-status-form');
-
-        let currentSort = '<?= $_GET['sort'] ?? 'partner_name' ?>';
-        let currentOrder = '<?= $_GET['order'] ?? 'ASC' ?>';
-        let currentFilter = '<?= $_GET['filter'] ?? '' ?>';
-        let currentSearch = '<?= $_GET['search'] ?? '' ?>';
-        let activeFilters = [];
-
-        if (currentFilter && currentFilter !== 'all') {
-            activeFilters = currentFilter.split(',');
-        }
-
-        createBtn.addEventListener('click', () => {
-            createModal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        });
-
-        editBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                
-                document.getElementById('edit_id').value = btn.dataset.id;
-                document.getElementById('edit_coop_type').value = btn.dataset.coop;
-                document.getElementById('edit_name').value = btn.dataset.name;
-                document.getElementById('edit_herd').value = btn.dataset.herd;
-                document.getElementById('edit_person').value = btn.dataset.person;
-                document.getElementById('edit_number').value = btn.dataset.number;
-                document.getElementById('edit_barangay').value = btn.dataset.barangay;
-                document.getElementById('edit_municipality').value = btn.dataset.municipality;
-                document.getElementById('edit_province').value = btn.dataset.province;
-                document.getElementById('edit_active').checked = btn.dataset.active === '1';
-                
-                editModal.classList.add('show');
-                document.body.style.overflow = 'hidden';
-            });
-        });
-
-let searchTimeout;
-
-searchInput.addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    
-    // Auto-format the input (add space after commas)
-    const cursorPos = this.selectionStart;
-    this.value = this.value.replace(/,(\S)/g, ', $1');
-    this.setSelectionRange(cursorPos, cursorPos);
-    
-    searchTimeout = setTimeout(() => {
-        currentSearch = this.value.replace(/, /g, ',').trim(); // Remove spaces after commas for processing
-        fetchPartners();
-        
-        // Debug output
-        console.log("Searching for:", currentSearch);
-    }, 500);
-});
-
-function updateSearchTermDisplay() {
-    const termsContainer = document.getElementById('searchTermsDisplay');
-    
-    if (!termsContainer) {
-        const newContainer = document.createElement('div');
-        newContainer.id = 'searchTermsDisplay';
-        newContainer.className = 'search-terms-display mt-2';
-        searchInput.parentNode.parentNode.appendChild(newContainer);
-    }
-    
-    if (currentSearch.includes(',')) {
-        const terms = currentSearch.split(',').map(t => t.trim()).filter(t => t);
-        const html = terms.map((term, i) => 
-            `<span class="search-term ${i > 0 ? 'narrow-term' : ''}">${term}</span>`).join(' ');
-        
-        termsContainer.innerHTML = `
-            <div class="narrowing-indicator">
-                <small>Narrowing by:</small>
-                ${html}
-                <small class="results-count"></small>
-            </div>
-        `;
-    } else {
-        termsContainer.innerHTML = '';
-    }
-}
-
-// Update the fetchPartners function to maintain search terms in input
-function fetchPartners() {
-    if (window.fetchPartnersXHR) {
-        window.fetchPartnersXHR.abort();
-    }
-    
-    const params = new URLSearchParams();
-    if (currentSort) params.append('sort', currentSort);
-    if (currentOrder) params.append('order', currentOrder);
-    if (currentSearch) params.append('search', currentSearch);
-    if (currentFilter) params.append('filter', currentFilter);
-    
-    window.fetchPartnersXHR = new AbortController();
-    const signal = window.fetchPartnersXHR.signal;
-    
-    fetch(`partners_ajax.php?${params.toString()}`, { signal })
-        .then(response => {
-            if (response.ok) return response.json();
-            throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-        if (data.error) {
-            console.error(data.error);
-            return;
-        }
-        
-        partnersTableBody.innerHTML = data.html;
-        document.getElementById('resultsCount').textContent = 
-            `Showing ${data.count} of ${data.total} partners`;
+    <script>
+        $(document).ready(function() {
+            // Initialize variables
+            let currentSort = '<?= $_GET['sort'] ?? 'partner_name' ?>';
+            let currentOrder = '<?= $_GET['order'] ?? 'ASC' ?>';
+            let currentFilter = '<?= $_GET['filter'] ?? '' ?>';
+            let currentSearch = '<?= $_GET['search'] ?? '' ?>';
+            let activeFilters = currentFilter ? currentFilter.split(',') : [];
             
-        // Update the narrowing indicator
-        const countDisplay = document.querySelector('.results-count');
-        if (countDisplay) {
-            countDisplay.textContent = `(${data.count} matching results)`;
-        }
-        
-        attachRowClickHandlers();
-        attachEditButtonHandlers();
-        attachStatusToggleHandlers();
-        })
-        .catch(error => {
-            if (error.name !== 'AbortError') console.error('Error:', error);
-        });
-}
-
-function updateClearButton() {
-    const inputGroup = searchInput.parentElement;
-    const clearBtn = document.getElementById('clearSearch');
-    
-    if (currentSearch && !clearBtn) {
-        const newClearBtn = document.createElement('button');
-        newClearBtn.id = 'clearSearch';
-        newClearBtn.className = 'btn btn-outline-danger';
-        newClearBtn.innerHTML = '<i class="fas fa-times"></i>';
-        newClearBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            searchInput.value = '';
-            currentSearch = '';
-            fetchPartners();
+            // Initialize search terms display
+            updateSearchTermDisplay();
+            
+            // Initialize clear button
             updateClearButton();
             
-            // Update URL
-            const params = new URLSearchParams(window.location.search);
-            params.delete('search');
-            history.replaceState(null, '', '?' + params.toString());
-        });
-        inputGroup.appendChild(newClearBtn);
-    } else if (!currentSearch && clearBtn) {
-        clearBtn.parentElement.removeChild(clearBtn);
-    }
-}
-
-function attachEventHandlers() {
-    attachRowClickHandlers();
-    attachEditButtonHandlers();
-    attachStatusToggleHandlers();
-    
-    // Highlight search terms in results
-    if (currentSearch) {
-        const searchTerms = currentSearch.split(',').map(term => term.trim());
-        highlightSearchTerms(searchTerms);
-    }
-}
-
-function highlightSearchTerms(terms) {
-    const rows = partnersTableBody.querySelectorAll('tr');
-    
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td:not(:last-child)');
-        let rowContainsTerm = false;
-        
-        cells.forEach(cell => {
-            let cellHtml = cell.innerHTML;
-            let cellContainsTerm = false;
+            // Initialize sort indicators
+            initSortIndicators();
             
-            terms.forEach(term => {
-                if (term.toLowerCase() === 'active' || term.toLowerCase() === 'inactive') {
-                    return; // Skip status terms
-                }
-                
-                const regex = new RegExp(escapeRegExp(term), 'gi');
-                cellHtml = cellHtml.replace(regex, match => 
-                    `<span class="highlight">${match}</span>`);
-                
-                if (cell.textContent.toLowerCase().includes(term.toLowerCase())) {
-                    cellContainsTerm = true;
+            // Initialize filter button states
+            updateAllButtonState();
+            
+            // Sidebar toggle for mobile
+            $('#sidebarToggle').click(function() {
+                $('.sidebar').toggleClass('show');
+            });
+            
+            // Handle window resize
+            $(window).resize(function() {
+                if ($(window).width() > 992) {
+                    $('.sidebar').removeClass('show');
                 }
             });
             
-            if (cellContainsTerm) {
-                rowContainsTerm = true;
-                cell.innerHTML = cellHtml;
-            }
-        });
-        
-        if (rowContainsTerm) {
-            row.classList.add('search-match');
-        } else {
-            row.classList.remove('search-match');
-        }
-    });
-}
-
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-        document.querySelectorAll('.type-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            // Search input handling
+            $('#searchInput').on('input', function() {
+                currentSearch = $(this).val().replace(/, /g, ',').trim();
+                updateSearchTermDisplay();
+                updateClearButton();
+                fetchPartners();
+            });
+            
+            // Clear search button
+            $('#clearSearch').click(function() {
+                $('#searchInput').val('');
+                currentSearch = '';
+                updateSearchTermDisplay();
+                updateClearButton();
+                fetchPartners();
+            });
+            
+            // Filter buttons
+            $('.filter-btn').click(function(e) {
                 e.preventDefault();
-                const filterType = this.dataset.filter;
                 
-                const index = activeFilters.indexOf(filterType);
-                if (index === -1) {
-                    activeFilters.push(filterType);
-                    this.classList.add('active');
+                const filterType = $(this).data('filter');
+                
+                if (filterType === 'all') {
+                    activeFilters = [];
+                    $('.type-btn').removeClass('active');
                 } else {
-                    activeFilters.splice(index, 1);
-                    this.classList.remove('active');
+                    const index = activeFilters.indexOf(filterType);
+                    if (index === -1) {
+                        activeFilters.push(filterType);
+                    } else {
+                        activeFilters.splice(index, 1);
+                    }
+                    $(this).toggleClass('active');
                 }
                 
                 updateAllButtonState();
-                
                 currentFilter = activeFilters.join(',');
                 fetchPartners();
             });
-        });
-
-        document.querySelector('.all-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            activeFilters = [];
-            currentFilter = '';
             
-            document.querySelectorAll('.type-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            this.classList.add('active');
-            
-            fetchPartners();
-        });
-
-        function updateAllButtonState() {
-            const allBtn = document.querySelector('.all-btn');
-            if (activeFilters.length === 0) {
-                allBtn.classList.add('active');
-            } else {
-                allBtn.classList.remove('active');
-            }
-        }
-
-        sortableHeaders.forEach(header => {
-            header.addEventListener('click', function() {
-                const sortField = this.dataset.sort;
+            // Sortable headers
+            $('.sortable-header').click(function() {
+                const sortField = $(this).data('sort');
                 
                 if (currentSort === sortField) {
                     currentOrder = currentOrder === 'ASC' ? 'DESC' : 'ASC';
@@ -1068,362 +920,155 @@ function escapeRegExp(string) {
                 
                 fetchPartners();
             });
-        });
-
-        toggleStatusForms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const formData = new FormData(this);
-                formData.append('toggle_status', '1');
-                
-                fetch(window.location.href.split('?')[0], {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.text();
-                    }
-                    throw new Error('Network response was not ok.');
-                })
-                .then(() => {
-                    fetchPartners();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            });
-        });
-
-        function fetchPartners() {
-            const params = new URLSearchParams();
-            if (currentSort) params.append('sort', currentSort);
-            if (currentOrder) params.append('order', currentOrder);
-            if (currentSearch) params.append('search', currentSearch);
-            if (currentFilter) params.append('filter', currentFilter);
             
-            fetch(`partners_ajax.php?${params.toString()}`)
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error('Network response was not ok.');
-                })
-                .then(data => {
-                    partnersTableBody.innerHTML = data.html;
-                    document.getElementById('resultsCount').textContent = 
-                        `Showing ${data.count} of ${data.total} partners`;
-                        
-                    attachRowClickHandlers();
-                    attachEditButtonHandlers();
-                    attachStatusToggleHandlers();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        }
-
-        function attachRowClickHandlers() {
-            document.querySelectorAll(".clickable-row").forEach(row => {
-                row.addEventListener("click", function(e) {
-                    if (e.target.closest(".action-buttons") || e.target.closest('form')) return;
-                    const url = this.getAttribute("data-href");
-                    if (url) window.location.href = url;
-                });
-            });
-        }
-
-        function attachEditButtonHandlers() {
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    document.getElementById('edit_id').value = btn.dataset.id;
-                    document.getElementById('edit_coop_type').value = btn.dataset.coop;
-                    document.getElementById('edit_name').value = btn.dataset.name;
-                    document.getElementById('edit_herd').value = btn.dataset.herd;
-                    document.getElementById('edit_person').value = btn.dataset.person;
-                    document.getElementById('edit_number').value = btn.dataset.number;
-                    document.getElementById('edit_barangay').value = btn.dataset.barangay;
-                    document.getElementById('edit_municipality').value = btn.dataset.municipality;
-                    document.getElementById('edit_province').value = btn.dataset.province;
-                    document.getElementById('edit_active').checked = btn.dataset.active === '1';
-                    editModal.classList.add('show');
-                    document.body.style.overflow = 'hidden';
-                });
-            });
-        }
-
-        function attachStatusToggleHandlers() {
-            document.querySelectorAll('.toggle-status-form').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const formData = new FormData(this);
-                    formData.append('toggle_status', '1');
-                    
-                    fetch(window.location.href.split('?')[0], {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            return response.text();
-                        }
-                        throw new Error('Network response was not ok.');
-                    })
-                    .then(() => {
-                        fetchPartners();
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                });
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", function() {
-            attachRowClickHandlers();
-        });
-
-// Add this to your JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    // Delegate event for dynamically loaded content
-    document.body.addEventListener('submit', function(e) {
-        if (e.target.classList.contains('toggle-status-form')) {
-            e.preventDefault();
-            togglePartnerStatus(e.target);
-        }
-    });
-});
- 
-function togglePartnerStatus(form) {
-    const formData = new FormData(form);
-    const button = form.querySelector('button');
-    
-    // Add loading state
-    const originalText = button.textContent;
-    button.disabled = true;
-
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Helps identify AJAX requests
-        }
-    })
-    .then(response => {
-        // First check if the response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            return response.text().then(text => {
-                throw new Error(`Expected JSON, got: ${text.substring(0, 100)}...`);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        // Update button based on new status
-        if (data.new_status == 1) {
-            button.classList.remove('btn-danger');
-            button.classList.add('btn-success');
-            button.textContent = 'Active';
-        } else {
-            button.classList.remove('btn-success');
-            button.classList.add('btn-danger');
-            button.textContent = 'Inactive';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Show error message near the button
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'text-danger small mt-1';
-        errorDiv.textContent = error.message;
-        form.appendChild(errorDiv);
-        setTimeout(() => errorDiv.remove(), 5000);
-        
-        // Reset button
-        button.textContent = originalText;
-    })
-    .finally(() => {
-        button.disabled = false;
-    });
-}
-
-            // Update URL without reload
-            function updateURL() {
-                const params = new URLSearchParams();
-                if (currentSort !== 'partner_name') params.append('sort', currentSort);
-                if (currentOrder !== 'ASC') params.append('order', currentOrder);
-                if (currentSearch) params.append('search', currentSearch);
-                if (currentFilter) params.append('filter', currentFilter);
+            // Clickable rows
+            $(document).on('click', '.clickable-row', function(e) {
+                // Don't navigate if clicking on a button or link within the row
+                if ($(e.target).is('a, button, input, .btn') || $(e.target).closest('a, button, input, .btn').length) {
+                    return;
+                }
                 
-                const newUrl = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
+                const url = $(this).data('href');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+            
+            // Logout confirmation
+            $('#logoutLink').click(function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Logout Confirmation',
+                    text: 'Are you sure you want to logout?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, logout!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = $(this).attr('href');
+                    }
+                });
+            });
+            
+            // Functions
+            function fetchPartners() {
+                const params = {
+                    sort: currentSort,
+                    order: currentOrder,
+                    page: 1, // Always reset to first page when changing filters/sort
+                    search: currentSearch,
+                    filter: currentFilter
+                };
+                
+                // Update URL
+                updateURL(params);
+                
+                $.ajax({
+                    url: 'partners_ajax.php',
+                    method: 'GET',
+                    data: params,
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.error) {
+                            console.error(data.error);
+                            return;
+                        }
+                        
+                        $('#partnersTableBody').html(data.html);
+                        $('#resultsCount h4').text(`Showing ${data.count} of ${data.total} partners`);
+                        
+                        // Update pagination
+                        $('.pagination-container').html(data.pagination);
+                        
+                        // Highlight search terms
+                        if (currentSearch) {
+                            highlightSearchTerms(currentSearch.split(',').map(t => t.trim()));
+                        }
+                        
+                        // Update sort indicators
+                        initSortIndicators();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+            
+            function updateURL(params) {
+                const queryString = $.param(params);
+                const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
                 window.history.replaceState(null, '', newUrl);
             }
             
-            
-            function escapeRegExp(string) {
-                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            }
-            
-            // Update search term display
             function updateSearchTermDisplay() {
                 const termsDisplay = $('#searchTermsDisplay');
+                termsDisplay.empty();
                 
                 if (currentSearch.includes(',')) {
                     const terms = currentSearch.split(',').map(t => t.trim()).filter(t => t);
-                    const html = terms.map((term, i) => 
+                    const termsHtml = terms.map((term, i) => 
                         `<span class="search-term ${i > 0 ? 'narrow-term' : ''}">${term}</span>`).join(' ');
                     
                     termsDisplay.html(`
                         <div class="narrowing-indicator">
                             <small>Narrowing by:</small>
-                            ${html}
+                            ${termsHtml}
                         </div>
                     `);
-                } else {
-                    termsDisplay.empty();
                 }
             }
             
-            // Show alert function
-            function showAlert(title, text, icon) {
-                Swal.fire({
-                    title: title,
-                    text: text,
-                    icon: icon,
-                    confirmButtonColor: '#3085d6',
-                });
+            function updateClearButton() {
+                const clearBtn = $('#clearSearch');
+                if (currentSearch) {
+                    clearBtn.show();
+                } else {
+                    clearBtn.hide();
+                }
             }
             
-            // Initialize sort indicators
+            function updateAllButtonState() {
+                const allBtn = $('.all-btn');
+                if (activeFilters.length === 0) {
+                    allBtn.addClass('active');
+                } else {
+                    allBtn.removeClass('active');
+                }
+            }
+            
             function initSortIndicators() {
                 $('.sort-indicator').hide();
-                const header = $(`.sortable-header[data-sort="${currentSort}"]`);
-                if (header.length) {
-                    const indicator = header.find('.sort-indicator');
-                    indicator.show().text(currentOrder === 'ASC' ? '↑' : '↓');
-                }
+                $(`.sortable-header[data-sort="${currentSort}"] .sort-indicator`)
+                    .show()
+                    .text(currentOrder === 'ASC' ? '↑' : '↓');
             }
             
-            initSortIndicators();
-
-        const sidebarToggle = document.createElement('button');
-        sidebarToggle.innerHTML = '<i class="fas fa-bars"></i>';
-        sidebarToggle.style.position = 'fixed';
-        sidebarToggle.style.bottom = '20px';
-        sidebarToggle.style.right = '20px';
-        sidebarToggle.style.zIndex = '999';
-        sidebarToggle.style.width = '50px';
-        sidebarToggle.style.height = '50px';
-        sidebarToggle.style.borderRadius = '50%';
-        sidebarToggle.style.backgroundColor = 'var(--primary)';
-        sidebarToggle.style.color = 'white';
-        sidebarToggle.style.border = 'none';
-        sidebarToggle.style.boxShadow = 'var(--shadow-md)';
-        sidebarToggle.style.cursor = 'pointer';
-        sidebarToggle.style.display = 'none';
-        
-        document.body.appendChild(sidebarToggle);
-        
-        sidebarToggle.addEventListener('click', () => {
-            document.querySelector('.sidebar').classList.toggle('show');
-        });
-
-        modalCloses.forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.classList.remove('show');
+            function highlightSearchTerms(terms) {
+                $('td').each(function() {
+                    let cellHtml = $(this).html();
+                    
+                    terms.forEach(term => {
+                        if (term.toLowerCase() === 'active' || term.toLowerCase() === 'inactive') {
+                            return; // Skip status terms
+                        }
+                        
+                        if (term) {
+                            const regex = new RegExp(escapeRegExp(term), 'gi');
+                            cellHtml = cellHtml.replace(regex, match => 
+                                `<span class="highlight">${match}</span>`);
+                        }
+                    });
+                    
+                    $(this).html(cellHtml);
                 });
-                document.body.style.overflow = 'auto';
-            });
-        });
-
-        document.querySelectorAll('.modal-cancel').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.classList.remove('show');
-                });
-                document.body.style.overflow = 'auto';
-            });
-        });     
-           
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                e.target.classList.remove('show');
-                document.body.style.overflow = 'auto';
+            }
+            
+            function escapeRegExp(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             }
         });
-
-        function handleResize() {
-            if (window.innerWidth <= 992) {
-                sidebarToggle.style.display = 'flex';
-                sidebarToggle.style.alignItems = 'center';
-                sidebarToggle.style.justifyContent = 'center';
-            } else {
-                sidebarToggle.style.display = 'none';
-                document.querySelector('.sidebar').classList.remove('show');
-            }
-        }
-        
-        window.addEventListener('resize', handleResize);
-        handleResize();
-
-        function confirmLogout(event) {
-            event.preventDefault();
-            Swal.fire({
-                title: 'Logout Confirmation',
-                text: 'Are you sure you want to logout?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, logout!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = event.target.href;
-                }
-            });
-        }
-
-// navigation.js
-document.addEventListener('DOMContentLoaded', () => {
-    const currentPage = window.location.pathname.split('/').pop(); // Get current filename (e.g., "partners.php")
-
-    // Highlight active nav-link based on current page or section
-    document.querySelectorAll('nav .nav-link, nav a').forEach(link => {
-        const href = link.getAttribute('href');
-        
-        // Highlight if href matches the current page
-        if (href && currentPage === href) {
-            link.classList.add('active');
-        }
-
-        // SPA-style section toggle for links with data-section (if ever needed again)
-        if (link.dataset.section) {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-
-                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-
-                link.classList.add('active');
-                const targetSection = document.getElementById(link.dataset.section);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                }
-            });
-        }
-    });
-});
-
     </script>
 </body>
 </html>

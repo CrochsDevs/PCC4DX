@@ -132,6 +132,13 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
         <p>Report on successful births and calf health monitoring programs.</p>
         </a>
+
+        <a href="cd_dashboard.php" class="service-card">
+        <h3 class="card-title"><i class="fas fa-solid fa-store"></i> Dairy box</h3>
+        <p>Report on Dairy Box hubs supporting farmers through milk marketing and enterprise.</p>
+        </a>
+
+        
     </div>
     </div>
 
