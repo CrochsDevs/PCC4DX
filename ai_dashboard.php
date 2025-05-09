@@ -9,12 +9,10 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     exit;
 }
 
-// Define target value for grand total only
-$targetValues = [
-    'grand_total' => 5000
-];
+// Define target value for AI services
+$targetValue = 31000; // Example target value for AI services
 
-class DashboardManager {
+class AIDashboardManager {
     private $db;
     private $centerCode;
     
@@ -26,12 +24,8 @@ class DashboardManager {
     // Get cumulative totals (all-time)
     public function getSummaryData() {
         $query = "SELECT 
-                    SUM(ai) as total_ai,
-                    SUM(bep) as total_bep,
-                    SUM(ih) as total_ih,
-                    SUM(private) as total_private,
-                    SUM(ai + bep + ih + private) as grand_total
-                  FROM calf_drop 
+                    SUM(aiServices) as total_ai
+                  FROM ai_services 
                   WHERE center = :center";
         
         $stmt = $this->db->prepare($query);
@@ -43,12 +37,8 @@ class DashboardManager {
     // Get yearly summary data
     public function getYearlySummaryData($year = null) {
         $query = "SELECT 
-                    SUM(ai) as total_ai,
-                    SUM(bep) as total_bep,
-                    SUM(ih) as total_ih,
-                    SUM(private) as total_private,
-                    SUM(ai + bep + ih + private) as grand_total
-                  FROM calf_drop 
+                    SUM(aiServices) as total_ai
+                  FROM ai_services 
                   WHERE center = :center";
         
         $params = [':center' => $this->centerCode];
@@ -67,12 +57,8 @@ class DashboardManager {
     // Get filtered data for charts
     public function getFilteredData($year = null, $months = null, $week = null) {
         $query = "SELECT 
-                    SUM(ai) as total_ai,
-                    SUM(bep) as total_bep,
-                    SUM(ih) as total_ih,
-                    SUM(private) as total_private,
-                    SUM(ai + bep + ih + private) as grand_total
-                  FROM calf_drop 
+                    SUM(aiServices) as total_ai
+                  FROM ai_services 
                   WHERE center = :center";
         
         $params = [':center' => $this->centerCode];
@@ -111,11 +97,8 @@ class DashboardManager {
         $query = "SELECT 
                     YEAR(date) as year,
                     MONTH(date) as month,
-                    SUM(ai) as ai,
-                    SUM(bep) as bep,
-                    SUM(ih) as ih,
-                    SUM(private) as private
-                  FROM calf_drop 
+                    SUM(aiServices) as ai
+                  FROM ai_services 
                   WHERE center = :center";
         
         $params = [':center' => $this->centerCode];
@@ -152,11 +135,8 @@ class DashboardManager {
     public function getYearlyData() {
         $query = "SELECT 
                     YEAR(date) as year,
-                    SUM(ai) as ai,
-                    SUM(bep) as bep,
-                    SUM(ih) as ih,
-                    SUM(private) as private
-                  FROM calf_drop 
+                    SUM(aiServices) as ai
+                  FROM ai_services 
                   WHERE center = :center
                   GROUP BY YEAR(date)
                   ORDER BY year DESC
@@ -170,7 +150,7 @@ class DashboardManager {
     
     public function getAvailableYears() {
         $query = "SELECT DISTINCT YEAR(date) as year 
-                  FROM calf_drop 
+                  FROM ai_services 
                   WHERE center = :center
                   ORDER BY year DESC";
         
@@ -184,7 +164,7 @@ class DashboardManager {
         if (empty($months)) return [];
         
         $query = "SELECT DISTINCT WEEK(date, 1) as week 
-                  FROM calf_drop 
+                  FROM ai_services 
                   WHERE center = :center 
                   AND YEAR(date) = :year";
         
@@ -215,71 +195,104 @@ class DashboardManager {
     }
 
     public function getDailyData($year, $months, $week) {
-        if (empty($months)) return [];
-    
         $query = "SELECT 
                     DAYNAME(date) as day_name,
                     DATE_FORMAT(date, '%Y-%m-%d') as full_date,
                     DAYOFWEEK(date) as day_number,
-                    SUM(ai) as ai,
-                    SUM(bep) as bep,
-                    SUM(ih) as ih,
-                    SUM(private) as private
-                  FROM calf_drop 
+                    SUM(aiServices) as ai
+                  FROM ai_services 
                   WHERE center = :center
                   AND YEAR(date) = :year
                   AND WEEK(date, 1) = :week";
-    
+        
         $params = [
             ':center' => $this->centerCode,
             ':year' => $year,
             ':week' => $week
         ];
-    
+        
         if (!empty($months)) {
-            $placeholders = [];
-            foreach ($months as $i => $month) {
-                $placeholders[] = ":month$i";
-                $params[":month$i"] = $month;
+            if (is_array($months)) {
+                $placeholders = [];
+                foreach ($months as $i => $month) {
+                    $placeholders[] = ":month$i";
+                    $params[":month$i"] = $month;
+                }
+                $query .= " AND MONTH(date) IN (" . implode(',', $placeholders) . ")";
+            } else {
+                $query .= " AND MONTH(date) = :month";
+                $params[':month'] = $months;
             }
-            $query .= " AND MONTH(date) IN (" . implode(',', $placeholders) . ")";
         }
-    
-        $query .= " GROUP BY DAYNAME(date), DATE_FORMAT(date, '%Y-%m-%d'), DAYOFWEEK(date)
-                    ORDER BY DAYOFWEEK(date)";
-    
+        
+        $query .= " GROUP BY date, DAYNAME(date), DAYOFWEEK(date)
+                    ORDER BY date";
+        
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-    
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getWeeklyData($year, $months) {
+        $query = "SELECT 
+                    WEEK(date, 1) as week,
+                    SUM(aiServices) as ai
+                  FROM ai_services 
+                  WHERE center = :center
+                  AND YEAR(date) = :year";
+        
+        $params = [
+            ':center' => $this->centerCode,
+            ':year' => $year
+        ];
+        
+        if (!empty($months)) {
+            if (is_array($months)) {
+                $placeholders = [];
+                foreach ($months as $i => $month) {
+                    $placeholders[] = ":month$i";
+                    $params[":month$i"] = $month;
+                }
+                $query .= " AND MONTH(date) IN (" . implode(',', $placeholders) . ")";
+            } else {
+                $query .= " AND MONTH(date) = :month";
+                $params[':month'] = $months;
+            }
+        }
+        
+        $query .= " GROUP BY WEEK(date, 1)
+                    ORDER BY week";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getReportRatingData($year = null) {
+
         $startDate = $year ? "{$year}-01-01" : "{$year}-01-01";
     
         $query = "
             SELECT 
-                -- Count unique dates from calf_drop table
                 unique_dates,
-            
                 workdays,
-            
                 ROUND((unique_dates / workdays) * 100, 2) AS percentage
             FROM (
                 SELECT 
-                    -- Count unique dates from the calf_drop table
                     (SELECT COUNT(DISTINCT date) 
-                     FROM pcc_auth_system.calf_drop 
+                     FROM ai_services 
                      WHERE center = :center AND date >= :startDate AND date <= CURDATE()) AS unique_dates,
     
                     (SELECT COUNT(*) 
                      FROM (
-                        SELECT ADDDATE(:startDate, INTERVAL n DAY) AS workday
+                        SELECT DATE_ADD(:startDate, INTERVAL n DAY) AS workday
                         FROM (SELECT @rownum := @rownum + 1 AS n 
                               FROM information_schema.columns, (SELECT @rownum := 0) r 
                               LIMIT 365) days
-                        WHERE DAYOFWEEK(ADDDATE(:startDate, INTERVAL n DAY)) NOT IN (1, 7)  -- Exclude Sundays and Saturdays
-                        AND ADDDATE(:startDate, INTERVAL n DAY) <= CURDATE()  -- Ensure date is within current date
+                        WHERE DAYOFWEEK(DATE_ADD(:startDate, INTERVAL n DAY)) NOT IN (1, 7)  -- Exclude Sundays and Saturdays
+                        AND DATE_ADD(:startDate, INTERVAL n DAY) <= CURDATE()  -- Ensure date is within current date
                      ) workdays) AS workdays
             ) AS result
         ";
@@ -292,15 +305,14 @@ class DashboardManager {
         
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-
-    public function calculateGrading($targetValue, $actualAchieved, $reportPercentage) {
+    
+    public function calculateGrading($targetValue, $actualAchieved, $reportPercentage, ) {
         // Calculate Accomplished Rating
         $accomplishedRating = ($actualAchieved / $targetValue) * 100;
-        
-        
+
         // Calculate Final Score
         $finalScore = ($reportPercentage) + ($accomplishedRating) / 2;
-        
+
         // Determine Grade
         $grade = '';
         if ($finalScore >= 90) {
@@ -321,29 +333,38 @@ class DashboardManager {
             'grade' => $grade,
         ];
     }
-
 }
 
-// Handle AJAX request for weeks
+// Handle AJAX request for chart data
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
     
     $year = $_GET['year'] ?? null;
     $months = isset($_GET['months']) ? explode(',', $_GET['months']) : null;
+    $week = $_GET['week'] ?? null;
     $centerCode = $_SESSION['center_code'];
     
-    if ($year && $months) {
-        $dashboardManager = new DashboardManager($conn, $centerCode);
-        $weeks = $dashboardManager->getWeeksInMonth($year, $months);
-        echo json_encode($weeks);
-    } else {
-        echo json_encode([]);
+    $dashboardManager = new AIDashboardManager($conn, $centerCode);
+    
+    $response = [
+        'monthlyData' => $dashboardManager->getMonthlyData($year, $months),
+        'yearlyData' => $dashboardManager->getYearlyData(),
+    ];
+    
+    if ($months) {
+        $response['weeklyData'] = $dashboardManager->getWeeklyData($year, $months);
+        
+        if ($week) {
+            $response['dailyData'] = $dashboardManager->getDailyData($year, $months, $week);
+        }
     }
+    
+    echo json_encode($response);
     exit;
 }
 
 $centerCode = $_SESSION['center_code'];
-$dashboardManager = new DashboardManager($conn, $centerCode);
+$dashboardManager = new AIDashboardManager($conn, $centerCode);
 
 // Get current year and month for default filter
 $currentYear = date('Y');
@@ -360,19 +381,58 @@ $availableWeeks = $selectedMonths ? $dashboardManager->getWeeksInMonth($selected
 
 // Get summary data based on selected year
 $summaryData = $dashboardManager->getYearlySummaryData($selectedYear);
+$allTimeSummaryData = $dashboardManager->getSummaryData();
 
 // Get filtered data for charts
 $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonths, $selectedWeek);
 $monthlyData = $dashboardManager->getMonthlyData($selectedYear, $selectedMonths);
 $yearlyData = $dashboardManager->getYearlyData();
 
+// Get report rating data for the selected year
+$reportRatingData = $dashboardManager->getReportRatingData($selectedYear);
+
+// Extract the unique_date, workdays, and report percentage
+$uniqueDates = $reportRatingData['unique_dates'] ?? 0;
+$workdays = $reportRatingData['workdays'] ?? 0;
+$reportPercentage = $reportRatingData['percentage'] ?? 0;
+
+// Calculate percentage against target
+$totalAI = $summaryData['total_ai'] ?? 0;
+$aiPercentage = round(($totalAI / $targetValue) * 100);
+
+// Calculate grading
+$gradingData = $dashboardManager->calculateGrading(
+    $targetValue,
+    $totalAI,
+    $reportPercentage,
+    1,  
+    1   
+);
+
+// Determine status for AI services
+$aiStatus = '';
+$aiStatusClass = '';
+if ($aiPercentage >= 100) {
+    $aiStatus = 'Excellent! Target exceeded';
+    $aiStatusClass = 'text-green-600';
+} elseif ($aiPercentage >= 95) {
+    $aiStatus = 'Target achieved!';
+    $aiStatusClass = 'text-green-500';
+} elseif ($aiPercentage >= 60) {
+    $aiStatus = 'Keep it up!';
+    $aiStatusClass = 'text-yellow-600';
+} elseif ($aiPercentage >= 20) {
+    $aiStatus = 'Nearly there!';
+    $aiStatusClass = 'text-orange-500';
+} else {
+    $aiStatus = 'Getting started';
+    $aiStatusClass = 'text-red-500';
+}
+
 // Prepare data for charts
 function prepareChartData($data) {
     $labels = [];
     $aiData = [];
-    $bepData = [];
-    $ihData = [];
-    $privateData = [];
 
     foreach (array_reverse($data) as $item) {
         if (isset($item['month'])) {
@@ -381,19 +441,16 @@ function prepareChartData($data) {
             $labels[] = $item['year'];
         }
         $aiData[] = $item['ai'];
-        $bepData[] = $item['bep'];
-        $ihData[] = $item['ih'];
-        $privateData[] = $item['private'];
     }
 
     return [
         'labels' => $labels,
-        'aiData' => $aiData,
-        'bepData' => $bepData,
-        'ihData' => $ihData,
-        'privateData' => $privateData
+        'aiData' => $aiData
     ];
 }
+
+$monthlyChartData = prepareChartData($monthlyData);
+$yearlyChartData = prepareChartData($yearlyData);
 
 $dailyData = [];
 if ($selectedWeek && $selectedMonths) {
@@ -404,88 +461,39 @@ if ($selectedWeek && $selectedMonths) {
 $dailyChartData = [
     'labels' => [],
     'dates' => [],
-    'aiData' => [],
-    'bepData' => [],
-    'ihData' => [],
-    'privateData' => []
+    'aiData' => []
 ];
 
 foreach ($dailyData as $day) {
-    $dailyChartData['labels'][] = $day['day_name'] . ' (' . $day['full_date'] . ')'; 
+    $dailyChartData['labels'][] = $day['day_name'] . ' (' . date('M j', strtotime($day['full_date'])) . ')'; 
     $dailyChartData['dates'][] = $day['full_date'];
     $dailyChartData['aiData'][] = $day['ai'];
-    $dailyChartData['bepData'][] = $day['bep'];
-    $dailyChartData['ihData'][] = $day['ih'];
-    $dailyChartData['privateData'][] = $day['private'];
 }
 
-// Get report rating data for the selected year
-$reportRatingData = $dashboardManager->getReportRatingData($selectedYear);
-
-// Extract the unique_date, workdays, and report percentage
-$uniqueDates = $reportRatingData['unique_dates'] ?? 0;
-$workdays = $reportRatingData['workdays'] ?? 0;
-$reportPercentage = $reportRatingData['percentage'] ?? 0;
-
-
-
-$monthlyChartData = prepareChartData($monthlyData);
-$yearlyChartData = prepareChartData($yearlyData);
-
-// Calculate percentages against targets
-$grandTotal = $filteredData['grand_total'] ?? $summaryData['grand_total'] ?? 0;
-$grandTotalPercentage = round(($grandTotal / $targetValues['grand_total']) * 100);
-
-// Calculate percentages of each category against grand total
-$filteredTotals = $filteredData ? $filteredData : $summaryData;
-$aiPercentage = $grandTotal > 0 ? round(($filteredTotals['total_ai'] / $grandTotal) * 100) : 0;
-$bepPercentage = $grandTotal > 0 ? round(($filteredTotals['total_bep'] / $grandTotal) * 100) : 0;
-$ihPercentage = $grandTotal > 0 ? round(($filteredTotals['total_ih'] / $grandTotal) * 100) : 0;
-$privatePercentage = $grandTotal > 0 ? round(($filteredTotals['total_private'] / $grandTotal) * 100) : 0;
-
-$totalAI = $filteredData['total_ai'] ?? 0;
-$totalBEP = $filteredData['total_bep'] ?? 0;
-$totalIH = $filteredData['total_ih'] ?? 0;
-$totalPrivate = $filteredData['total_private'] ?? 0;
-
-$totalSum = $totalAI + $totalBEP + $totalIH + $totalPrivate;
-
-// Determine status for grand total
-$grandTotalStatus = '';
-$grandTotalStatusClass = '';
-if ($grandTotalPercentage >= 100) {
-    $grandTotalStatus = 'Excellent! Target exceeded';
-    $grandTotalStatusClass = 'text-green-600';
-} elseif ($grandTotalPercentage >= 95) {
-    $grandTotalStatus = 'Target achieved!';
-    $grandTotalStatusClass = 'text-green-500';
-} elseif ($grandTotalPercentage >= 60) {
-    $grandTotalStatus = 'Keep it up!';
-    $grandTotalStatusClass = 'text-yellow-600';
-} elseif ($grandTotalPercentage >= 20) {
-    $grandTotalStatus = 'Nearly there!';
-    $grandTotalStatusClass = 'text-orange-500';
-} else {
-    $grandTotalStatus = 'Getting started';
-    $grandTotalStatusClass = 'text-red-500';
+// Get weekly data for the selected months
+$weeklyData = [];
+if ($selectedMonths) {
+    $weeklyData = $dashboardManager->getWeeklyData($selectedYear, $selectedMonths);
 }
 
-// Calculate grading
-$gradingData = $dashboardManager->calculateGrading(
-    $targetValues['grand_total'],
-    $grandTotal,
-    $reportPercentage,
-    1, 
-    1   
-);
+// Prepare weekly chart data
+$weeklyChartData = [
+    'labels' => [],
+    'aiData' => []
+];
+
+foreach ($weeklyData as $week) {
+    $weeklyChartData['labels'][] = 'Week ' . $week['week'];
+    $weeklyChartData['aiData'][] = $week['ai'];
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
+    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> AI Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -627,34 +635,32 @@ $gradingData = $dashboardManager->calculateGrading(
 </head>
 <body>
     <!-- Sidebar -->
-<div class="sidebar">
-       <!-- User Profile Section -->
-    <div class="user-profile">
-        <div class="profile-picture">
-            <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                <!-- Display the uploaded profile image -->
-                <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-            <?php else: ?>
-                <!-- Fallback to the generated avatar -->
-                <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-            <?php endif; ?>
+    <div class="sidebar">
+        <!-- User Profile Section -->
+        <div class="user-profile">
+            <div class="profile-picture">
+                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+                <?php else: ?>
+                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+                <?php endif; ?>
+            </div>
+            <div class="profile-info">
+                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+            </div>
         </div>
-        <div class="profile-info">
-            <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-            <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-        </div>
-    </div>
 
         <nav>
             <ul>
                 <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
-                <li><a href="cd_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                <li><a href="calf_drop.php" class="nav-link"><i class="fas fa-plus-circle"></i> Calf Drop</a></li>
-                <li><a href="cd_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="ai_dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="ai.php" class="nav-link"><i class="fas fa-syringe"></i> AI Services</a></li>
+                <li><a href="ai_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
-</div>
+    </div>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -664,8 +670,7 @@ $gradingData = $dashboardManager->calculateGrading(
                 <header class="mb-10">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h1 class="text-3xl font-bold ">Calf Drop Dashboard</h1>
-                        
+                        <h1 class="text-3xl font-bold ">Artificial Insemination Dashboard</h1>
                     </div>
                 </div>
                 </header>
@@ -780,195 +785,148 @@ $gradingData = $dashboardManager->calculateGrading(
         
         <!-- Dashboard Content -->
         <div class="container mx-auto px-4 py-8">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-10">
                 <!-- AI Services Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-gray-500 font-medium">Total AI</p>
+                            <p class="text-gray-500 font-medium">Total AI Services</p>
                             <h3 class="text-2xl font-bold text-indigo-600"><?= number_format($summaryData['total_ai'] ?? 0) ?></h3>
+                            <p class="text-sm mt-1">       
+                                <span class="status-indicator <?= 
+                                    $aiPercentage >= 100 ? 'status-excellent' : 
+                                    ($aiPercentage >= 95 ? 'status-achieved' : 
+                                    ($aiPercentage >= 60 ? 'status-progress' : 'status-low')) ?>">
+                                    <?= $aiStatus ?>
+                                    <i class="fas <?= 
+                                        $aiPercentage >= 100 ? 'fa-check-circle' : 
+                                        ($aiPercentage >= 60 ? 'fa-arrow-up' : 'fa-arrow-down') ?> ml-1"></i>
+                                </span>
+                            </p>
                         </div>
                         <div class="bg-indigo-100 p-3 rounded-full">
-                            <i class="fas fa-cow text-indigo-600 text-xl"></i>
+                            <i class="fas fa-syringe text-indigo-600 text-xl"></i>
                         </div>
                     </div>
                     <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-indigo-600 rounded-full" style="width: <?= $aiPercentage ?>%"></div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($aiPercentage, 100) ?>%; 
+                                background-color: <?= 
+                                    $aiPercentage >= 100 ? '#10b981' : 
+                                    ($aiPercentage >= 80 ? '#3b82f6' : 
+                                    ($aiPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
+                            <div class="target-marker" style="left: 100%"></div>
                         </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $aiPercentage ?>% of total</p>
+                        <div class="progress-text">
+                            <?= $aiPercentage ?>% of target (<?= number_format($summaryData['total_ai'] ?? 0) ?>/<?= number_format($targetValue) ?>)
+                        </div>
                     </div>
                 </div>
 
-                <!-- BEP Card -->
+                <!-- Grading Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-gray-500 font-medium">Total BEP</p>
-                            <h3 class="text-2xl font-bold text-blue-600"><?= number_format($summaryData['total_bep'] ?? 0) ?></h3>
+                            <p class="text-gray-500 font-medium">Performance Grade</p>
+                            <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
+                            <p class="text-sm mt-1">
+                                <span class="status-indicator <?= 
+                                    $gradingData['final_score'] >= 90 ? 'status-excellent' : 
+                                    ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
+                                    ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
+                                    Score: <?= $gradingData['final_score'] ?>%
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <i class="fas fa-star text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= $gradingData['final_score'] ?>%; 
+                                background-color: <?= 
+                                    $gradingData['final_score'] >= 90 ? '#10b981' : 
+                                    ($gradingData['final_score'] >= 80 ? '#3b82f6' : 
+                                    ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
+                        </div>
+                        <div class="progress-text text-xs mt-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
+                                </div>
+                                <div>
+                                    <span class="font-medium">Achievement:</span> <?= $gradingData['accomplished_rating'] ?>%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+
+                <!-- Report Rating Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-500 font-medium">Report Rating</p>
+                            <h3 class="text-2xl font-bold text-blue-600"><?= number_format($reportPercentage) ?>%</h3>
+                            <p class="text-sm mt-1">
+                                <span class="status-indicator <?= 
+                                    $reportPercentage >= 90 ? 'status-excellent' : 
+                                    ($reportPercentage >= 75 ? 'status-achieved' : 
+                                    ($reportPercentage >= 50 ? 'status-progress' : 'status-low')) ?>">
+                                    <?= 
+                                        $reportPercentage >= 90 ? 'Excellent' : 
+                                        ($reportPercentage >= 75 ? 'Good' : 
+                                        ($reportPercentage >= 50 ? 'Average' : 'Needs Improvement')) ?>
+                                </span>
+                            </p>
                         </div>
                         <div class="bg-blue-100 p-3 rounded-full">
                             <i class="fas fa-chart-line text-blue-600 text-xl"></i>
                         </div>
                     </div>
                     <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-blue-600 rounded-full" style="width: <?= $bepPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $bepPercentage ?>% of total</p>
-                    </div>
-                </div>
-
-                <!-- Grand Total Card (Top Row) -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in col-span-1 lg:col-span-1">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Grand Total</p>
-                            <h3 class="text-2xl font-bold" style="color: <?= 
-                                $grandTotalPercentage >= 100 ? '#10b981' : 
-                                ($grandTotalPercentage >= 80 ? '#3b82f6' : 
-                                ($grandTotalPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
-                                <?= number_format($summaryData['grand_total'] ?? 0) ?>
-                            </h3>
-                            <p class="text-sm mt-1">
-                                <span class="status-indicator <?= 
-                                    $grandTotalPercentage >= 100 ? 'status-excellent' : 
-                                    ($grandTotalPercentage >= 95 ? 'status-achieved' : 
-                                    ($grandTotalPercentage >= 60 ? 'status-progress' : 'status-low')) ?>">
-                                    <?= $grandTotalStatus ?>
-                                    <i class="fas <?= 
-                                        $grandTotalPercentage >= 100 ? 'fa-check-circle' : 
-                                        ($grandTotalPercentage >= 60 ? 'fa-arrow-up' : 'fa-arrow-down') ?> ml-1"></i>
-                                </span>
-                            </p>
-                        </div>
-                        <div class="bg-red-100 p-3 rounded-full">
-                            <i class="fas fa-chart-pie text-red-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
                         <div class="progress-container">
-                            <div class="progress-bar" style="width: <?= min($grandTotalPercentage, 100) ?>%; 
+                            <div class="progress-bar" style="width: <?= $reportPercentage ?>%; 
                                 background-color: <?= 
-                                    $grandTotalPercentage >= 100 ? '#10b981' : 
-                                    ($grandTotalPercentage >= 80 ? '#3b82f6' : 
-                                    ($grandTotalPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                                    $reportPercentage >= 90 ? '#10b981' : 
+                                    ($reportPercentage >= 75 ? '#3b82f6' : 
+                                    ($reportPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                             </div>
-                            <div class="target-marker" style="left: 100%"></div>
                         </div>
                         <div class="progress-text">
-                            <?= $grandTotalPercentage ?>% of target (<?= number_format($summaryData['grand_total'] ?? 0) ?>/<?= number_format($targetValues['grand_total']) ?>)
+                            <?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                <!-- Total IH Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total IH</p>
-                            <h3 class="text-2xl font-bold text-green-600"><?= number_format($summaryData['total_ih'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-full">
-                            <i class="fas fa-home text-green-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-green-600 rounded-full" style="width: <?= $ihPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $ihPercentage ?>% of total</p>
-                    </div>
-                </div>
-
-                <!-- Total Private Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total Private</p>
-                            <h3 class="text-2xl font-bold text-purple-600"><?= number_format($summaryData['total_private'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-full">
-                            <i class="fas fa-lock text-purple-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-purple-600 rounded-full" style="width: <?= $privatePercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $privatePercentage ?>% of total</p>
-                    </div>
-                </div>
-                <!-- Grand Total -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-gray-500 font-medium">Performance Grade</p>
-                                <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
-                                <p class="text-sm mt-1">
-                                    <span class="status-indicator <?= 
-                                        $gradingData['final_score'] >= 90 ? 'status-excellent' : 
-                                        ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
-                                        ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
-                                        Score: <?= $gradingData['final_score'] ?>%
-                                    </span>
-                                </p>
-                            </div>
-                            <div class="bg-purple-100 p-3 rounded-full">
-                                <i class="fas fa-star text-purple-600 text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <div class="progress-container">
-                                <div class="progress-bar" style="width: <?= min($gradingData['final_score'], 100) ?>%; 
-                                    background-color: <?= 
-                                        $gradingData['final_score'] >= 90 ? '#10b981' : 
-                                        ($gradingData['final_score'] >= 80 ? '#3b82f6' : 
-                                        ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
-                                </div>
-                            </div>
-                            <div class="progress-text text-xs mt-2">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
-                                        <h2><?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays </h2>
-                                    </div>
-                                    <div>
-                                        <span class="font-medium">Achievement:</span> <?= $gradingData['accomplished_rating'] ?>% 
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                </div>
-
-        </div>
-            
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-                <!-- Bar Chart (showing filtered data) -->
+                <!-- Bar Chart -->
                 <div class="bg-white p-6 rounded-xl shadow-md fade-in">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">Category Distribution</h2>
-                            <div class="flex space-x-2">
-                                <?php if ($selectedWeek): ?>
-                                <button id="dailyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="daily">Daily</button>
-                                <?php endif; ?>
-                                <?php if ($selectedMonths): ?>
-                                <button id="weeklyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="weekly">Weekly</button>
-                                <?php endif; ?>
-                                <button id="monthlyBtn" class="px-3 py-1 text-sm timeframe-btn active" data-timeframe="monthly">Monthly</button>
-                                <button id="yearlyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="yearly">Yearly</button>
-                            </div>
+                        <h2 class="text-xl font-semibold text-gray-800">AI Services Distribution</h2>
+                        <div class="flex space-x-2" id="timeframeButtons">
+                            <?php if ($selectedWeek): ?>
+                            <button id="dailyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="daily">Daily</button>
+                            <?php endif; ?>
+                            <?php if ($selectedMonths): ?>
+                            <button id="weeklyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="weekly">Weekly</button>
+                            <?php endif; ?>
+                            <button id="monthlyBtn" class="px-3 py-1 text-sm timeframe-btn active" data-timeframe="monthly">Monthly</button>
+                            <button id="yearlyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="yearly">Yearly</button>
+                        </div>
                     </div>
                     <div class="chart-container h-80">
                         <canvas id="barChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Line Chart (showing filtered data) -->
+                <!-- Line Chart -->
                 <div class="bg-white p-6 rounded-xl shadow-md fade-in">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-800">Trend Over Time</h2>    
@@ -978,117 +936,30 @@ $gradingData = $dashboardManager->calculateGrading(
                     </div>
                 </div>
             </div>
-            <!-- Pie Chart (showing filtered data) -->
-            <div class="bg-white p-6 rounded-xl shadow-md fade-in mb-10">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Category Breakdown</h2>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 h-96">
-                        <canvas id="pieChart"></canvas>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <?php foreach (['ai', 'bep', 'ih', 'private'] as $category): 
-                            $current = $filteredData['total_'.$category] ?? 0;
-                            $percentage = $grandTotal > 0 ? round(($current / $grandTotal) * 100) : 0;
-                            $color = [
-                                'ai' => ['bg' => 'indigo-600', 'text' => 'indigo'],
-                                'bep' => ['bg' => 'blue-600', 'text' => 'blue'],
-                                'ih' => ['bg' => 'green-600', 'text' => 'green'],
-                                'private' => ['bg' => 'purple-600', 'text' => 'purple']
-                            ][$category];
-                        ?>
-                        <div class="mb-6">
-                            <div class="flex items-center mb-2">
-                                <div class="w-4 h-4 bg-<?= $color['bg'] ?> rounded-full mr-2"></div>
-                                <span class="text-sm font-medium uppercase"><?= $category ?></span>
-                                <span class="ml-auto text-sm font-semibold">
-                                    <?= number_format($current) ?>
-                                </span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-bar bg-<?= $color['bg'] ?>" style="width: <?= $percentage ?>%"></div>
-                            </div>
-                            <div class="flex justify-between items-center mt-1">
-                                <span class="text-xs text-gray-500">
-                                    <i class="fas <?= $statusIcon ?> mr-1"></i>
-                                    <span class="status-indicator <?= $statusClass ?>">
-                                        <?= $percentage ?>%
-                                    </span>
-                                </span>
-                            </div>                          
-                        </div>
-                        <?php endforeach; ?>
-                        <!-- Display Total Sum -->
-                        <div class="mb-6">
-                            <div class="flex items-center mb-2">
-                                <div class="w-4 h-4 bg-gray-600 rounded-full mr-2"></div>
-                                <span class="text-sm font-medium uppercase">Total</span>
-                                <span class="ml-auto text-sm font-semibold"><?= number_format($totalSum) ?></span>
-                            </div>
-                        </div>  
-                    </div>
-                </div>
-            </div>
         </div>
 
         <script>
-            // Update the chartData in the script section
+            // Chart data
             const chartData = {
                 monthly: {
                     labels: <?= json_encode($monthlyChartData['labels']) ?>,
-                    aiData: <?= json_encode($monthlyChartData['aiData']) ?>,
-                    bepData: <?= json_encode($monthlyChartData['bepData']) ?>,
-                    ihData: <?= json_encode($monthlyChartData['ihData']) ?>,
-                    privateData: <?= json_encode($monthlyChartData['privateData']) ?>
+                    aiData: <?= json_encode($monthlyChartData['aiData']) ?>
                 },
                 yearly: {
                     labels: <?= json_encode($yearlyChartData['labels']) ?>,
-                    aiData: <?= json_encode($yearlyChartData['aiData']) ?>,
-                    bepData: <?= json_encode($yearlyChartData['bepData']) ?>,
-                    ihData: <?= json_encode($yearlyChartData['ihData']) ?>,
-                    privateData: <?= json_encode($yearlyChartData['privateData']) ?>
+                    aiData: <?= json_encode($yearlyChartData['aiData']) ?>
                 },
                 weekly: {
-                    labels: <?= json_encode(array_map(function($week) { return "Week ".$week; }, $availableWeeks)) ?>,
-                    aiData: <?= json_encode(array_fill(0, count($availableWeeks), 0)) ?>, 
-                    bepData: <?= json_encode(array_fill(0, count($availableWeeks), 0)) ?>,      
-                    ihData: <?= json_encode(array_fill(0, count($availableWeeks), 0)) ?>,  
-                    privateData: <?= json_encode(array_fill(0, count($availableWeeks), 0)) ?>
+                    labels: <?= json_encode($weeklyChartData['labels']) ?>,
+                    aiData: <?= json_encode($weeklyChartData['aiData']) ?>
                 },
                 daily: {
                     labels: <?= json_encode($dailyChartData['labels']) ?>,
                     dates: <?= json_encode($dailyChartData['dates']) ?>,
-                    aiData: <?= json_encode($dailyChartData['aiData']) ?>,
-                    bepData: <?= json_encode($dailyChartData['bepData']) ?>,
-                    ihData: <?= json_encode($dailyChartData['ihData']) ?>,
-                    privateData: <?= json_encode($dailyChartData['privateData']) ?>
+                    aiData: <?= json_encode($dailyChartData['aiData']) ?>
                 }
             };
 
-            // Fetch weekly data if months are selected
-            <?php if ($selectedMonths): ?>
-                <?php 
-                $weeklyData = [];
-                foreach ($availableWeeks as $week) {
-                    $weekData = $dashboardManager->getFilteredData($selectedYear, $selectedMonths, $week);
-                    $weeklyData[] = [
-                        'ai' => $weekData['total_ai'] ?? 0,
-                        'bep' => $weekData['total_bep'] ?? 0,
-                        'ih' => $weekData['total_ih'] ?? 0,
-                        'private' => $weekData['total_private'] ?? 0
-                    ];
-                }
-                ?>
-                chartData.weekly = {
-                    labels: <?= json_encode(array_map(function($week) { return "Week ".$week; }, $availableWeeks)) ?>,
-                    aiData: <?= json_encode(array_column($weeklyData, 'ai')) ?>,
-                    bepData: <?= json_encode(array_column($weeklyData, 'bep')) ?>,
-                    ihData: <?= json_encode(array_column($weeklyData, 'ih')) ?>,
-                    privateData: <?= json_encode(array_column($weeklyData, 'private')) ?>
-                };
-            <?php endif; ?>
-            
             // Initialize charts with monthly data by default
             const barCtx = document.getElementById('barChart').getContext('2d');
             let barChart = new Chart(barCtx, {
@@ -1096,28 +967,10 @@ $gradingData = $dashboardManager->calculateGrading(
                 data: {
                     labels: chartData.monthly.labels,
                     datasets: [{
-                        label: 'AI',
+                        label: 'AI Services',
                         data: chartData.monthly.aiData,
                         backgroundColor: 'rgba(79, 70, 229, 0.7)',
                         borderColor: 'rgba(79, 70, 229, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'BEP',
-                        data: chartData.monthly.bepData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'IH',
-                        data: chartData.monthly.ihData,
-                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
-                        borderColor: 'rgba(16, 185, 129, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'Private',
-                        data: chartData.monthly.privateData,
-                        backgroundColor: 'rgba(124, 58, 237, 0.7)',
-                        borderColor: 'rgba(124, 58, 237, 1)',
                         borderWidth: 1
                     }]
                 },
@@ -1157,34 +1010,10 @@ $gradingData = $dashboardManager->calculateGrading(
                     labels: chartData.monthly.labels,
                     datasets: [
                         {
-                            label: 'AI',
+                            label: 'AI Services',
                             data: chartData.monthly.aiData,
                             borderColor: 'rgba(79, 70, 229, 1)',
                             backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'BEP',
-                            data: chartData.monthly.bepData,
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'IH',
-                            data: chartData.monthly.ihData,
-                            borderColor: 'rgba(16, 185, 129, 1)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Private',
-                            data: chartData.monthly.privateData,
-                            borderColor: 'rgba(124, 58, 237, 1)',
-                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
                             tension: 0.3,
                             fill: true
                         }
@@ -1215,59 +1044,6 @@ $gradingData = $dashboardManager->calculateGrading(
                             }
                         }
                     }
-                }
-            });
-
-            // Pie Chart (showing filtered data)
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            const pieChart = new Chart(pieCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['AI', 'BEP', 'IH', 'Private'],
-                    datasets: [{
-                        data: [
-                            <?= $filteredData['total_ai'] ?? 0 ?>,
-                            <?= $filteredData['total_bep'] ?? 0 ?>,
-                            <?= $filteredData['total_ih'] ?? 0 ?>,
-                            <?= $filteredData['total_private'] ?? 0 ?>
-                        ],
-                        backgroundColor: [
-                            'rgba(79, 70, 229, 0.7)',
-                            'rgba(59, 130, 246, 0.7)',
-                            'rgba(16, 185, 129, 0.7)',
-                            'rgba(124, 58, 237, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(79, 70, 229, 1)',
-                            'rgba(59, 130, 246, 1)',
-                            'rgba(16, 185, 129, 1)',
-                            'rgba(124, 58, 237, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const percentage = Math.round((value / <?= $grandTotal ?>) * 100);
-                                    return [
-                                        `${label}: ${value.toLocaleString()}`,
-                                        `Percentage: ${percentage}%`
-                                    ];
-                                }
-                            }
-                        }
-                    },
-                    cutout: '70%'
                 }
             });
 
@@ -1365,12 +1141,14 @@ $gradingData = $dashboardManager->calculateGrading(
                             weekFilter.empty();
                             if (weeks.length > 0) {
                                 weeks.forEach(week => {
-                                    weekFilter.append(`<button class="filter-btn" data-week="${week}">Week ${week}</button>`);
+                                    const activeClass = week == <?= $selectedWeek ?? 'null' ?> ? 'active' : '';
+                                    weekFilter.append(`<button class="filter-btn ${activeClass}" data-week="${week}">Week ${week}</button>`);
                                 });
-                                weekFilter.prepend('<button class="filter-btn active" data-week="all">All Weeks</button>');
+                                const allActiveClass = <?= $selectedWeek ? 'false' : 'true' ?> ? 'active' : '';
+                                weekFilter.prepend(`<button class="filter-btn ${allActiveClass}" data-week="all">All Weeks</button>`);
                                 
-                                // Update weekly chart data
-                                updateWeeklyChartData(year, selectedMonths, weeks);
+                                // Fetch weekly data
+                                fetchWeeklyData(year, selectedMonths);
                                 
                                 // Show weekly button if not already shown
                                 if (!$('#weeklyBtn').length) {
@@ -1387,6 +1165,8 @@ $gradingData = $dashboardManager->calculateGrading(
                         $('#weekFilter').empty();
                         // Hide weekly button when no months selected
                         $('#weeklyBtn').remove();
+                        // Also hide daily button if no months selected
+                        $('#dailyBtn').remove();
                     }
                     
                     // Update URL with new filter
@@ -1397,38 +1177,48 @@ $gradingData = $dashboardManager->calculateGrading(
                     });
                 }
 
-                function updateWeeklyChartData(year, months, weeks) {
-                    // Fetch data for each week
-                    const promises = weeks.map(week => {
-                        return $.get(window.location.pathname, {
-                            ajax: true,
-                            year: year,
-                            months: months.join(','),
-                            week: week,
-                            center: '<?= $centerCode ?>'
-                        });
-                    });
-                    
-                    Promise.all(promises).then(results => {
+                function fetchWeeklyData(year, months) {
+                    $.get(window.location.pathname, {
+                        ajax: true,
+                        year: year,
+                        months: months.join(','),
+                        weekly: true,
+                        center: '<?= $centerCode ?>'
+                    }, function(data) {
                         // Update chartData.weekly with the fetched data
                         chartData.weekly = {
-                            labels: weeks.map(week => `Week ${week}`),
-                            aiData: results.map(r => r.total_ai || 0),
-                            bepData: results.map(r => r.total_bep || 0),
-                            ihData: results.map(r => r.total_ih || 0),
-                            privateData: results.map(r => r.total_private || 0)
+                            labels: data.map(item => `Week ${item.week}`),
+                            aiData: data.map(item => item.ai)
                         };
                         
                         // If currently viewing weekly data, update the chart
                         if ($('#weeklyBtn').hasClass('active')) {
-                            barChart.data.labels = chartData.weekly.labels;
-                            barChart.data.datasets[0].data = chartData.weekly.aiData;
-                            barChart.data.datasets[1].data = chartData.weekly.bepData;
-                            barChart.data.datasets[2].data = chartData.weekly.ihData;
-                            barChart.data.datasets[3].data = chartData.weekly.privateData;
-                            barChart.update();
+                            updateBarChart('weekly');
                         }
-                    });
+                    }, 'json');
+                }
+
+                function fetchDailyData(year, months, week) {
+                    $.get(window.location.pathname, {
+                        ajax: true,
+                        year: year,
+                        months: months.join(','),
+                        week: week,
+                        daily: true,
+                        center: '<?= $centerCode ?>'
+                    }, function(data) {
+                        // Update chartData.daily with the fetched data
+                        chartData.daily = {
+                            labels: data.map(day => `${day.day_name} (${new Date(day.full_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})})`),
+                            dates: data.map(day => day.full_date),
+                            aiData: data.map(day => day.ai)
+                        };
+                        
+                        // If currently viewing daily data, update the chart
+                        if ($('#dailyBtn').hasClass('active')) {
+                            updateBarChart('daily');
+                        }
+                    }, 'json');
                 }
                 
                 // Week filter click handler
@@ -1453,55 +1243,23 @@ $gradingData = $dashboardManager->calculateGrading(
                     
                     // Show/hide daily button based on week selection
                     const isSpecificWeek = week !== 'all';
-                    if (isSpecificWeek && !$('#dailyBtn').length) {
-                        $('.timeframe-btn').last().after('<button id="dailyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="daily">Daily</button>');
+                    if (isSpecificWeek) {
+                        // Add daily button if not already present
+                        if (!$('#dailyBtn').length) {
+                            $('#timeframeButtons').prepend('<button id="dailyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="daily">Daily</button>');
+                        }
                         
                         // Fetch daily data for the selected week
-                        updateDailyChartData(year, selectedMonths, week);
-                    } else if (!isSpecificWeek && $('#dailyBtn').length) {
+                        fetchDailyData(year, selectedMonths, week);
+                    } else if ($('#dailyBtn').length) {
                         $('#dailyBtn').remove();
-                        // Switch to weekly view if currently on daily
+                        // If currently viewing daily, switch to weekly view
                         if ($('#dailyBtn').hasClass('active')) {
-                            if ($('#weeklyBtn').length) {
-                                $('#weeklyBtn').click();
-                            } else {
-                                $('#monthlyBtn').click();
-                            }
+                            $('#weeklyBtn').click();
                         }
                     }
                 });
 
-                function updateDailyChartData(year, months, week) {
-                    $.get(window.location.pathname, {
-                        ajax: true,
-                        year: year,
-                        months: months.join(','),
-                        week: week,
-                        center: '<?= $centerCode ?>',
-                        daily: true
-                    }, function(data) {
-                        // Update chartData.daily with the fetched data
-                        chartData.daily = {
-                            labels: data.labels || [],
-                            dates: data.dates || [],
-                            aiData: data.aiData || [],
-                            bepData: data.bepData || [],
-                            ihData: data.ihData || [],
-                            privateData: data.privateData || []
-                        };
-                        
-                        // If currently viewing daily data, update the chart
-                        if ($('#dailyBtn').hasClass('active')) {
-                            barChart.data.labels = chartData.daily.labels;
-                            barChart.data.datasets[0].data = chartData.daily.aiData;
-                            barChart.data.datasets[1].data = chartData.daily.bepData;
-                            barChart.data.datasets[2].data = chartData.daily.ihData;
-                            barChart.data.datasets[3].data = chartData.daily.privateData;
-                            barChart.update();
-                        }
-                    }, 'json');
-                }
-                
                 // Year filter click handler
                 $(document).on('click', '.year-filter .filter-btn', function() {
                     const year = $(this).data('year');
@@ -1513,112 +1271,54 @@ $gradingData = $dashboardManager->calculateGrading(
                     $('.week-filter').hide();
                     $('#weekFilter').empty();
                     
-                    // Update URL with new filter
+                    // Hide weekly and daily buttons
+                    $('#weeklyBtn').remove();
+                    $('#dailyBtn').remove();
+                    
+                    // Reload the page with the new year filter to update the cards
                     updateFilters({ year: year, months: null, week: null });
                 });
 
                 // Timeframe button functionality
-                $('.timeframe-btn').click(function() {
+                $(document).on('click', '.timeframe-btn', function() {
                     const timeframe = $(this).data('timeframe');
                     
                     // Update button styles
-                    $('.timeframe-btn').removeClass('active bg-indigo-100 text-indigo-700');
+                    $('.timeframe-btn').removeClass('active bg-blue-600 text-white');
                     $('.timeframe-btn').addClass('bg-gray-100 text-gray-700');
                     $(this).removeClass('bg-gray-100 text-gray-700');
-                    $(this).addClass('active bg-indigo-100 text-indigo-700');
+                    $(this).addClass('active bg-blue-600 text-white');
                     
                     // Update chart data
+                    updateBarChart(timeframe);
+                });
+
+                function updateBarChart(timeframe) {
                     barChart.data.labels = chartData[timeframe].labels;
                     barChart.data.datasets[0].data = chartData[timeframe].aiData;
-                    barChart.data.datasets[1].data = chartData[timeframe].bepData;
-                    barChart.data.datasets[2].data = chartData[timeframe].ihData;
-                    barChart.data.datasets[3].data = chartData[timeframe].privateData;
                     barChart.update();
-                });
-
-                // Show/hide weekly and daily buttons based on selections
-                $(document).on('click', '.month-filter .filter-btn, .week-filter .filter-btn', function() {
-                    const hasSelectedMonths = $('.month-filter .filter-btn.active').length > 0;
-                    const hasSelectedWeek = $('.week-filter .filter-btn.active').not('[data-week="all"]').length > 0;
-                    
-                    // Manage weekly button
-                    if (hasSelectedMonths && !$('#weeklyBtn').length) {
-                        $('#monthlyBtn').before('<button id="weeklyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="weekly">Weekly</button>');
-                    } else if (!hasSelectedMonths && $('#weeklyBtn').length) {
-                        $('#weeklyBtn').remove();
-                        // Switch to monthly view if currently on weekly
-                        if ($('#weeklyBtn').hasClass('active')) {
-                            $('#monthlyBtn').click();
-                        }
-                    }
-                    
-                    // Manage daily button
-                    if (hasSelectedWeek && !$('#dailyBtn').length) {
-                        $('.timeframe-btn').last().after('<button id="dailyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="daily">Daily</button>');
-                    } else if (!hasSelectedWeek && $('#dailyBtn').length) {
-                        $('#dailyBtn').remove();
-                        // Switch to weekly view if currently on daily
-                        if ($('#dailyBtn').hasClass('active')) {
-                            if ($('#weeklyBtn').length) {
-                                $('#weeklyBtn').click();
-                            } else {
-                                $('#monthlyBtn').click();
-                            }
-                        }
-                    }
-                });
-
-                // Show/hide weekly button based on month selection
-                $(document).on('click', '.month-filter .filter-btn', function() {
-                    const hasSelectedMonths = $('.month-filter .filter-btn.active').length > 0;
-                    if (hasSelectedMonths && !$('#weeklyBtn').length) {
-                        $('#monthlyBtn').before('<button id="weeklyBtn" class="px-3 py-1 text-sm timeframe-btn bg-gray-100 text-gray-700 rounded-md" data-timeframe="weekly">Weekly</button>');
-                    } else if (!hasSelectedMonths && $('#weeklyBtn').length) {
-                        $('#weeklyBtn').remove();
-                        // Switch to monthly view if currently on weekly
-                        if ($('#weeklyBtn').hasClass('active')) {
-                            $('#monthlyBtn').click();
-                        }
-                    }
-                });    
-
-                // Function to update filters and reload data
-                function updateFilters(params) {
-                    const currentParams = new URLSearchParams(window.location.search);
-                    
-                    // Update params
-                    if (params.year !== undefined) currentParams.set('year', params.year);
-                    
-                    if (params.months !== undefined) {
-                        if (params.months === null) {
-                            currentParams.delete('months');
-                        } else {
-                            currentParams.set('months', params.months.join(','));
-                        }
-                    }
-                    
-                    if (params.week !== undefined) {
-                        if (params.week === null) {
-                            currentParams.delete('week');
-                        } else {
-                            currentParams.set('week', params.week);
-                        }
-                    }
-                    
-                    // Reload page with new filters
-                    window.location.search = currentParams.toString();
                 }
-                
+
+                function updateFilters({year, months, week}) {
+                    const params = new URLSearchParams();
+                    
+                    if (year) params.set('year', year);
+                    if (months && months.length > 0) params.set('months', months.join(','));
+                    if (week) params.set('week', week);
+                    
+                    // Update URL and reload the page to update the cards when year changes
+                    const newUrl = window.location.pathname + '?' + params.toString();
+                    window.location.href = newUrl;
+                }
+
                 // Export to Excel functionality
                 $('#exportToExcel').click(function() {
                     // Prepare data for export
                     const data = [
-                        ['Category', 'Count', 'Percentage of Total'],
-                        ['AI', <?= $filteredData['total_ai'] ?? 0 ?>, <?= $aiPercentage ?> + '%'],
-                        ['BEP', <?= $filteredData['total_bep'] ?? 0 ?>, <?= $bepPercentage ?> + '%'],
-                        ['IH', <?= $filteredData['total_ih'] ?? 0 ?>, <?= $ihPercentage ?> + '%'],
-                        ['Private', <?= $filteredData['total_private'] ?? 0 ?>, <?= $privatePercentage ?> + '%'],
-                        ['Grand Total', <?= $grandTotal ?>, <?= $grandTotalPercentage ?> + '%']
+                        ['Metric', 'Value'],
+                        ['AI Services', <?= $totalAI ?>],
+                        ['Target Percentage', <?= $aiPercentage ?> + '%'],
+                        ['Report Rating', <?= $reportPercentage ?> + '%']
                     ];
                     
                     // Create worksheet
@@ -1626,18 +1326,17 @@ $gradingData = $dashboardManager->calculateGrading(
                     
                     // Create workbook
                     const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "CalfDropData");
+                    XLSX.utils.book_append_sheet(wb, ws, "AIServicesData");
                     
                     // Generate file name
-                    let fileName = 'CalfDrop_';
+                    let fileName = 'AI_Services_';
                     let centerCode = '<?= $centerCode ?>';
 
                     if (<?= $selectedYear ?>) fileName += <?= $selectedYear ?> + '_';
-                    if (<?= $selectedMonth ?? 'null' ?>) fileName += <?= $selectedMonth ?? 'null' ?> + '_';
+                    if (<?= $selectedMonths ? json_encode(implode('-', $selectedMonths)) : 'null' ?>) fileName += <?= $selectedMonths ? json_encode(implode('-', $selectedMonths)) : 'null' ?> + '_';
                     if (<?= $selectedWeek ?? 'null' ?>) fileName += <?= $selectedWeek ?? 'null' ?>;
 
                     fileName += '_' + centerCode ;  
-
                     fileName += '.xlsx';
                     
                     // Export to Excel

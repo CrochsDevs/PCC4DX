@@ -9,7 +9,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     exit;
 }
 
-class CalfDropManager {
+class AIServicesManager {
     private $db;
     private $centerCode;
     
@@ -19,15 +19,12 @@ class CalfDropManager {
     }
     
     public function saveRecord($data) {
-        $query = "INSERT INTO calf_drop (ai, bep, ih, private, center, date) 
-                  VALUES (:ai, :bep, :ih, :private, :center, :date)";
+        $query = "INSERT INTO ai_services (aiServices, center, date) 
+                  VALUES (:aiServices, :center, :date)";
         $stmt = $this->db->prepare($query);
         
         return $stmt->execute([
-            ':ai' => $data['ai'],
-            ':bep' => $data['bep'],
-            ':ih' => $data['ih'],
-            ':private' => $data['private'],
+            ':aiServices' => $data['aiServices'],
             ':center' => $this->centerCode,
             ':date' => $data['date']
         ]);
@@ -36,20 +33,8 @@ class CalfDropManager {
     public function validateInput($data) {
         $errors = [];
         
-        if (!is_numeric($data['ai']) || $data['ai'] < 0) {
-            $errors[] = "AI must be a positive number";
-        }
-        
-        if (!is_numeric($data['bep']) || $data['bep'] < 0) {
-            $errors[] = "BEP must be a positive number";
-        }
-        
-        if (!is_numeric($data['ih']) || $data['ih'] < 0) {
-            $errors[] = "IH must be a positive number";
-        }
-        
-        if (!is_numeric($data['private']) || $data['private'] < 0) {
-            $errors[] = "Private must be a positive number";
+        if (!is_numeric($data['aiServices']) || $data['aiServices'] < 0) {
+            $errors[] = "AI Services must be a positive number";
         }
         
         return $errors;
@@ -57,33 +42,27 @@ class CalfDropManager {
 }
 
 $centerCode = $_SESSION['center_code'];
-$calfDropManager = new CalfDropManager($conn, $centerCode);
+$aiManager = new AIServicesManager($conn, $centerCode);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
     $data = [
-        'ai' => $_POST['ai'] ?? 0,
-        'bep' => $_POST['bep'] ?? 0,
-        'ih' => $_POST['ih'] ?? 0,
-        'private' => $_POST['private'] ?? 0,
+        'aiServices' => $_POST['aiServices'] ?? 0,
         'date' => date('Y-m-d')
     ];
     
-    $errors = $calfDropManager->validateInput($data);
+    $errors = $aiManager->validateInput($data);
     
     if (empty($errors)) {
-        $success = $calfDropManager->saveRecord($data);
+        $success = $aiManager->saveRecord($data);
         if ($success) {
-            $_SESSION['success_message'] = "Record saved successfully!";
-            // header("Location: ".$_SERVER['PHP_SELF']);
-            // exit;
+            $_SESSION['success_message'] = "AI Services record saved successfully!";
             echo "<script>sessionStorage.setItem('showSuccess', '1'); window.location.href = '".$_SERVER['PHP_SELF']."';</script>";
             exit;
         } else {
             $errors[] = "Failed to save record. Please try again.";
         }
     }
-    
 }
 ?>
 <!DOCTYPE html>
@@ -159,11 +138,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         }
 
         .entry-form {
-            width: 80%; /* Adjust width as needed */
-            max-width: 600px; /* Optional: limits the maximum width */
-            margin: 0 auto; /* Centers horizontally */
+            width: 80%;
+            max-width: 600px;
+            margin: 0 auto;
             padding: 20px;
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
+            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -173,13 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
 
         form {
             width: 100%;
-            max-width: 600px;        /* Set a maximum width for the form */
+            max-width: 600px;
             padding: 20px;
-            background-color: #f9f9f9;  /* Optional: for better visibility */
-            border-radius: 8px;      /* Optional: rounded corners */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional: subtle shadow for form */
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
     </style>
 </head>
 <body>
@@ -203,9 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         <nav>
             <ul>
                 <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
-                <li><a href="cd_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                <li><a href="calf_drop.php" class="nav-link active"><i class="fas fa-plus-circle"></i> Calf Drop</a></li>
-                <li><a href="cd_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
+                <li><a href="ai_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="ai.php" class="nav-link active"><i class="fas fa-syringe"></i> AI Services</a></li>
+                <li><a href="ai_report.php" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a></li>
                 <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </nav>
@@ -216,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <h1>Daily Calf Drop</h1>
+                <h1>Daily AI Services</h1>
             </div>
             <!-- Notification Section -->   
             <div class="header-right">
@@ -287,25 +265,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
             <?php endif; ?>
             
             <div class="entry-form">
-                <form id="calfDropForm" method="POST">
+                <form id="aiServicesForm" method="POST">
                     <div class="form-group">
-                        <label class="form-label">AI</label>
-                        <input type="number" step="1" name="ai" id="ai" class="form-input" value="0" min="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">BEP</label>
-                        <input type="number" step="1" name="bep" id="bep" class="form-input" value="0" min="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">IH</label>
-                        <input type="number" step="1" name="ih" id="ih" class="form-input" value="0" min="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Private</label>
-                        <input type="number" step="1" name="private" id="private" class="form-input" value="0" min="0">
+                        <label class="form-label">AI Services Performed</label>
+                        <input type="number" step="1" name="aiServices" id="aiServices" class="form-input" value="0" min="0">
                     </div>
 
                     <div class="form-group">
@@ -325,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
     <div id="confirmationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Confirm Calf Drop Entry</h3>
+                <h3>Confirm AI Services Entry</h3>
             </div>
             <div class="modal-body">
                 <div id="summaryContent">
@@ -339,7 +302,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
             // Show confirmation modal when submit button is clicked
@@ -347,21 +309,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                 e.preventDefault();
                 
                 // Get form values
-                const ai = parseInt($('#ai').val()) || 0;
-                const bep = parseInt($('#bep').val()) || 0;
-                const ih = parseInt($('#ih').val()) || 0;
-                const privateVal = parseInt($('#private').val()) || 0;
+                const aiServices = parseInt($('#aiServices').val()) || 0;
                 const date = $('#date').val();
-                const total = ai + bep + ih + privateVal;
                 
                 // Build summary HTML
                 let summaryHtml = `
-                    <div class="summary-item"><span>AI:</span><span>${ai}</span></div>
-                    <div class="summary-item"><span>BEP:</span><span>${bep}</span></div>
-                    <div class="summary-item"><span>IH:</span><span>${ih}</span></div>
-                    <div class="summary-item"><span>Private:</span><span>${privateVal}</span></div>
+                    <div class="summary-item"><span>AI Services:</span><span>${aiServices}</span></div>
                     <div class="summary-item"><span>Date:</span><span>${date}</span></div>
-                    <div class="summary-total"><span>Total Calves:</span><span>${total}</span></div>
                 `;
                 
                 // Insert summary into modal
@@ -379,8 +333,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
             // Handle confirm button
             $('#confirmBtn').click(function() {
                 // Submit the form
-                $('#calfDropForm').append('<input type="hidden" name="submit_entry" value="1">');
-                $('#calfDropForm').submit();
+                $('#aiServicesForm').append('<input type="hidden" name="submit_entry" value="1">');
+                $('#aiServicesForm').submit();
             });
             
             // Close modal when clicking outside
@@ -397,14 +351,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
-                    text: 'Calf Drop entry saved successfully.',
+                    text: 'AI Services record saved successfully.',
                     confirmButtonColor: '#28a745'
                 });
                 sessionStorage.removeItem('showSuccess');
             }
         });
-
-
     </script>
 </body>
 </html>

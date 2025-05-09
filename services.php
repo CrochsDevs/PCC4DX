@@ -113,7 +113,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
 
     <div class="services-grid">
-        <a href="artificial_insemination.php" class="service-card">
+        <a href="ai_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
         <p>Report on artificial insemination services for carabaos.</p>
         </a>
