@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db_config.php'; // Contains database connection details
+require_once 'db_config.php';
 
 class MilkFeeding {
     private $conn;
@@ -9,22 +9,6 @@ class MilkFeeding {
     public function __construct($conn) {
         $this->conn = $conn;
         $this->centerCode = $_SESSION['center_code'] ?? '';
-    }
-
-    public function create($data) {
-        $stmt = $this->conn->prepare("INSERT INTO school_feeding_program 
-            (fiscal_year, school_division, status, remarks, center_code, is_archived) 
-            VALUES (:fiscal_year, :school_division, :status, :remarks, :center_code, 0)");
-        
-        return $stmt->execute([
-            ':center_code' => $this->centerCode,
-            ':fiscal_year' => $data['fiscal_year'],
-            ':region' => $data['region'],
-            ':school_division' => $data['school_division'],
-            ':status' => $data['status'],
-            ':remarks' => $data['remarks'],
-        ]);
-        
     }
     
     public function read($includeArchived = false, $page = 1, $perPage = 10) {
@@ -61,23 +45,6 @@ class MilkFeeding {
         ];
     }
     
-    public function update($id, $data) {
-        $stmt = $this->conn->prepare("UPDATE school_feeding_program SET 
-            fiscal_year = :fiscal_year, 
-            school_division = :school_division, 
-            status = :status, 
-            remarks = :remarks 
-            WHERE id = :id");
-    
-        return $stmt->execute([
-            ':fiscal_year' => $data['fiscal_year'],
-            ':school_division' => $data['school_division'],
-            ':status' => $data['status'],
-            ':remarks' => $data['remarks'],
-            ':id' => $id
-        ]);
-    }
-    
     public function archive($id) {
         $stmt = $this->conn->prepare("UPDATE school_feeding_program SET is_archived = 1 WHERE id = :id");
         return $stmt->execute([':id' => $id]);
@@ -89,8 +56,11 @@ class MilkFeeding {
     }
     
     public function getStatusCounts() {
-        $stmt = $this->conn->prepare("SELECT status, COUNT(*) as count FROM school_feeding_program WHERE is_archived = 0 GROUP BY status");
-        $stmt->execute();
+        $stmt = $this->conn->prepare("SELECT status, COUNT(*) as count 
+            FROM school_feeding_program 
+            WHERE is_archived = 0 AND center_code = :center_code 
+            GROUP BY status");
+        $stmt->execute([':center_code' => $this->centerCode]);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         $counts = [
@@ -105,12 +75,6 @@ class MilkFeeding {
         }
         
         return $counts;
-    }
-    
-    public function getSchoolDivisions() {
-        $stmt = $this->conn->prepare("SELECT DISTINCT school_division FROM school_feeding_program ORDER BY school_division");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 }
 
@@ -139,46 +103,11 @@ if (isset($_GET['ajax'])) {
     }
 }
 
-// Handle form submissions
-$message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        if (isset($_POST['confirm']) && $_POST['confirm'] === 'true') {
-            $data = [
-                'fiscal_year' => htmlspecialchars($_POST['fiscal_year']),
-                'school_division' => htmlspecialchars($_POST['school_division']),
-                'status' => htmlspecialchars($_POST['status']),
-                'remarks' => htmlspecialchars($_POST['remarks'])
-            ];
-
-            if (!empty($_POST['id'])) {
-                $milkFeeding->update($_POST['id'], $data);
-                $message = '<div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="bi bi-check-circle-fill me-2"></i>Entry updated successfully!
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>';
-            } else {
-                $milkFeeding->create($data);
-                $message = '<div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="bi bi-check-circle-fill me-2"></i>New entry added successfully!
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>';
-            }
-        }
-    } catch (Exception $e) {
-        $message = '<div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Error: '.$e->getMessage().'
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>';
-    }
-}
-
 // Get paginated entries and status counts
 $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $perPage = 10;
 $entries = $milkFeeding->read(false, $currentPage, $perPage);
 $statusCounts = $milkFeeding->getStatusCounts();
-$schoolDivisions = $milkFeeding->getSchoolDivisions();
 
 $showArchived = isset($_GET['show_archived']) && $_GET['show_archived'] === 'true';
 if ($showArchived) {
@@ -197,7 +126,8 @@ if ($showArchived) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        :root {
+
+          :root {
             --pcc-blue: #0056b3;
             --pcc-dark-blue: #003366;
             --pcc-light-blue: #e6f0ff;
@@ -762,8 +692,8 @@ if ($showArchived) {
     </style>
 </head>
 <body>
-    <!-- Loading Spinner -->
-    <div class="spinner-container" id="loadingSpinner">
+     <!-- Loading Spinner -->
+     <div class="spinner-container" id="loadingSpinner">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
@@ -798,20 +728,16 @@ if ($showArchived) {
                 </nav>
             </div>
 
-            <!-- Main Content -->
-            <div class="main-content">
+            
+             <!-- Main Content -->
+             <div class="main-content">
                 <!-- Content Header -->
                 <div class="content-header fade-in">
                     <div class="content-title">
                         <h2>DepEd-School-based Feeding Program</h2>
                         <p>Track and manage milk feeding program implementations</p>
                     </div>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#entryModal">
-                        <i class="bi bi-plus-lg"></i> Add New Entry
-                    </button>
                 </div>
-
-                <?= $message ?>
 
                 <!-- Stats Cards -->
                 <div class="stats-container fade-in">
@@ -843,121 +769,69 @@ if ($showArchived) {
                     </div>
                 </div>
 
-                <!-- Tabs -->
-                <ul class="nav nav-tabs mb-3 fade-in" id="entriesTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">
-                            <i class="bi bi-list-check me-1"></i> Active Entries
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab">
-                            <i class="bi bi-archive me-1"></i> Archived Entries
-                        </button>
-                    </li>
-                </ul>
+                <!-- Tabs and Table Content -->
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th>Fiscal Year</th>
+                                <th>Region</th>
+                                <th>Province</th>
+                                <th>SDO</th>
+                                <th>School Name</th>
+                                <th>Beneficiaries</th>
+                                <th>Start Date</th>
+                                <th>Completion Date</th>
+                                <th>Milk Type</th>
+                                <th>Raw Milk (L)</th>
+                                <th>Milk Packs</th>
+                                <th>Price/Pack</th>
+                                <th>Supplier</th>
+                                <th>Gross Income</th>
+                                <th>Delivery Date</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($entries['data'] as $entry): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($entry['fiscal_year']) ?></td>
+                                <td><?= htmlspecialchars($entry['region']) ?></td>
+                                <td><?= htmlspecialchars($entry['province']) ?></td>
+                                <td><?= htmlspecialchars($entry['sdo']) ?></td>
+                                <td><?= htmlspecialchars($entry['school_name']) ?></td>
+                                <td><?= number_format($entry['beneficiaries']) ?></td>
+                                <td><?= date('M d, Y', strtotime($entry['date_started'])) ?></td>
+                                <td><?= date('M d, Y', strtotime($entry['date_complete'])) ?></td>
+                                <td><?= htmlspecialchars($entry['milk_type']) ?></td>
+                                <td><?= number_format($entry['raw_milk_liters']) ?></td>
+                                <td><?= number_format($entry['milk_packs']) ?></td>
+                                <td>₱<?= number_format($entry['price_per_pack'], 2) ?></td>
+                                <td><?= htmlspecialchars($entry['supplier']) ?></td>
+                                <td>₱<?= number_format($entry['gross_income'], 2) ?></td>
+                                <td><?= date('M d, Y', strtotime($entry['delivery_date'])) ?></td>
+                                <td>
+                                    <span class="status-badge status-<?= strtolower(str_replace(' ', '', $entry['status'])) ?>">
+                                        <?= htmlspecialchars($entry['status']) ?>
+                                    </span>
+                                </td>
+                                <td><?= $entry['remarks'] ?: 'N/A' ?></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary archive-btn"
+                                        data-id="<?= $entry['id'] ?>">
+                                        <i class="bi bi-archive"></i> Archive
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
 
-                <!-- Tab Content -->
-                <div class="tab-content" id="entriesTabContent">
-                    <!-- Active Entries Tab -->
-                    <div class="tab-pane fade show active" id="active" role="tabpanel">
-                        <div class="data-card fade-in">
-                            <div class="data-card-header">
-                                <h3><i class="bi bi-table me-2"></i>Active Program Entries</h3>
-                                <span class="badge bg-primary"><?= $entries['total'] ?> records</span>
-                            </div>
-                            <div class="data-card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Fiscal Year</th>
-                                                <th>School Division</th>
-                                                <th>Status</th>
-                                                <th>Remarks</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($entries['data'] as $entry): ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($entry['fiscal_year']) ?></td>
-                                                <td><?= htmlspecialchars($entry['school_division']) ?></td>
-                                                <td>
-                                                    <?php 
-                                                        $statusClass = 'status-' . strtolower(str_replace([' ', 'Yet'], ['', ''], $entry['status'])); 
-                                                        $statusIcon = '';
-                                                        if ($entry['status'] === 'Completed') {
-                                                            $statusIcon = '<i class="bi bi-check-circle-fill"></i>';
-                                                        } elseif ($entry['status'] === 'On-going Milk Deliveries') {
-                                                            $statusIcon = '<i class="bi bi-arrow-repeat"></i>';
-                                                        } elseif ($entry['status'] === 'Partially Completed') {
-                                                            $statusIcon = '<i class="bi bi-check2-all"></i>';
-                                                        } else {
-                                                            $statusIcon = '<i class="bi bi-clock"></i>';
-                                                        }
-                                                    ?>
-                                                    <span class="status-badge <?= $statusClass ?>">
-                                                        <?= $statusIcon ?>
-                                                        <?= htmlspecialchars($entry['status']) ?>
-                                                    </span>
-                                                </td>
-                                                <td><?= $entry['remarks'] ? htmlspecialchars($entry['remarks']) : '<span class="text-muted">N/A</span>' ?></td>
-                                                <td>
-                                                    <div class="d-flex gap-2">
-                                                        <button class="btn btn-sm btn-outline-primary edit-btn"
-                                                            data-id="<?= $entry['id'] ?>"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#entryModal">
-                                                            <i class="bi bi-pencil"></i> Edit
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-secondary archive-btn"
-                                                            data-id="<?= $entry['id'] ?>">
-                                                            <i class="bi bi-archive"></i> Archive
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                            <?php if (empty($entries['data'])): ?>
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted py-4">
-                                                    <i class="bi bi-database-fill-exclamation me-2"></i>No active program entries found
-                                                </td>
-                                            </tr>
-                                            <?php endif; ?>
-                                        </tbody>
-                                    </table>
-                                    
-                                    <!-- Pagination -->
-                                    <?php if ($entries['totalPages'] > 1): ?>
-                                    <nav aria-label="Page navigation">
-                                        <ul class="pagination">
-                                            <li class="page-item <?= $entries['page'] == 1 ? 'disabled' : '' ?>">
-                                                <a class="page-link" href="?page=<?= $entries['page'] - 1 ?>" aria-label="Previous">
-                                                    <span aria-hidden="true">&laquo;</span>
-                                                </a>
-                                            </li>
-                                            <?php for ($i = 1; $i <= $entries['totalPages']; $i++): ?>
-                                                <li class="page-item <?= $i == $entries['page'] ? 'active' : '' ?>">
-                                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                                                </li>
-                                            <?php endfor; ?>
-                                            <li class="page-item <?= $entries['page'] == $entries['totalPages'] ? 'disabled' : '' ?>">
-                                                <a class="page-link" href="?page=<?= $entries['page'] + 1 ?>" aria-label="Next">
-                                                    <span aria-hidden="true">&raquo;</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Archived Entries Tab -->
-                    <div class="tab-pane fade" id="archived" role="tabpanel">
+                <!-- Archived Entries Tab -->
+                <div class="tab-pane fade" id="archived" role="tabpanel">
                         <div class="data-card fade-in">
                             <div class="data-card-header">
                                 <h3><i class="bi bi-archive me-2"></i>Archived Program Entries</h3>
@@ -1062,100 +936,6 @@ if ($showArchived) {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CRUD Modal -->
-    <div class="modal fade" id="entryModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form method="POST" id="entryForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2"></i>Program Entry Form</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" name="id" id="entryId">
-                        <input type="hidden" name="confirm" id="confirmSubmit" value="false">
-                        
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Fiscal Year <span class="text-danger">*</span></label>
-                                <input type="number" name="fiscal_year" id="fiscalYear" class="form-control" 
-                                    min="2000" max="2050" required>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label class="form-label">School Division <span class="text-danger">*</span></label>
-                                <select name="school_division" id="schoolDivision" class="form-select" required>
-                                    <option value="">Select School Division</option>
-                                    <?php foreach ($schoolDivisions as $division): ?>
-                                        <option value="<?= htmlspecialchars($division) ?>"><?= htmlspecialchars($division) ?></option>
-                                    <?php endforeach; ?>
-                                    <option value="Other">Other (Please specify)</option>
-                                </select>
-                                <input type="text" name="custom_school_division" id="customSchoolDivision" 
-                                    class="form-control mt-2" style="display: none;" 
-                                    placeholder="Enter school division name">
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label class="form-label">Status <span class="text-danger">*</span></label>
-                                <select name="status" id="status" class="form-select" required>
-                                    <option value="Completed">Completed</option>
-                                    <option value="On-going Milk Deliveries">On-going Milk Deliveries</option>
-                                    <option value="Not Yet Started">Not Yet Started</option>
-                                </select>
-                            </div>
-                            
-                            <div class="col-12">
-                                <label class="form-label">Remarks</label>
-                                <textarea name="remarks" id="remarks" class="form-control" rows="3" 
-                                    placeholder="Additional notes or comments..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-lg me-1"></i> Cancel
-                        </button>
-                        <button type="button" class="btn btn-primary" id="submitBtn">
-                            <i class="bi bi-save me-1"></i> Save Entry
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Confirm Submission</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to submit this entry?</p>
-                    <div class="alert alert-info mt-3">
-                        <h6 class="fw-bold">Entry Preview:</h6>
-                        <div><strong>Fiscal Year:</strong> <span id="previewFiscalYear"></span></div>
-                        <div><strong>School Division:</strong> <span id="previewSchoolDivision"></span></div>
-                        <div><strong>Status:</strong> <span id="previewStatus"></span></div>
-                        <div><strong>Remarks:</strong> <span id="previewRemarks"></span></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i> Cancel
-                    </button>
-                    <button type="button" class="btn btn-primary" id="confirmSubmitBtn">
-                        <i class="bi bi-check-lg me-1"></i> Confirm
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -1163,197 +943,40 @@ if ($showArchived) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Handle edit button clicks
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const row = btn.closest('tr');
-                const cells = row.children;
-                
-                document.getElementById('entryId').value = btn.dataset.id;
-                document.getElementById('fiscalYear').value = cells[0].textContent;
-                
-                // Set school division
-                const schoolDivision = cells[1].textContent;
-                const schoolDivisionSelect = document.getElementById('schoolDivision');
-                const options = Array.from(schoolDivisionSelect.options);
-                const existingOption = options.find(opt => opt.text === schoolDivision);
-                
-                if (existingOption) {
-                    schoolDivisionSelect.value = schoolDivision;
-                    document.getElementById('customSchoolDivision').style.display = 'none';
-                } else {
-                    schoolDivisionSelect.value = 'Other';
-                    document.getElementById('customSchoolDivision').style.display = 'block';
-                    document.getElementById('customSchoolDivision').value = schoolDivision;
-                }
-                
-                // Extract status text (removing icon if present)
-                const statusText = cells[2].querySelector('.status-badge').textContent.trim().replace(/\s+/g, ' ');
-                document.getElementById('status').value = statusText;
-                
-                // Handle remarks (check if it's "N/A" span or regular text)
-                const remarksCell = cells[3];
-                const remarksText = remarksCell.querySelector('span.text-muted') ? '' : remarksCell.textContent.trim();
-                document.getElementById('remarks').value = remarksText;
-            });
-        });
-
-        // Clear form when adding new entry
-        document.getElementById('entryModal').addEventListener('show.bs.modal', event => {
-            if (!event.relatedTarget) {
-                document.getElementById('entryId').value = '';
-                document.getElementById('entryForm').reset();
-                document.getElementById('confirmSubmit').value = 'false';
-                document.getElementById('customSchoolDivision').style.display = 'none';
-            }
-        });
-
-        // Handle form submission with confirmation
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            // Update preview
-            document.getElementById('previewFiscalYear').textContent = document.getElementById('fiscalYear').value;
-            
-            // Handle school division preview
-            const schoolDivisionSelect = document.getElementById('schoolDivision');
-            let schoolDivision = schoolDivisionSelect.value;
-            if (schoolDivision === 'Other') {
-                schoolDivision = document.getElementById('customSchoolDivision').value;
-            }
-            document.getElementById('previewSchoolDivision').textContent = schoolDivision;
-            
-            document.getElementById('previewStatus').textContent = document.getElementById('status').value;
-            document.getElementById('previewRemarks').textContent = document.getElementById('remarks').value || 'N/A';
-            
-            // Show confirmation modal
-            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-            confirmModal.show();
-        });
-
-        // Final confirmation
-        document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
-            document.getElementById('confirmSubmit').value = 'true';
-            document.getElementById('entryForm').submit();
-        });
-
-        // Toggle custom school division input
-        document.getElementById('schoolDivision').addEventListener('change', function() {
-            const customDivisionInput = document.getElementById('customSchoolDivision');
-            customDivisionInput.style.display = this.value === 'Other' ? 'block' : 'none';
-            if (this.value !== 'Other') {
-                customDivisionInput.value = '';
-            }
-        });
-
-        // Handle archive button clicks with AJAX
-        document.querySelectorAll('.archive-btn').forEach(btn => {
+        // Archive/Restore functionality
+        document.querySelectorAll('.archive-btn, .restore-btn').forEach(btn => {
             btn.addEventListener('click', function() {
+                const action = this.classList.contains('archive-btn') ? 'archive' : 'restore';
                 const entryId = this.dataset.id;
                 
                 Swal.fire({
-                    title: 'Archive Entry',
-                    text: 'Are you sure you want to archive this entry?',
+                    title: `${action.charAt(0).toUpperCase() + action.slice(1)} Entry`,
+                    text: `Are you sure you want to ${action} this entry?`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, archive it!'
+                    confirmButtonText: `Yes, ${action} it!`
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        showLoading();
-                        
-                        fetch(`?ajax=archive&id=${entryId}`)
+                        fetch(`?ajax=${action}&id=${entryId}`)
                             .then(response => response.json())
                             .then(data => {
-                                hideLoading();
-                                
                                 if (data.success) {
                                     Swal.fire(
-                                        'Archived!',
-                                        'The entry has been archived.',
+                                        `${action.charAt(0).toUpperCase() + action.slice(1)}!`,
+                                        `Entry has been ${action}d.`,
                                         'success'
-                                    ).then(() => {
-                                        window.location.reload();
-                                    });
+                                    ).then(() => window.location.reload());
                                 } else {
-                                    Swal.fire(
-                                        'Error!',
-                                        'Failed to archive the entry.',
-                                        'error'
-                                    );
+                                    Swal.fire('Error!', 'Operation failed', 'error');
                                 }
                             })
-                            .catch(error => {
-                                hideLoading();
-                                Swal.fire(
-                                    'Error!',
-                                    'An error occurred while archiving the entry.',
-                                    'error'
-                                );
-                            });
+                            .catch(error => Swal.fire('Error!', 'Operation failed', 'error'));
                     }
                 });
             });
         });
-
-        // Handle restore button clicks with AJAX
-        document.querySelectorAll('.restore-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const entryId = this.dataset.id;
-                
-                Swal.fire({
-                    title: 'Restore Entry',
-                    text: 'Are you sure you want to restore this entry?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, restore it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        showLoading();
-                        
-                        fetch(`?ajax=restore&id=${entryId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                hideLoading();
-                                
-                                if (data.success) {
-                                    Swal.fire(
-                                        'Restored!',
-                                        'The entry has been restored.',
-                                        'success'
-                                    ).then(() => {
-                                        window.location.reload();
-                                    });
-                                } else {
-                                    Swal.fire(
-                                        'Error!',
-                                        'Failed to restore the entry.',
-                                        'error'
-                                    );
-                                }
-                            })
-                            .catch(error => {
-                                hideLoading();
-                                Swal.fire(
-                                    'Error!',
-                                    'An error occurred while restoring the entry.',
-                                    'error'
-                                );
-                            });
-                    }
-                });
-            });
-        });
-
-        // Loading spinner functions
-        function showLoading() {
-            document.getElementById('loadingSpinner').style.display = 'flex';
-        }
-        
-        function hideLoading() {
-            document.getElementById('loadingSpinner').style.display = 'none';
-        }
     </script>
 </body>
 </html>
