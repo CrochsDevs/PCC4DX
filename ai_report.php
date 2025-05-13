@@ -19,9 +19,9 @@ class AIReportManager {
     }
     
     public function getReports($year = null, $month = null, $week = null, $date = null) {
-        $query = "SELECT aiID, aiServices, date 
-                  FROM ai_services 
-                  WHERE center = :center";
+    $query = "SELECT aiID, aiServices, date, remarks 
+              FROM ai_services 
+              WHERE center = :center";
         $params = [':center' => $this->centerCode];
         
         if ($date) {
@@ -348,18 +348,20 @@ $reports = $reportManager->getReports($year, $month, $week);
                         if (data.reports.length > 0) {
                             let html = `
                                 <table class="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Day</th>
-                                        <th>AI Services</th>
-                                    </tr>
-                                    <tr class="total-row" style="background-color:rgb(125, 139, 139);">
-                                        <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
-                                        <td style="color: black; font-weight: bold;"></td>
-                                        <td style="color: black; font-weight: bold;"><strong>${data.total}</strong></td>
-                                    </tr>
-                                </thead>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Day</th>
+                                            <th>AI Services</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                        <tr class="total-row" style="background-color:rgb(125, 139, 139);">
+                                            <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
+                                            <td style="color: black; font-weight: bold;"></td>
+                                            <td style="color: black; font-weight: bold;"><strong>${data.total}</strong></td>
+                                            <td></td>
+                                        </tr>
+                                    </thead>
                                 <tbody>`;
                             
                             let previousWeek = null;
@@ -384,6 +386,7 @@ $reports = $reportManager->getReports($year, $month, $week);
                                     <td>${row.date}</td>
                                     <td>${dayOfWeek}</td>
                                     <td>${row.aiServices}</td>
+                                    <td>${row.remarks ? row.remarks : ''}</td>
                                 </tr>`;
                             });
 
@@ -478,7 +481,7 @@ $reports = $reportManager->getReports($year, $month, $week);
                     weekNumber = currentWeek;
                 }
 
-                let csvContent = "Date,Day,AI Services\n";
+                let csvContent = "Date,Day,AI Services,Remarks\n";
 
                 const centerName = centerCode;
                 const totalsRow = $('.report-table .total-row');
@@ -505,8 +508,10 @@ $reports = $reportManager->getReports($year, $month, $week);
                     const row = [
                         date,
                         dayOfWeek,
-                        cells.eq(2).text().trim()  // AI Services
+                        cells.eq(2).text().trim(),  // AI Services
+                        cells.eq(3).text().trim()   // Remarks
                     ];
+
                     csvContent += row.join(',') + '\n';
                 });
 

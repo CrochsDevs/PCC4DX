@@ -66,7 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         'bep' => $_POST['bep'] ?? 0,
         'ih' => $_POST['ih'] ?? 0,
         'private' => $_POST['private'] ?? 0,
-        'date' => date('Y-m-d')
+        'date' => $_POST['date'] ?? date('Y-m-d'),
+        'remarks' => $_POST['remarks'] ?? ''
     ];
     
     $errors = $calfDropManager->validateInput($data);
