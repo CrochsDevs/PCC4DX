@@ -171,7 +171,7 @@ body {
             <ul>
                 <li><a href="#" class="active">Home</a></li>
                 <li><a href="#">About</a></li>           
-                <li><a href="programs.php">Programs</a></li>
+                <li><a href="programs.php">CBED Coordinators</a></li>
 
                 <li><a href="announcements.php">News</a></li> 
                 <li><a href="#">Contact</a></li>
@@ -232,6 +232,11 @@ body {
                 <i class="fas fa-box"></i>
                 <h3>Milk production</h3>
                 <p>Learn about milk production</p>
+            </div>
+            <div class="quick-link-item">
+                <i class="fas fa-store"></i>
+                <h3>Dairy Box</h3>
+                <p>Learn about dairy box</p>
             </div>
         </div>
     </section>

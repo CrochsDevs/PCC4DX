@@ -118,7 +118,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <p>Report on artificial insemination services for carabaos.</p>
         </a>
 
-        <a href="milkfeeding_dashboard.php" class="service-card">
+        <a href="mf_underdevelopment.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
         <p>Report on milk feeding programs and nutritional supplements for calves.</p>
         </a>
@@ -133,7 +133,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <p>Report on successful births and calf health monitoring programs.</p>
         </a>
 
-        <a href="cd_dashboard.php" class="service-card">
+        <a href="dbox_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-solid fa-store"></i> Dairy box</h3>
         <p>Report on Dairy Box hubs supporting farmers through milk marketing and enterprise.</p>
         </a>

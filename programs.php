@@ -91,7 +91,7 @@
             <ul>
                 <li><a href="index.php">Home</a></li>
                 <li><a href="#">About</a></li>
-                <li><a href="programs.php" class="active">Programs</a></li> 
+                <li><a href="programs.php" class="active">CBED Coordinators</a></li> 
                 <li><a href="announcements.php">News</a></li>
                 <li><a href="#">Contact</a></li>
                 <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Login</a></li>
@@ -104,7 +104,7 @@
 <!-- Programs Section -->
 <section class="news-section" style="padding-top: 60px;">
     <div class="container">
-        <h2 class="section-title">Our Programs & Staff</h2>
+        <h2 class="section-title">CBED Coordinators</h2>
         <div class="news-grid" id="programsGrid">
             <!-- Loaded dynamically -->
         </div>

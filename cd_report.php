@@ -183,7 +183,7 @@ $reports = $reportManager->getReports($year, $month, $week);
 
         <nav>
             <ul>
-                <li><a href="services.php" class="nav-link"><i class="fas fa-dashboard"></i> Back to quickfacts</a></li>
+                <li><a href="services.php" class="nav-link"><i class="fa-solid fa-arrow-left"></i> Back to quickfacts</a></li>
                 <li><a href="cd_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="calf_drop.php" class="nav-link"><i class="fas fa-plus-circle"></i> Calf Drop</a></li>
                 <li><a href="cd_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> Reports</a></li>
