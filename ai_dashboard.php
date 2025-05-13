@@ -10,7 +10,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 }
 
 // Define target value for AI services
-$targetValue = 31000; // Example target value for AI services
+$targetValue = 13400; // Example target value for AI services
 
 class AIDashboardManager {
     private $db;
@@ -311,7 +311,7 @@ class AIDashboardManager {
         $accomplishedRating = ($actualAchieved / $targetValue) * 100;
 
         // Calculate Final Score
-        $finalScore = ($reportPercentage) + ($accomplishedRating) / 2;
+        $finalScore = ($reportPercentage + $accomplishedRating) / 2;
 
         // Determine Grade
         $grade = '';
@@ -486,6 +486,10 @@ foreach ($weeklyData as $week) {
     $weeklyChartData['labels'][] = 'Week ' . $week['week'];
     $weeklyChartData['aiData'][] = $week['ai'];
 }
+$totalFilteredAI = $filteredData['total_ai'] ?? 0;
+
+$filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonths, $selectedWeek);
+
 ?>
 
 <!DOCTYPE html>
@@ -522,6 +526,7 @@ foreach ($weeklyData as $week) {
             border-radius: 10px;
             margin-top: 10px;
             position: relative;
+            overflow: hidden;
         }
         .progress-bar {
             height: 10px;
@@ -904,6 +909,7 @@ foreach ($weeklyData as $week) {
                 </div>
             </div>
 
+
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
                 <!-- Bar Chart -->
@@ -933,6 +939,25 @@ foreach ($weeklyData as $week) {
                     </div>
                     <div class="h-80">
                         <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtered Total AI Services Card -->
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-gray-500 font-medium">Filtered AI Services</p>
+                        <h3 class="text-2xl font-bold text-blue-700"><?= number_format($totalFilteredAI) ?></h3>
+                        <p class="text-sm mt-1 text-gray-500">
+                            Based on selected filters 
+                            <?= $selectedYear ? "Year: $selectedYear" : "" ?>
+                            <?= $selectedMonths ? " | Month(s): " . implode(', ', $selectedMonths) : "" ?>
+                            <?= $selectedWeek ? " | Week: $selectedWeek" : "" ?>
+                        </p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-filter text-blue-600 text-xl"></i>
                     </div>
                 </div>
             </div>

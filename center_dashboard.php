@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'auth_check.php';
+require 'db_config.php'; // if not already present
 
 // Prevent headquarters users from accessing center dashboard
 if ($_SESSION['user']['center_type'] === 'Headquarters') {
@@ -9,6 +10,53 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 }
 
 $centerCode = $_SESSION['center_code']; 
+
+class SummaryFetcher {
+    private $db;
+    private $centerCode;
+
+    public function __construct($db, $centerCode) {
+        $this->db = $db;
+        $this->centerCode = $centerCode;
+    }
+
+    public function getAIData($year, $target) {
+        $stmt = $this->db->prepare("SELECT SUM(aiServices) as total_ai FROM ai_services WHERE center = :center AND YEAR(date) = :year");
+        $stmt->execute([':center' => $this->centerCode, ':year' => $year]);
+        $totalAI = $stmt->fetch(PDO::FETCH_ASSOC)['total_ai'] ?? 0;
+
+        $accomplished = ($target > 0) ? ($totalAI / $target) * 100 : 0;
+        return [
+            'total' => $totalAI,
+            'target' => $target,
+            'percent' => round($accomplished, 2)
+        ];
+    }
+
+    public function getCalfDropData($year, $target) {
+        $stmt = $this->db->prepare("SELECT SUM(ai + bep + ih + private) as total FROM calf_drop WHERE center = :center AND YEAR(date) = :year");
+        $stmt->execute([':center' => $this->centerCode, ':year' => $year]);
+        $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+
+        $accomplished = ($target > 0) ? ($total / $target) * 100 : 0;
+        return [
+            'total' => $total,
+            'target' => $target,
+            'percent' => round($accomplished, 2)
+        ];
+    }
+}
+
+$centerCode = $_SESSION['center_code'];
+$fetcher = new SummaryFetcher($conn, $centerCode);
+$year = date('Y');
+
+// Define target values
+$aiTarget = 13400;
+$calfDropTarget = 5000;
+
+$aiPerf = $fetcher->getAIData($year, $aiTarget);
+$cdPerf = $fetcher->getCalfDropData($year, $calfDropTarget);
 
 ?>
 <!DOCTYPE html>
@@ -19,11 +67,145 @@ $centerCode = $_SESSION['center_code'];
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <script src="js/center.js"></script>
     <link rel="stylesheet" href="css/center.css">
 </head>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 10px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .target-marker {
+            position: absolute;
+            top: -5px;
+            width: 2px;
+            height: 20px;
+            background-color: #000;
+        }
+        .progress-text {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .status-excellent {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-achieved {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-progress {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-low {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .timeframe-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .filter-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .year-filter, .month-filter, .week-filter {
+            flex: 1;
+        }
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .filter-title {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        .filter-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+        }
+        .filter-btn {
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover {
+            background: #e5e7eb;
+        }
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .export-btn {
+            padding: 6px 12px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .export-btn:hover {
+            background: #059669;
+        }
+
+        .chart-container {
+            min-height: 400px;
+            position: relative;
+        }
+    </style>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
@@ -113,75 +295,80 @@ $centerCode = $_SESSION['center_code'];
         <!-- Dashboard Section -->
         <div id="dashboard-section" class="content-section active">
             <h2 class="dashboard-title"><i class="fas fa-chart-line"></i> Performance Dashboard</h2>
-            <p class="dashboard-description">Monitor and manage all PCC Headquarters operations. Track key metrics and performance indicators to ensure efficient service delivery.</p>
+        <p class="dashboard-description">
+            Discover key insights about PCC 
+            Quickfacts, performance metrics, and goal-tracking updates.
+        </p>
             
-            <div class="dashboard-grid">
-                <!-- Farmers Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-users"></i> Farmers</h3>
-                    <div class="chart-container">
-                        <canvas id="usersChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">1,254</span>
-                            <span class="target">Target: 1,500</span>
-                        </div>
-                        <div class="chart-change positive">
-                            <i class="fas fa-arrow-up"></i> 12% increase
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-10">
+
+                <!-- AI Performance Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <h3 class="card-title"><i class="fas fa-syringe"></i> AI Performance</h3>
+                    <p>Total: <?= number_format($aiPerf['total']) ?> / <?= number_format($aiPerf['target']) ?></p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: <?= min($aiPerf['percent'], 100) ?>%; background-color: <?= 
+                            $aiPerf['percent'] >= 100 ? '#10b981' : 
+                            ($aiPerf['percent'] >= 80 ? '#3b82f6' : 
+                            ($aiPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                         </div>
                     </div>
+                    <p class="dashboard-description"><?= $aiPerf['percent'] ?>% of target</p>
                 </div>
 
-                <!-- Carabaos Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-paw"></i> Carabaos</h3>
-                    <div class="chart-container">
-                        <canvas id="carabaosChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">3,421</span>
-                            <span class="target">Target: 3,800</span>
-                        </div>
-                        <div class="chart-change positive">
-                            <i class="fas fa-arrow-up"></i> 8% increase
+                <!-- Calf Drop Performance Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
+                    <p>Total: <?= number_format($cdPerf['total']) ?> / <?= number_format($cdPerf['target']) ?></p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                            $cdPerf['percent'] >= 100 ? '#10b981' : 
+                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                         </div>
                     </div>
+                    <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
                 </div>
 
-                <!-- Services Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-check-circle"></i> Completed Services</h3>
-                    <div class="chart-container">
-                        <canvas id="servicesChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">892</span>
-                            <span class="target">Target: 1,000</span>
-                        </div>
-                        <div class="chart-change negative">
-                            <i class="fas fa-arrow-down"></i> 5% decrease
+                <!-- Calf Drop Performance Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <h3 class="card-title"><i class="fas fa-cow"></i> Milk Production</h3>
+                    <p>Total: </p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                            $cdPerf['percent'] >= 100 ? '#10b981' : 
+                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                         </div>
                     </div>
+                    <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
                 </div>
 
-                <!-- Requests Card -->
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-clock"></i> Pending Requests</h3>
-                    <div class="chart-container">
-                        <canvas id="requestsChart"></canvas>
-                    </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">59</span>
-                            <span class="target">Target: 30</span>
-                        </div>
-                        <div class="chart-change negative">
-                            <i class="fas fa-arrow-down"></i> 15% increase
+                <!-- Calf Drop Performance Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <h3 class="card-title"><i class="fas fa-cow"></i> Milk Feeding</h3>
+                    <p>Total: </p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                            $cdPerf['percent'] >= 100 ? '#10b981' : 
+                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                         </div>
                     </div>
+                    <p class="dashboard-description">% of target</p>
+                </div>
+                <!-- Calf Drop Performance Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <h3 class="card-title"><i class="fas fa-box"></i> Dairy Box</h3>
+                    <p>Total: </p>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                            $cdPerf['percent'] >= 100 ? '#10b981' : 
+                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                        </div>
+                    </div>
+                    <p class="dashboard-description">% of target</p>
                 </div>
             </div>
         </div>

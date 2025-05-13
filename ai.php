@@ -19,17 +19,30 @@ class AIServicesManager {
     }
     
     public function saveRecord($data) {
-        $query = "INSERT INTO ai_services (aiServices, center, date) 
-                  VALUES (:aiServices, :center, :date)";
-        $stmt = $this->db->prepare($query);
-        
-        return $stmt->execute([
-            ':aiServices' => $data['aiServices'],
-            ':center' => $this->centerCode,
-            ':date' => $data['date']
-        ]);
+        if (empty($data['remarks'])) {
+            // Insert without remarks
+            $query = "INSERT INTO ai_services (aiServices, center, date) 
+                    VALUES (:aiServices, :center, :date)";
+            $stmt = $this->db->prepare($query);
+            return $stmt->execute([
+                ':aiServices' => $data['aiServices'],
+                ':center' => $this->centerCode,
+                ':date' => $data['date']
+            ]);
+        } else {
+            // Insert with remarks
+            $query = "INSERT INTO ai_services (aiServices, center, date, remarks) 
+                    VALUES (:aiServices, :center, :date, :remarks)";
+            $stmt = $this->db->prepare($query);
+            return $stmt->execute([
+                ':aiServices' => $data['aiServices'],
+                ':center' => $this->centerCode,
+                ':date' => $data['date'],
+                ':remarks' => $data['remarks']
+            ]);
+        }
     }
-    
+
     public function validateInput($data) {
         $errors = [];
         
@@ -48,7 +61,8 @@ $aiManager = new AIServicesManager($conn, $centerCode);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
     $data = [
         'aiServices' => $_POST['aiServices'] ?? 0,
-        'date' => date('Y-m-d')
+        'date' => $_POST['date'] ?? date('Y-m-d'),
+        'remarks' => $_POST['remarks'] ?? ''
     ];
     
     $errors = $aiManager->validateInput($data);
@@ -276,6 +290,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                         <input type="date" name="date" id="date" class="form-input" value="<?= date('Y-m-d') ?>">
                     </div>
 
+                    <div class="form-group" id="remarksGroup" style="display: none;">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" id="remarks" class="form-input" placeholder="Provide remarks for past date..."></textarea>
+                    </div>
+
                     <button type="button" id="submitBtn" class="form-input" style="background-color: var(--primary); color: white; cursor: pointer;">
                         Submit Entry
                     </button>
@@ -357,6 +376,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                 sessionStorage.removeItem('showSuccess');
             }
         });
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateInput = document.getElementById("date");
+            const remarksGroup = document.getElementById("remarksGroup");
+            const today = new Date().toISOString().split("T")[0];
+
+            dateInput.setAttribute("max", today); // Restrict future dates
+            dateInput.value = today;
+
+            dateInput.addEventListener("change", function () {
+                if (this.value < today) {
+                    remarksGroup.style.display = "block";
+                } else {
+                    remarksGroup.style.display = "none";
+                    document.getElementById("remarks").value = '';
+                }
+            });
+        });
+
+
     </script>
 </body>
 </html>
