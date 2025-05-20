@@ -74,9 +74,10 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     <li><a href="dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
     <li><a href="announcements.php" class="nav-link" data-section="announcement-section"><i class="fas fa-bullhorn"></i> Announcement</a></li>
     <li class="dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-section="services-section" data-toggle="dropdown">
-    <i class="fas fa-user-friends"></i> Services <i class="fas fa-caret-down"></i>
-  </a>
+<a href="#" class="nav-link dropdown-toggle" data-section="services-section" data-toggle="dropdown">
+  <i class="fas fa-sitemap"></i> Services <i class="fas fa-caret-down"></i>
+</a>
+
   <ul class="dropdown-menu">
     <li><a href="admin_ai_dashboard.php" class="nav-link" data-section="ai-insemination"><i class="fas fa-syringe"></i> AI Insemination</a></li>
     <li><a href="admin_calf_drop.php" class="nav-link" data-section="calf-drop"><i class="fas fa-cow"></i> Calf Drop</a></li>
@@ -84,7 +85,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     <li><a href="admin_milk_production.php" class="nav-link" data-section="milk-production"><i class="fas fa-flask"></i> Milk Production</a></li>
   </ul>
 </li>
-<li><a href="programs.php" class="nav-link" data-section="programs-section"><i class="fas fa-calendar-alt"></i> Programs</a></li>
+<li><a href="programs.php" class="nav-link" data-section="programs-section"><i class="fas fa-user"></i> Coordinators</a></li>
     <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cog"></i> Settings</a></li>
 </ul>
     </div>

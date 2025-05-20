@@ -1,156 +1,156 @@
-<?php
-session_start();
-require 'auth_check.php';
-require 'db_config.php';
+    <?php
+    session_start();
+    require_once 'db_config.php';
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $agency = $_POST['agency'];
-    $cluster = $_POST['cluster'];
-    $region = $_POST['region'];
-    $beneficiaries = $_POST['beneficiaries'];
-    $coops = $_POST['coops'];
-    $raw_milk = $_POST['raw_milk'];
-    $milk_packs = $_POST['milk_packs'];
-    $contract_amount = $_POST['contract_amount'];
-    $center_code = $_SESSION['user']['center_code'];
+    class MilkFeeding {
+        private $conn;
+        private $centerCode;
 
-    try {
-        $stmt = $conn->prepare("INSERT INTO feeding_entries 
-            (agency, cluster, region, beneficiaries, coops, raw_milk, milk_packs, contract_amount, center_code)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        public function __construct($conn) {
+            $this->conn = $conn;
+            $this->centerCode = $_SESSION['center_code'] ?? die("Error: Center code not set in session!");
+        }
         
-        $stmt->execute([
-            $agency, $cluster, $region, $beneficiaries, $coops, 
-            $raw_milk, $milk_packs, $contract_amount, $center_code
-        ]);
+        public function read($includeArchived = false, $page = 1, $perPage = 10) {
+            $offset = ($page - 1) * $perPage;
+            
+            $sql = "SELECT * FROM dswd_feeding_program WHERE center_code = :center_code";
+            $countSql = "SELECT COUNT(*) as total FROM dswd_feeding_program WHERE center_code = :center_code";
+            
+            if (!$includeArchived) {
+                $sql .= " AND is_archived = 0";
+                $countSql .= " AND is_archived = 0";
+            } else {
+                $sql .= " AND is_archived = 1";
+                $countSql .= " AND is_archived = 1";
+            }
+            
+            $sql .= " LIMIT :offset, :perPage";
+            
+            $countStmt = $this->conn->prepare($countSql);
+            $countStmt->execute([':center_code' => $this->centerCode]);
+            $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindValue(':center_code', $this->centerCode);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return [
+                'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                'total' => $total,
+                'page' => $page,
+                'perPage' => $perPage,
+                'totalPages' => ceil($total / $perPage)
+            ];
+        }
         
-        $_SESSION['success'] = "New feeding program entry added successfully!";
-        header("Location: milkfeeding_dashboard.php");
-        exit();
-    } catch(PDOException $e) {
-        $_SESSION['error'] = "Error adding entry: " . $e->getMessage();
+        public function archive($id) {
+            $stmt = $this->conn->prepare("UPDATE dswd_feeding_program SET is_archived = 1 WHERE id = :id");
+            return $stmt->execute([':id' => $id]);
+        }
+        
+        public function restore($id) {
+            $stmt = $this->conn->prepare("UPDATE dswd_feeding_program SET is_archived = 0 WHERE id = :id");
+            return $stmt->execute([':id' => $id]);
+        }
+        
+        public function getStatusCounts() {
+            $stmt = $this->conn->prepare("SELECT status, COUNT(*) as count 
+                FROM dswd_feeding_program 
+                WHERE is_archived = 0 AND center_code = :center_code 
+                GROUP BY status");
+            $stmt->execute([':center_code' => $this->centerCode]);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $counts = [
+                'Completed' => 0,
+                'On-going Milk Deliveries' => 0,
+                'Partially Completed' => 0,
+                'Not Yet Started' => 0
+            ];
+            
+            foreach ($results as $row) {
+                $counts[$row['status']] = $row['count'];
+            }
+            
+            return $counts;
+        }
     }
-}
 
-// Fetch existing entries
-$entries = [];
-try {
-    $stmt = $conn->prepare("SELECT * FROM feeding_entries WHERE center_code = ? ORDER BY created_at DESC");
-    $stmt->execute([$_SESSION['user']['center_code']]);
-    $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch(PDOException $e) {
-    $_SESSION['error'] = "Error fetching entries: " . $e->getMessage();
-}
-?>
+    $milkFeeding = new MilkFeeding($conn);
+
+    if (isset($_GET['ajax'])) {
+        header('Content-Type: application/json');
+        
+        try {
+            if ($_GET['ajax'] === 'archive' && isset($_GET['id'])) {
+                $success = $milkFeeding->archive($_GET['id']);
+                echo json_encode(['success' => $success]);
+                exit;
+            }
+            
+            if ($_GET['ajax'] === 'restore' && isset($_GET['id'])) {
+                $success = $milkFeeding->restore($_GET['id']);
+                echo json_encode(['success' => $success]);
+                exit;
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
+        }
+    }
+
+    $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $archivedPage = isset($_GET['archived_page']) ? max(1, intval($_GET['archived_page'])) : 1;
+    $perPage = 10;
+
+    $activeEntries = $milkFeeding->read(false, $currentPage, $perPage);
+    $archivedEntries = $milkFeeding->read(true, $archivedPage, $perPage);
+    $statusCounts = $milkFeeding->getStatusCounts();
+    ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milk Feeding Program | PCC</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>DSWD Milk Feeding Program</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
             --pcc-blue: #0056b3;
-            --pcc-light-blue: #e1f0ff;
-            --pcc-gold: #d4af37;
-            --pcc-dark: #343a40;
+            --pcc-dark-blue: #003366;
+            --pcc-light-blue: #e6f0ff;
+            --pcc-orange: #ff6b00;
+            --pcc-light-orange: #fff3e6;
+            --pcc-green: #28a745;
+            --pcc-light-green: #e6f7eb;
+            --pcc-red: #dc3545;
+            --pcc-light-red: #f8d7da;
+            --pcc-purple: #6f42c1;
+            --pcc-light-purple: #f3e8ff;
+            --secondary: #6c757d;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border-radius: 0.375rem;
         }
-        body { 
-            margin-left: 280px; 
-            background-color: #f8fafc; 
+
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            margin-left: 280px;
+            color: #495057;
+            transition: margin-left 0.3s;
         }
-        .sidebar { 
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            width: 280px;
-            background: var(--pcc-blue);
-            color: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-        }
-        .pcc-header {
-            background: var(--pcc-blue);
-            color: white;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 3px solid var(--pcc-gold);
-        }
-        .pcc-card {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-            margin-bottom: 1.5rem;
-        }
-        .pcc-card:hover {
-            transform: translateY(-5px);
-        }
-        .pcc-card-header {
-            background: var(--pcc-blue);
-            color: white;
-            border-radius: 8px 8px 0 0 !important;
-            padding: 1rem;
-            font-weight: 600;
-        }
-        .deped-badge {
-            background: #2A5C82;
-            color: white;
-        }
-        .dswd-badge {
-            background: var(--pcc-gold);
-            color: white;
-        }
-        .btn-pcc {
-            background: var(--pcc-blue);
-            color: white;
-            border: none;
-        }
-        .btn-pcc:hover {
-            background: #004494;
-            color: white;
-        }
-        .btn-pcc-outline {
-            border: 1px solid var(--pcc-blue);
-            color: var(--pcc-blue);
-        }
-        .btn-pcc-outline:hover {
-            background: var(--pcc-light-blue);
-        }
-        .table-pcc {
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        .table-pcc thead th {
-            background: var(--pcc-blue);
-            color: white;
-            position: sticky;
-            top: 0;
-        }
-        .table-pcc tbody tr:hover {
-            background-color: var(--pcc-light-blue);
-        }
-        .modal-header {
-            background: var(--pcc-blue);
-            color: white;
-        }
-        .agency-badge {
-            font-size: 1.1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        .agency-badge:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
-        }
-         /* Sidebar Styles */
-         .sidebar {
+
+        /* Sidebar Styles */
+        .sidebar {
             position: fixed;
             left: 0;
             top: 0;
@@ -235,7 +235,7 @@ try {
             overflow: hidden;
             border: 3px solid var(--secondary);
         }
-
+       
         .profile-picture img {
             width: 100%;
             height: 100%;
@@ -247,7 +247,7 @@ try {
             align-items: center;
             gap: 8px;
             padding: 8px 15px;
-            background-color: red;
+            background-color: var(--pcc-red);
             color: white;
             border-radius: 6px;
             text-decoration: none;
@@ -259,356 +259,378 @@ try {
         .logout-btn:hover {
             background-color: #c53030;
             transform: translateY(-2px);
+        }   
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            transition: margin-left 0.3s;
         }
 
-        .dashboard-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+        .main-content {
+            padding: 2rem;
+            transition: margin-left 0.3s;
         }
 
-        .stat-card {
-            border-left: 4px solid;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        .table-container {
+            max-height: 500px;
+            overflow: auto;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            background-color: #fff;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        .table {
+            margin-bottom: 0;
+            border-collapse: collapse;
+            min-width: 1200px;
+            table-layout: fixed;
         }
 
-        .chart-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        .table thead th {
+            background-color: var(--pcc-light-blue);
+            color: var(--pcc-dark-blue);
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            padding: 1rem 1.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            vertical-align: middle;
         }
 
-        .data-table {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        .table tbody td {
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+            border-top: 1px solid #f1f1f1;
+            line-height: 1.4;
+            max-width: 200px;
+            word-wrap: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-height: 3.6em;
         }
 
-        .badge-pending {
-            background-color: #fff3cd;
-            color: #856404;
+        .archived-row {
+            background-color: rgba(220, 53, 69, 0.05) !important;
         }
 
-        .badge-completed {
-            background-color: #d4edda;
-            color: #155724;
+        .status-badge {
+            padding: 0.5rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        #loadingSpinner {
-            display: none;
+        .status-completed {
+            background-color: var(--pcc-light-green);
+            color: var(--pcc-green);
         }
-        /* Add these to your existing CSS */
-.profile-info {
-    max-width: 200px; /* Adjust based on your sidebar width */
-    width: 100%;
-}
 
-.user-email {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    display: block;
-}
+        .status-ongoingmilkdeliveries {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+        }
+
+        .status-partiallycompleted {
+            background-color: var(--pcc-light-purple);
+            color: var(--pcc-purple);
+        }
+
+        .status-notyetstarted {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: var(--secondary);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0056b3;
+            border-bottom: 3px solid #0056b3;
+            background-color: transparent;
+        }
+
+        @media (max-width: 992px) {
+            body {
+                margin-left: 0;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
-         <!-- Sidebar -->
-         <div class="sidebar">
-       <!-- User Profile Section -->
-        <div class="user-profile">
-            <div class="profile-picture">
-                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <!-- Display the uploaded profile image -->
-                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-                <?php else: ?>
-                    <!-- Fallback to the generated avatar -->
-                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-                <?php endif; ?>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="profile-picture">
+                        <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
+                        <?php else: ?>
+                            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
+                        <?php endif; ?>
+                    </div>
+                    <div class="profile-info">
+                        <h5 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h5>
+                        <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+                    </div>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="service.php" class="nav-link"><i class="fa-solid fa-arrow-left"></i>Back to quickfacts</a></li>
+                        <li><a href="milkfeeding_dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i>DSWD Program Report</a></li>
+                        <li><a href="milk_feeding_dswd_report.php" class="nav-link active"><i class="fas fa-file-alt"></i> DSWD Program Report</a></li>
+                        <li><a href="milk_feeding_deped_report.php" class="nav-link"><i class="fas fa-file-alt"></i> DepEd Program Report</a></li>
+                        <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </nav>
             </div>
-        <div class="profile-info">
-            <h5 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h5>
-            <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-        </div>
-    </div>
 
-    <nav>
-        <ul>
-            <li><a href="services.php" class="nav-link"><i class="fas fa-arrow-left"></i> Back to Quickfacts</a></li>
-            <li><a href="milkfeeding_dashboard.php" class="nav-link "><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="milk_feeding_dswd_report.php" class="nav-link active"><i class="fas fa-handshake"></i> DSWD Program Report</a></li>
-            <li><a href="milk_feeding_deped_report.php" class="nav-link "><i class="fas fa-file-alt"></i> DepEd Program Report</a></li>
-            <li><a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </nav>
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="content-header">
+                    <div class="content-title">
+                        <h2>DSWD Milk Feeding Program</h2>
+                        <p>Track and manage milk feeding program implementations</p>
+                    </div>
+                </div>
 
-    </div>
-    <!-- Main Content -->
-    <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="pcc-header rounded">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">
-                    <i class="fas fa-milk-bottle me-2"></i> Milk Feeding Program
-                </h2>
-                <button class="btn btn-pcc" data-bs-toggle="modal" data-bs-target="#newEntryModal">
-                    <i class="fas fa-plus me-2"></i> New Entry
-                </button>
-            </div>
-        </div>
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab" aria-controls="active" aria-selected="true">
+                            <i class="bi bi-list-check me-2"></i>Active Entries (<?= $activeEntries['total'] ?>)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab" aria-controls="archived" aria-selected="false">
+                            <i class="bi bi-archive me-2"></i>Archived Entries (<?= $archivedEntries['total'] ?>)
+                        </button>
+                    </li>
+                </ul>
 
-        <!-- Alerts -->
-        <?php if(isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?= $_SESSION['error']; unset($_SESSION['error']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if(isset($_SESSION['success'])): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?= $_SESSION['success']; unset($_SESSION['success']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <?php endif; ?>
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- Active Entries Tab -->
+                    <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th>Cycle Year</th>
+                                        <th>Region</th>
+                                        <th>Province</th>
+                                        <th>LGU</th>
+                                        <th>Beneficiaries</th>
+                                        <th>Milk Type</th>
+                                        <th>Milk Packs</th>
+                                        <th>Price/Pack</th>
+                                        <th>Supplier</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($activeEntries['data'] as $entry): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($entry['cycle_year']) ?></td>
+                                        <td><?= htmlspecialchars($entry['region']) ?></td>
+                                        <td><?= htmlspecialchars($entry['province']) ?></td>
+                                        <td><?= htmlspecialchars($entry['lgu']) ?></td>
+                                        <td><?= number_format($entry['beneficiaries']) ?></td>
+                                        <td><?= htmlspecialchars($entry['milk_type']) ?></td>
+                                        <td><?= number_format($entry['milk_packs']) ?></td>
+                                        <td>₱<?= number_format($entry['price_per_pack'], 2) ?></td>
+                                        <td><?= htmlspecialchars($entry['supplier']) ?></td>
+                                        <td>
+                                            <span class="status-badge status-<?= strtolower(str_replace(' ', '', $entry['status'])) ?>">
+                                                <?= htmlspecialchars($entry['status']) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= $entry['remarks'] ?: 'N/A' ?></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-secondary archive-btn" 
+                                                data-id="<?= $entry['id'] ?>">
+                                                <i class="bi bi-archive"></i> Archive
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination -->
+                        <?php if ($activeEntries['totalPages'] > 1): ?>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                <?php if ($activeEntries['page'] > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=<?= $activeEntries['page'] - 1 ?>" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                <?php for ($i = 1; $i <= $activeEntries['totalPages']; $i++): ?>
+                                <li class="page-item <?= $i == $activeEntries['page'] ? 'active' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                                <?php endfor; ?>
+                                <?php if ($activeEntries['page'] < $activeEntries['totalPages']): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=<?= $activeEntries['page'] + 1 ?>" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                        <?php endif; ?>
+                    </div>
 
-        <!-- Summary Cards -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card pcc-card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-muted">Total Beneficiaries</h5>
-                        <h2 class="text-primary"><?= number_format(array_sum(array_column($entries, 'beneficiaries'))); ?></h2>
+                    <!-- Archived Entries Tab -->
+                    <div class="tab-pane fade" id="archived" role="tabpanel" aria-labelledby="archived-tab">
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Cycle Year</th>
+                                        <th>Region</th>
+                                        <th>Province</th>
+                                        <th>LGU</th>
+                                        <th>Beneficiaries</th>
+                                        <th>Milk Type</th>
+                                        <th>Milk Packs</th>
+                                        <th>Price/Pack</th>
+                                        <th>Supplier</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($archivedEntries['data'])): ?>
+                                        <?php foreach ($archivedEntries['data'] as $entry): ?>
+                                        <tr class="archived-row">
+                                            <td><?= htmlspecialchars($entry['cycle_year']) ?></td>
+                                            <td><?= htmlspecialchars($entry['region']) ?></td>
+                                            <td><?= htmlspecialchars($entry['province']) ?></td>
+                                            <td><?= htmlspecialchars($entry['lgu']) ?></td>
+                                            <td><?= number_format($entry['beneficiaries']) ?></td>
+                                            <td><?= htmlspecialchars($entry['milk_type']) ?></td>
+                                            <td><?= number_format($entry['milk_packs']) ?></td>
+                                            <td>₱<?= number_format($entry['price_per_pack'], 2) ?></td>
+                                            <td><?= htmlspecialchars($entry['supplier']) ?></td>
+                                            <td>
+                                                <span class="status-badge status-<?= strtolower(str_replace(' ', '', $entry['status'])) ?>">
+                                                    <?= htmlspecialchars($entry['status']) ?>
+                                                </span>
+                                            </td>
+                                            <td><?= $entry['remarks'] ?: 'N/A' ?></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary restore-btn" 
+                                                    data-id="<?= $entry['id'] ?>">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="12" class="text-center text-muted py-4">
+                                                <i class="bi bi-database-fill-exclamation me-2"></i>No archived entries found
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination -->
+                        <?php if ($archivedEntries['totalPages'] > 1): ?>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                <?php if ($archivedEntries['page'] > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="?archived_page=<?= $archivedEntries['page'] - 1 ?>" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                <?php for ($i = 1; $i <= $archivedEntries['totalPages']; $i++): ?>
+                                <li class="page-item <?= $i == $archivedEntries['page'] ? 'active' : '' ?>">
+                                    <a class="page-link" href="?archived_page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                                <?php endfor; ?>
+                                <?php if ($archivedEntries['page'] < $archivedEntries['totalPages']): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="?archived_page=<?= $archivedEntries['page'] + 1 ?>" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card pcc-card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-muted">Total Milk Packs</h5>
-                        <h2 class="text-primary"><?= number_format(array_sum(array_column($entries, 'milk_packs'))); ?></h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card pcc-card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-muted">Total Contract Amount</h5>
-                        <h2 class="text-primary">₱<?= number_format(array_sum(array_column($entries, 'contract_amount')), 2); ?></h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Entries Table -->
-        <div class="card pcc-card">
-            <div class="card-header pcc-card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-table me-2"></i> Feeding Program Entries</span>
-                <div>
-                    <button class="btn btn-sm btn-pcc-outline me-2">
-                        <i class="fas fa-filter me-1"></i> Filter
-                    </button>
-                    <button class="btn btn-sm btn-pcc-outline">
-                        <i class="fas fa-download me-1"></i> Export
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-pcc table-hover">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Agency</th>
-                                <th>Region</th>
-                                <th>Beneficiaries</th>
-                                <th>Cooperatives</th>
-                                <th>Milk Packs</th>
-                                <th>Amount</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($entries as $entry): ?>
-                            <tr>
-                                <td><?= date('M d, Y', strtotime($entry['created_at'])); ?></td>
-                                <td>
-                                    <span class="badge <?= $entry['agency'] === 'DepEd' ? 'deped-badge' : 'dswd-badge'; ?>">
-                                        <?= $entry['agency']; ?>
-                                    </span>
-                                </td>
-                                <td><?= $entry['region']; ?></td>
-                                <td><?= number_format($entry['beneficiaries']); ?></td>
-                                <td><?= number_format($entry['coops']); ?></td>
-                                <td><?= number_format($entry['milk_packs']); ?></td>
-                                <td>₱<?= number_format($entry['contract_amount'], 2); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-pcc-outline me-1">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-pcc-outline">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                            <?php if(empty($entries)): ?>
-                            <tr>
-                                <td colspan="8" class="text-center text-muted py-4">No entries found. Click "New Entry" to add one.</td>
-                            </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     </div>
 
-    <!-- New Entry Modal -->
-    <div class="modal fade" id="newEntryModal" tabindex="-1" aria-labelledby="newEntryModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="newEntryModalLabel">
-                        <i class="fas fa-milk-bottle me-2"></i> New Feeding Program Entry
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form method="POST" id="feedingForm">
-                        <div class="mb-4">
-                            <label class="form-label">Select Agency</label>
-                            <div class="btn-group w-100" role="group">
-                                <button type="button" class="btn agency-btn deped-badge active" data-agency="DepEd">
-                                    <i class="fas fa-school me-2"></i> DepEd School-based
-                                </button>
-                                <button type="button" class="btn agency-btn dswd-badge" data-agency="DSWD">
-                                    <i class="fas fa-hands-helping me-2"></i> DSWD Supplementary
-                                </button>
-                                <input type="hidden" name="agency" id="selectedAgency" value="DepEd">
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <!-- Cluster Field (Visible for DepEd) -->
-                            <div class="col-md-6 deped-field">
-                                <label class="form-label">Cluster</label>
-                                <select class="form-select" name="cluster" id="clusterSelect">
-                                    <option value="Luzon">Luzon</option>
-                                    <option value="Visayas">Visayas</option>
-                                    <option value="Mindanao">Mindanao</option>
-                                </select>
-                            </div>
-
-                            <!-- Region Field (Dynamic based on Cluster/Agency) -->
-                            <div class="col-md-6">
-                                <label class="form-label">Region</label>
-                                <select class="form-select" name="region" id="regionSelect" required>
-                                    <!-- Options populated by JavaScript -->
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Number of Beneficiaries</label>
-                                <input type="number" class="form-control" name="beneficiaries" min="0" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Number of Cooperatives</label>
-                                <input type="number" class="form-control" name="coops" min="0" required>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Raw Milk Used (Liters)</label>
-                                <input type="number" step="0.01" class="form-control" name="raw_milk" min="0" required>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Milk Packs</label>
-                                <input type="number" class="form-control" name="milk_packs" min="0" required>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">Contract Amount (₱)</label>
-                                <input type="number" step="0.01" class="form-control" name="contract_amount" min="0" required>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer mt-4">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-2"></i> Cancel
-                            </button>
-                            <button type="submit" class="btn btn-pcc">
-                                <i class="fas fa-save me-2"></i> Submit Entry
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Agency Selection
-        document.querySelectorAll('.agency-btn').forEach(btn => {
+        document.querySelectorAll('.archive-btn, .restore-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.agency-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('selectedAgency').value = this.dataset.agency;
+                const action = this.classList.contains('archive-btn') ? 'archive' : 'restore';
+                const entryId = this.dataset.id;
                 
-                // Toggle DepEd-specific fields
-                document.querySelectorAll('.deped-field').forEach(field => {
-                    field.style.display = this.dataset.agency === 'DepEd' ? 'block' : 'none';
+                Swal.fire({
+                    title: `${action.charAt(0).toUpperCase() + action.slice(1)} Entry`,
+                    text: `Are you sure you want to ${action} this entry?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: `Yes, ${action} it!`
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(`?ajax=${action}&id=${entryId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire(
+                                        `${action.charAt(0).toUpperCase() + action.slice(1)}!`,
+                                        `Entry has been ${action}d.`,
+                                        'success'
+                                    ).then(() => window.location.reload());
+                                } else {
+                                    Swal.fire('Error!', data.error || 'Operation failed', 'error');
+                                }
+                            })
+                            .catch(error => Swal.fire('Error!', 'Operation failed', 'error'));
+                    }
                 });
-                
-                updateRegions();
             });
-        });
-
-        // Region Data
-        const regions = {
-            DepEd: {
-                Luzon: ['I', 'II', 'III', 'IVA', 'IVB', 'V', 'NCR'],
-                Visayas: ['VI', 'VII', 'VIII'],
-                Mindanao: ['XI', 'XII', 'Caraga']
-            },
-            DSWD: {
-                Luzon: ['III'],
-                Visayas: ['VI']
-            }
-        };
-
-        function updateRegions() {
-            const agency = document.getElementById('selectedAgency').value;
-            const cluster = document.getElementById('clusterSelect').value;
-            const regionSelect = document.getElementById('regionSelect');
-            
-            regionSelect.innerHTML = '';
-            regions[agency][cluster].forEach(region => {
-                const option = document.createElement('option');
-                option.value = region;
-                option.textContent = region;
-                regionSelect.appendChild(option);
-            });
-        }
-
-        // Initial setup
-        document.getElementById('clusterSelect').addEventListener('change', updateRegions);
-        updateRegions();
-
-        // Clear form when modal is hidden
-        document.getElementById('newEntryModal').addEventListener('hidden.bs.modal', function() {
-            document.getElementById('feedingForm').reset();
-            document.getElementById('selectedAgency').value = 'DepEd';
-            document.querySelectorAll('.agency-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('.agency-btn[data-agency="DepEd"]').classList.add('active');
-            updateRegions();
         });
     </script>
 </body>

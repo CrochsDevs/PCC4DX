@@ -10,7 +10,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 }
 
 // Define target value for AI services
-$targetValue = 13400; // Example target value for AI services
+$targetValue =9000; // Example target value for AI services
 
 class AIDashboardManager {
     private $db;

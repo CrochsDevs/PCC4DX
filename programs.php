@@ -13,59 +13,78 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/index.css">
 
-    <style>
-        /* Grid Styling for Programs */
+<style>
+    /* Grid Styling for Programs */
+    .news-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+        padding: 0 15px;
+    }
+
+    /* Program Card Styling */
+    .news-card {
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        min-height: 120px;
+    }
+
+    .news-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .news-card img {
+        width: 120px;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-right: 15px;
+        flex-shrink: 0;
+        border: 2px solid #f0f0f0;
+    }
+
+    .news-content {
+        flex: 1;
+        min-width: 0; /* Prevent text overflow */
+    }
+
+    .news-content h4 {
+        font-size: 16px;
+        margin: 0 0 5px 0;
+        color: #003366;
+        line-height: 1.3;
+    }
+
+    .news-content p {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
         .news-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 3fr); 
-            gap: 30px;
-            margin-top: 30px;
+            grid-template-columns: 1fr;
         }
-
-        /* Program Card Styling */
+        
         .news-card {
-            background-color: #fff;
-            display: flex; /* Horizontal layout */
-            align-items: center;
             padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-            max-width: 450px;
-            margin: 0 auto;
         }
-
-        .news-card:hover {
-            transform: translateY(-5px);
-        }
-
+        
         .news-card img {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 50%;
-            margin-right: 20px;
-            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            margin-right: 12px;
         }
-
-        .news-content {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .news-content h4 {
-            font-size: 18px;
-            margin: 0;
-            color: #003366;
-        }
-
-        .news-content p {
-            font-size: 14px;
-            color: #555;
-            margin-top: 4px;
-        }
-    </style>
+    }
+</style>
 
 </head>
 <body>

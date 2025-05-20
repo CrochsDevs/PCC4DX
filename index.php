@@ -214,7 +214,7 @@ body {
     <section class="quick-links">
         <div class="container">
             <div class="quick-link-item">
-                <i class="fas fa-wine-bottle"></i>
+                <i class="fas fa-solid-jug"></i>
                 <h3>Milk feeding</h3>
                 <p>Learn about milk feeding</p>
             </div>
@@ -245,7 +245,7 @@ body {
 <section class="about-section">
   <!-- Left: Text Content -->
   <div class="about-content">
-    <h2 class="section-title">About 4DX</h2>
+    <h2 class="section-title">About Quick Fac</h2>
     <p><p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities. In line with its mission, 4DX actively collaborates with local government units, academic institutions, and farming cooperatives to ensure that carabao-related interventions reach even the most remote and underserved rural areas. Its efforts extend to providing continuous training for farmers, promoting the adoption of climate-smart agricultural practices, and improving market access for dairy and meat products derived from carabaos. </p>
     </p>
 
