@@ -9,56 +9,41 @@ class DashboardData {
         $this->conn = $conn;
     }
 
-    // DSWD Statistics
-    public function getDSWDStats() {
-        $stmt = $this->conn->prepare("
-            SELECT 
-                SUM(beneficiaries) AS total_beneficiaries,
-                COUNT(DISTINCT supplier) AS total_coops,
-                SUM(milk_packs) AS total_milk,
-                SUM(milk_packs * price_per_pack) AS gross_revenue
-            FROM dswd_feeding_program
-            WHERE is_archived = 0
-        ");
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // DepEd Statistics
-    public function getDepEdStats() {
-        $stmt = $this->conn->prepare("
-            SELECT 
-                SUM(beneficiaries) AS total_beneficiaries,
-                COUNT(DISTINCT supplier) AS total_coops,
-                SUM(milk_packs) AS total_milk,
-                SUM(milk_packs * price_per_pack) AS gross_revenue
-            FROM school_feeding_program
-            WHERE is_archived = 0
-        ");
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // Weekly Distribution Data
-    public function getWeeklyDistribution($program) {
-        $table = $program === 'dswd' ? 'dswd_feeding_program' : 'school_feeding_program';
+    public function getStats($program) {
+        $table = ($program === 'dswd') ? 'dswd_feeding_program' : 'school_feeding_program';
         
         $stmt = $this->conn->prepare("
             SELECT 
-                YEARWEEK(delivery_date) AS week,
+                SUM(beneficiaries) AS total_beneficiaries,
+                COUNT(DISTINCT supplier) AS total_coops,
+                SUM(milk_packs) AS total_milk,
+                SUM(milk_packs * price_per_pack) AS gross_revenue
+            FROM $table
+            WHERE is_archived = 0
+        ");
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getDistributionData($program, $timeframe) {
+        $table = $program === 'dswd' ? 'dswd_feeding_program' : 'school_feeding_program';
+        $groupBy = $timeframe === 'weekly' ? 'YEARWEEK(delivery_date)' : 'DATE_FORMAT(delivery_date, "%Y-%m")';
+        
+        $stmt = $this->conn->prepare("
+            SELECT 
+                $groupBy AS period,
                 SUM(milk_packs) AS total_milk,
                 SUM(beneficiaries) AS total_beneficiaries
             FROM $table
-            WHERE delivery_date >= DATE_SUB(NOW(), INTERVAL 6 WEEK)
-            GROUP BY YEARWEEK(delivery_date)
-            ORDER BY week DESC
+            WHERE delivery_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY $groupBy
+            ORDER BY period DESC
             LIMIT 5
         ");
         $stmt->execute();
         return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    // Regional Implementation Data
     public function getRegionalData($program) {
         $table = $program === 'dswd' ? 'dswd_feeding_program' : 'school_feeding_program';
         
@@ -77,13 +62,31 @@ class DashboardData {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getProgramStatus($program) {
+        $table = $program === 'dswd' ? 'dswd_feeding_program' : 'school_feeding_program';
+        
+        $stmt = $this->conn->prepare("
+            SELECT 
+                status,
+                COUNT(*) AS count,
+                SUM(beneficiaries) AS beneficiaries,
+                SUM(milk_packs * price_per_pack) AS amount
+            FROM $table
+            WHERE is_archived = 0
+            GROUP BY status
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
+$currentProgram = $_GET['program'] ?? 'dswd';
 $dashboard = new DashboardData($conn);
-$dswdStats = $dashboard->getDSWDStats();
-$depEdStats = $dashboard->getDepEdStats();
-$weeklyDSWD = $dashboard->getWeeklyDistribution('dswd');
-$regionalDSWD = $dashboard->getRegionalData('dswd');
+$stats = $dashboard->getStats($currentProgram);
+$distributionData = $dashboard->getDistributionData($currentProgram, ($currentProgram === 'dswd' ? 'weekly' : 'monthly'));
+$regionalData = $dashboard->getRegionalData($currentProgram);
+$statusData = $dashboard->getProgramStatus($currentProgram);
 ?>
 
 <!DOCTYPE html>
@@ -254,13 +257,24 @@ $regionalDSWD = $dashboard->getRegionalData('dswd');
         .legend-color {
             @apply w-3 h-3 rounded-full mr-1;
         }
+    
+        .status-badge {
+            @apply px-2 py-1 rounded-full text-xs font-medium;
+        }
+        .status-completed { @apply bg-green-100 text-green-800; }
+        .status-ongoing { @apply bg-yellow-100 text-yellow-800; }
+        .status-notyetstarted { @apply bg-red-100 text-red-800; }
+        .status-moasigning { @apply bg-blue-100 text-blue-800; }
+        .status-fundtransfer { @apply bg-purple-100 text-purple-800; }
+        .status-documents { @apply bg-pink-100 text-pink-800; }
+        .status-procurement { @apply bg-indigo-100 text-indigo-800; }
+        .status-milkdeliveries { @apply bg-teal-100 text-teal-800; }
+        .status-liquidation { @apply bg-orange-100 text-orange-800; }
     </style>
 </head>
 <body class="bg-gray-50">
-    <div class="flex h-screen overflow-hidden ">
-
-        <!-- Sidebar -->
-            <div class="sidebar">
+    <div class="flex h-screen overflow-hidden">
+         <div class="sidebar">
                 <div class="user-profile">
                     <div class="profile-picture">
                         <?php if (!empty($_SESSION['user']['profile_image'])): ?>
@@ -284,11 +298,9 @@ $regionalDSWD = $dashboard->getRegionalData('dswd');
                     </ul>
                 </nav>
             </div>
-
-
-       <div class="flex-1 h-screen overflow-auto ml-[280px]">
-            <!-- Header -->
-            <header class="bg-white shadow-sm">
+        
+        <div class="flex-1 h-screen overflow-auto ml-[280px]">
+               <header class="bg-white shadow-sm">
                 <div class="px-6 py-4 flex justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800">Milk Feeding Program Dashboard</h1>
                     <div class="flex items-center space-x-4">
@@ -301,90 +313,102 @@ $regionalDSWD = $dashboard->getRegionalData('dswd');
                 </div>
             </header>
 
-            <!-- Tabs Navigation -->
-            <div class="px-6 pt-4">
+             <div class="px-6 pt-4">
                 <div class="border-b border-gray-200">
                     <nav class="-mb-px flex space-x-8">
-                        <a href="#" class="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        <a href="?program=dswd" 
+                           class="<?= $currentProgram === 'dswd' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500' ?> 
+                           whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                             DSWD Program
                         </a>
-                        <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        <a href="?program=deped" 
+                           class="<?= $currentProgram === 'deped' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500' ?> 
+                           whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                             DepEd Program
                         </a>
                     </nav>
                 </div>
             </div>
 
-            <!-- DSWD Dashboard Content -->
             <main class="px-6 py-4">
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Beneficiaries -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500 truncate">Total Beneficiaries</p>
-                                <p class="mt-1 text-3xl font-semibold text-gray-900">24,568</p>
+                                <p class="mt-1 text-3xl font-semibold text-gray-900">
+                                    <?= number_format($stats['total_beneficiaries'] ?? 0) ?>
+                                </p>
                             </div>
                             <div class="p-3 rounded-full bg-blue-100 text-blue-600">
                                 <i class="fas fa-users text-xl"></i>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <span class="text-green-600 text-sm font-medium">+12.5% </span>
-                            <span class="text-gray-500 text-sm">from last week</span>
-                        </div>
                     </div>
-                    
+
+                    <!-- Coops Engaged -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500 truncate">Coops Engaged</p>
-                                <p class="mt-1 text-3xl font-semibold text-gray-900">42</p>
+                                <p class="mt-1 text-3xl font-semibold text-gray-900">
+                                    <?= number_format($stats['total_coops'] ?? 0) ?>
+                                </p>
                             </div>
                             <div class="p-3 rounded-full bg-green-100 text-green-600">
                                 <i class="fas fa-handshake text-xl"></i>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <span class="text-green-600 text-sm font-medium">+3 </span>
-                            <span class="text-gray-500 text-sm">new coops this month</span>
-                        </div>
                     </div>
-                    
+
+                    <!-- Milk Distributed -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500 truncate">Milk Distributed</p>
-                                <p class="mt-1 text-3xl font-semibold text-gray-900">58,920L</p>
+                                <p class="mt-1 text-3xl font-semibold text-gray-900">
+                                    <?= number_format($stats['total_milk'] ?? 0) ?>L
+                                </p>
                             </div>
                             <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
                                 <i class="fas fa-wine-bottle text-xl"></i>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <span class="text-green-600 text-sm font-medium">+8.2% </span>
-                            <span class="text-gray-500 text-sm">from last week</span>
-                        </div>
                     </div>
-                    
+
+                    <!-- Gross Revenue -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-500 truncate">Gross Revenue</p>
-                                <p class="mt-1 text-3xl font-semibold text-gray-900">₱12.4M</p>
+                                <p class="mt-1 text-3xl font-semibold text-gray-900">
+                                    ₱<?= number_format($stats['gross_revenue'] ?? 0, 2) ?>
+                                </p>
                             </div>
                             <div class="p-3 rounded-full bg-purple-100 text-purple-600">
                                 <i class="fas fa-money-bill-wave text-xl"></i>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <span class="text-green-600 text-sm font-medium">+5.7% </span>
-                            <span class="text-gray-500 text-sm">from last week</span>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Weekly Charts -->
+                <?php if($currentProgram === 'deped'): ?>
+                <!-- DepEd Specific Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Program Status Distribution</h3>
+                        <canvas id="statusPieChart" height="250"></canvas>
+                        <div class="mt-4 grid grid-cols-2 gap-2" id="pieLegend"></div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Monthly Distribution Overview</h3>
+                        <canvas id="monthlyDistributionChart" height="250"></canvas>
+                    </div>
+                </div>
+                <?php else: ?>
+                <!-- DSWD Specific Charts -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Weekly Milk Distribution</h3>
@@ -395,42 +419,29 @@ $regionalDSWD = $dashboard->getRegionalData('dswd');
                         <canvas id="beneficiariesChart" height="250"></canvas>
                     </div>
                 </div>
-
-                <!-- Status Legends -->
-                <div class="bg-white rounded-lg shadow p-6 mb-8">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Program Status Legend</h3>
-                    <div class="flex flex-wrap">
-                        <div class="legend-item">
-                            <div class="legend-color bg-blue-500"></div>
-                            <span class="text-sm">MOA Signing</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color bg-green-500"></div>
-                            <span class="text-sm">Fund Transfer</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color bg-yellow-500"></div>
-                            <span class="text-sm">Procurement - OG</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color bg-purple-500"></div>
-                            <span class="text-sm">Milk Deliveries - OG</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color bg-red-500"></div>
-                            <span class="text-sm">Liquidation</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color bg-gray-500"></div>
-                            <span class="text-sm">Not Yet Started</span>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <!-- Regional Data Table -->
                 <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
-                    <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                         <h3 class="text-lg font-medium text-gray-900">Regional Implementation Status</h3>
+                        <?php if($currentProgram === 'dswd'): ?>
+                        <div class="flex gap-2 flex-wrap">
+                            <?php 
+                            $statusColors = [
+                                'MOA Signing' => 'moasigning',
+                                'Fund Transfer' => 'fundtransfer',
+                                'Documents - OG' => 'documents',
+                                'Procurement - OG' => 'procurement',
+                                'Milk Deliveries - OG' => 'milkdeliveries',
+                                'Liquidation' => 'liquidation',
+                                'Not Yet Started' => 'notyetstarted'
+                            ];
+                            foreach($statusColors as $status => $color): ?>
+                                <span class="status-badge status-<?= $color ?>"><?= $status ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -444,72 +455,29 @@ $regionalDSWD = $dashboard->getRegionalData('dswd');
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
+                                <?php foreach ($regionalData as $region): ?>
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">NCR</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">5,240</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱2,850,000</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <?= htmlspecialchars($region['region']) ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <?= number_format($region['beneficiaries']) ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        ₱<?= number_format($region['contract_amount'], 2) ?>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge status-ongoingmilkdeliveries">
-                                            <i class="fas fa-truck mr-1"></i> On-going Milk Deliveries
+                                        <span class="status-badge status-<?= strtolower(str_replace([' ', '-'], '', $region['status'])) ?>">
+                                            <?= htmlspecialchars($region['status']) ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Phase 2 of 3 completed</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Region IV-A</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">4,150</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱2,250,000</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge status-completed">
-                                            <i class="fas fa-check-circle mr-1"></i> Completed
-                                        </span>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <?= htmlspecialchars($region['remarks']) ?>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">All phases delivered</td>
                                 </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Region III</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">3,780</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱2,050,000</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge status-partiallycompleted">
-                                            <i class="fas fa-check-double mr-1"></i> Partially Completed
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Waiting for next delivery</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Region VII</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">3,250</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱1,780,000</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge status-notyetstarted">
-                                            <i class="fas fa-clock mr-1"></i> Not Yet Started
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MOA signing scheduled</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Region XI</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2,980</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱1,620,000</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge status-ongoingmilkdeliveries">
-                                            <i class="fas fa-truck mr-1"></i> On-going Milk Deliveries
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Phase 1 of 3 completed</td>
-                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
-                    </div>
-                    <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-500">Showing <span class="font-medium">1</span> to <span class="font-medium">5</span> of <span class="font-medium">17</span> regions</div>
-                            <div class="flex space-x-2">
-                                <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Previous</button>
-                                <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Next</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </main>
@@ -517,101 +485,100 @@ $regionalDSWD = $dashboard->getRegionalData('dswd');
     </div>
 
     <script>
-        // Milk Distribution Chart
-        const milkCtx = document.getElementById('milkDistributionChart').getContext('2d');
-        const milkChart = new Chart(milkCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current Week'],
-                datasets: [{
-                    label: 'Milk Distributed (Liters)',
-                    data: [12500, 11800, 14200, 13500, 6900],
-                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Liters'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Beneficiaries Chart
-        const beneficiariesCtx = document.getElementById('beneficiariesChart').getContext('2d');
-        const beneficiariesChart = new Chart(beneficiariesCtx, {
-            type: 'line',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current Week'],
-                datasets: [{
-                    label: 'Beneficiaries Reached',
-                    data: [5200, 4800, 6200, 5800, 2568],
-                    fill: false,
-                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
-                    borderColor: 'rgba(16, 185, 129, 1)',
-                    borderWidth: 2,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Number of Beneficiaries'
-                        }
-                    }
-                }
-            }
-        });
-
-        // DepEd Program Status Pie Chart (would be shown when DepEd tab is selected)
-        const depedStatusCtx = document.createElement('canvas');
-        depedStatusCtx.id = 'depedStatusChart';
-        const depedStatusChart = new Chart(depedStatusCtx, {
+        <?php if($currentProgram === 'deped'): ?>
+        // DepEd Pie Chart
+        const statusData = <?= json_encode($statusData) ?>;
+        const pieCtx = document.getElementById('statusPieChart').getContext('2d');
+        new Chart(pieCtx, {
             type: 'pie',
             data: {
-                labels: ['Completed', 'On-going Milk Deliveries', 'Partially Completed', 'Not Yet Started'],
+                labels: statusData.map(item => item.status),
                 datasets: [{
-                    data: [35, 25, 20, 20],
+                    data: statusData.map(item => item.count),
                     backgroundColor: [
-                        'rgba(16, 185, 129, 0.7)',
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(245, 158, 11, 0.7)',
-                        'rgba(156, 163, 175, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(16, 185, 129, 1)',
-                        'rgba(59, 130, 246, 1)',
-                        'rgba(245, 158, 11, 1)',
-                        'rgba(156, 163, 175, 1)'
-                    ],
-                    borderWidth: 1
+                        '#10B981', '#F59E0B', '#EF4444',
+                        '#3B82F6', '#8B5CF6', '#EC4899',
+                        '#6366F1', '#14B8A6', '#F97316'
+                    ]
                 }]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    legend: {
-                        position: 'right',
-                    },
-                    title: {
-                        display: true,
-                        text: 'DepEd Program Status Distribution'
-                    }
+                    legend: { display: false }
                 }
             }
         });
+
+        // Monthly Distribution Chart
+        const monthlyData = <?= json_encode($distributionData) ?>;
+        const monthlyCtx = document.getElementById('monthlyDistributionChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: monthlyData.map(item => item.period),
+                datasets: [{
+                    label: 'Milk Distributed (Liters)',
+                    data: monthlyData.map(item => item.total_milk),
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                }, {
+                    label: 'Beneficiaries Reached',
+                    data: monthlyData.map(item => item.total_beneficiaries),
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    type: 'line',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        <?php else: ?>
+        // DSWD Charts (Existing weekly charts)
+        const weeklyLabels = <?= json_encode(array_column($distributionData, 'period')) ?>;
+        const milkData = <?= json_encode(array_column($distributionData, 'total_milk')) ?>;
+        const beneficiariesData = <?= json_encode(array_column($distributionData, 'total_beneficiaries')) ?>;
+
+        // Milk Distribution Chart
+        new Chart(document.getElementById('milkDistributionChart'), {
+            type: 'bar',
+            data: {
+                labels: weeklyLabels,
+                datasets: [{
+                    label: 'Milk Distributed (Liters)',
+                    data: milkData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Beneficiaries Chart
+        new Chart(document.getElementById('beneficiariesChart'), {
+            type: 'line',
+            data: {
+                labels: weeklyLabels,
+                datasets: [{
+                    label: 'Beneficiaries Reached',
+                    data: beneficiariesData,
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>

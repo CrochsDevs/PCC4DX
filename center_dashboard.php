@@ -1,7 +1,7 @@
 <?php
 session_start();
 require 'auth_check.php';
-require 'db_config.php'; // if not already present
+require 'db_config.php'; // Ensure DB connection is established
 
 // Prevent headquarters users from accessing center dashboard
 if ($_SESSION['user']['center_type'] === 'Headquarters') {
@@ -47,7 +47,53 @@ class SummaryFetcher {
     }
 }
 
-$centerCode = $_SESSION['center_code'];
+class CenterDashboard {
+    private $conn;
+    private $centerCode;
+
+    public function __construct($conn, $centerCode) {
+        $this->conn = $conn;
+        $this->centerCode = $centerCode;
+    }
+
+    public function getAnnualTrends() {
+        $query = "SELECT 
+                    DATE_FORMAT(entry_date, '%Y-%m') as month,
+                    DATE_FORMAT(entry_date, '%b %Y') as month_display,
+                    SUM(volume) as total_volume,
+                    SUM(total) as total_value
+                  FROM milk_production
+                  WHERE center_code = :centerCode
+                  AND entry_date >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+                  GROUP BY DATE_FORMAT(entry_date, '%Y-%m')
+                  ORDER BY month DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':centerCode', $this->centerCode);
+        $stmt->execute();
+        return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    public function getMonthlyPerformance() {
+        $query = "SELECT 
+                    p.partner_name,
+                    SUM(mp.volume) as total_volume,
+                    SUM(mp.total) as total_value
+                  FROM milk_production mp
+                  JOIN partners p ON mp.partner_id = p.id
+                  WHERE mp.center_code = :centerCode
+                  AND DATE_FORMAT(mp.entry_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+                  GROUP BY p.partner_name
+                  ORDER BY total_value DESC
+                  LIMIT 5";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':centerCode', $this->centerCode);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
 $fetcher = new SummaryFetcher($conn, $centerCode);
 $year = date('Y');
 
@@ -58,7 +104,20 @@ $calfDropTarget = 5000;
 $aiPerf = $fetcher->getAIData($year, $aiTarget);
 $cdPerf = $fetcher->getCalfDropData($year, $calfDropTarget);
 
+$dashboard = new CenterDashboard($conn, $centerCode);
+$annualTrends = $dashboard->getAnnualTrends();
+$monthlyPerformance = $dashboard->getMonthlyPerformance();
+
+// Prepare chart datasets
+$annualLabels = array_column($annualTrends, 'month_display');
+$annualVolumes = array_column($annualTrends, 'total_volume');
+$annualValues = array_column($annualTrends, 'total_value');
+
+$partnerLabels = array_column($monthlyPerformance, 'partner_name');
+$partnerVolumes = array_column($monthlyPerformance, 'total_volume');
+$partnerValues = array_column($monthlyPerformance, 'total_value');
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -386,11 +445,61 @@ $cdPerf = $fetcher->getCalfDropData($year, $calfDropTarget);
 
         </div>
 
-        <div class="container">
-            <div class="bg-white p-6 rounded-x1">
-                <h1>Milk Production</h1>
+    <div class="container mt-5">
+    <div class="bg-white p-4 rounded-3 shadow">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="fw-bold text-primary mb-0">
+                <i class="fas fa-tint me-2"></i>Milk Production
+            </h1>
+
+            <!-- Year Filter -->
+            <form method="GET" id="yearFilterForm" class="d-flex align-items-center">
+                <label for="year" class="me-2 mb-0 fw-semibold">Filter by Year:</label>
+                <select class="form-select" name="year" id="year" onchange="document.getElementById('yearFilterForm').submit();">
+                    <?php
+                        $currentYear = date('Y');
+                        $selectedYear = isset($_GET['year']) ? $_GET['year'] : $currentYear;
+                        for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
+                            $selected = ($selectedYear == $y) ? 'selected' : '';
+                            echo "<option value='$y' $selected>$y</option>";
+                        }
+                    ?>
+                </select>
+            </form>
+        </div>
+
+        <div class="row g-4">
+            <!-- Annual Production Trend Chart -->
+            <div class="col-lg-8">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0 text-secondary">
+                            <i class="fas fa-chart-line me-2 text-primary"></i>Annual Production Trend
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="annualTrendChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Performance Chart -->
+            <div class="col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0 text-secondary">
+                            <i class="fas fa-chart-bar me-2 text-success"></i>Current Month Top Partners
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyPerformanceChart" height="200"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+</div>
+
 
         <!-- Services Section -->
     <div id="services-section" class="content-section">
@@ -596,6 +705,92 @@ function confirmLogout(event) {
       window.location.href = 'Partners.php';
     }, 1000); // 1 second delay (can adjust)
   });
+
+    // Annual Trend Chart (Dual Axis)
+    new Chart(document.getElementById('annualTrendChart'), {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($annualLabels) ?>,
+            datasets: [{
+                label: 'Production Volume (L)',
+                data: <?= json_encode($annualVolumes) ?>,
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                yAxisID: 'volume',
+                tension: 0.3,
+                fill: true
+            }, {
+                label: 'Total Value (₱)',
+                data: <?= json_encode($annualValues) ?>,
+                borderColor: '#1cc88a',
+                backgroundColor: 'rgba(28, 200, 138, 0.05)',
+                yAxisID: 'value',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            },
+            scales: {
+                volume: {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Liters'
+                    }
+                },
+                value: {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Pesos'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Monthly Performance Chart (Horizontal Bar)
+    new Chart(document.getElementById('monthlyPerformanceChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($partnerLabels) ?>,
+            datasets: [{
+                label: 'Production Volume (L)',
+                data: <?= json_encode($partnerVolumes) ?>,
+                backgroundColor: '#4e73df'
+            }, {
+                label: 'Total Value (₱)',
+                data: <?= json_encode($partnerValues) ?>,
+                backgroundColor: '#1cc88a'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true }
+            }
+        }
+    });
   
 });
 </script>

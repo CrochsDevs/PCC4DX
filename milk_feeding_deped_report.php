@@ -127,7 +127,259 @@ $statusCounts = $milkFeeding->getStatusCounts();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
+    <style>
+        :root {
+            --pcc-blue: #0056b3;
+            --pcc-dark-blue: #003366;
+            --pcc-light-blue: #e6f0ff;
+            --pcc-orange: #ff6b00;
+            --pcc-light-orange: #fff3e6;
+            --pcc-green: #28a745;
+            --pcc-light-green: #e6f7eb;
+            --pcc-red: #dc3545;
+            --pcc-light-red: #f8d7da;
+            --pcc-purple: #6f42c1;
+            --pcc-light-purple: #f3e8ff;
+            --secondary: #6c757d;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border-radius: 0.375rem;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            margin-left: 280px;
+            color: #495057;
+            transition: margin-left 0.3s;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: linear-gradient(180deg, #0056b3 0%, #3a7fc5 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 1.25rem;
+            transition: transform 0.2s;
+        }
+
+        .sidebar li:hover {
+            transform: translateX(5px);
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1.25rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar a i {
+            margin-right: 1rem;
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .sidebar a:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .sidebar a.active {
+            background: #ffc107;
+            color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-profile {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .profile-picture {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--secondary);
+        }
+       
+        .profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background-color: var(--pcc-red);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            margin-top: 2rem;
+        }
+
+        .logout-btn:hover {
+            background-color: #c53030;
+            transform: translateY(-2px);
+        }   
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            transition: margin-left 0.3s;
+        }
+
+
+        .main-content {
+            padding: 2rem;
+            transition: margin-left 0.3s;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow: auto;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            background-color: #fff;
+        }
+
+        .table {
+            margin-bottom: 0;
+            border-collapse: collapse;
+            min-width: 1200px;
+            table-layout: fixed;
+        }
+
+        .table thead th {
+            background-color: var(--pcc-light-blue);
+            color: var(--pcc-dark-blue);
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            padding: 1rem 1.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            vertical-align: middle;
+        }
+
+        .table tbody td {
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+            border-top: 1px solid #f1f1f1;
+            line-height: 1.4;
+            max-width: 200px;
+            word-wrap: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-height: 3.6em;
+        }
+
+        .archived-row {
+            background-color: rgba(220, 53, 69, 0.05) !important;
+        }
+
+        .status-badge {
+            padding: 0.5rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-completed {
+            background-color: var(--pcc-light-green);
+            color: var(--pcc-green);
+        }
+
+        .status-ongoingmilkdeliveries {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+        }
+
+        .status-partiallycompleted {
+            background-color: var(--pcc-light-purple);
+            color: var(--pcc-purple);
+        }
+
+        .status-notyetstarted {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: var(--secondary);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0056b3;
+            border-bottom: 3px solid #0056b3;
+            background-color: transparent;
+        }
+
+        @media (max-width: 992px) {
+            body {
+                margin-left: 0;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
