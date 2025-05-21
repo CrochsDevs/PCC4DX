@@ -9,8 +9,11 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     exit;
 }
 
+<<<<<<< HEAD
+=======
 // Define target value for AI services
 $targetValue =9000; // Example target value for AI services
+>>>>>>> 018d949d5fc8c3c13e5871e6c918726c9c8920c8
 
 class AIDashboardManager {
     private $db;
@@ -21,6 +24,17 @@ class AIDashboardManager {
         $this->centerCode = $centerCode;
     }
     
+    public function getTargetForYear($year) {
+        $query = "SELECT target FROM ai_target WHERE center_code = :center AND year = :year LIMIT 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([
+            ':center' => $this->centerCode,
+            ':year' => $year
+        ]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['target'] ?? null;
+    }
+
     // Get cumulative totals (all-time)
     public function getSummaryData() {
         $query = "SELECT 
@@ -306,14 +320,10 @@ class AIDashboardManager {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
-    public function calculateGrading($targetValue, $actualAchieved, $reportPercentage, ) {
-        // Calculate Accomplished Rating
-        $accomplishedRating = ($actualAchieved / $targetValue) * 100;
-
-        // Calculate Final Score
+    public function calculateGrading($targetValue, $actualAchieved, $reportPercentage) {
+        $accomplishedRating = $targetValue > 0 ? ($actualAchieved / $targetValue) * 100 : 0;
         $finalScore = ($reportPercentage + $accomplishedRating) / 2;
 
-        // Determine Grade
         $grade = '';
         if ($finalScore >= 90) {
             $grade = 'A (Excellent)';
@@ -326,13 +336,14 @@ class AIDashboardManager {
         } else {
             $grade = 'F (Poor)';
         }
-        
+
         return [
             'accomplished_rating' => round($accomplishedRating, 2),
             'final_score' => round($finalScore, 2),
             'grade' => $grade,
         ];
     }
+
 }
 
 // Handle AJAX request for chart data
@@ -366,6 +377,8 @@ if (isset($_GET['ajax'])) {
 $centerCode = $_SESSION['center_code'];
 $dashboardManager = new AIDashboardManager($conn, $centerCode);
 
+
+
 // Get current year and month for default filter
 $currentYear = date('Y');
 $currentMonth = date('n');
@@ -375,6 +388,8 @@ $availableYears = $dashboardManager->getAvailableYears();
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $currentYear;
 $selectedMonths = isset($_GET['months']) ? array_map('intval', explode(',', $_GET['months'])) : null;
 $selectedWeek = isset($_GET['week']) ? (int)$_GET['week'] : null;
+
+$targetValue = $dashboardManager->getTargetForYear($selectedYear) ?? 0;
 
 // Get available weeks only if months are selected
 $availableWeeks = $selectedMonths ? $dashboardManager->getWeeksInMonth($selectedYear, $selectedMonths) : [];
@@ -398,7 +413,14 @@ $reportPercentage = $reportRatingData['percentage'] ?? 0;
 
 // Calculate percentage against target
 $totalAI = $summaryData['total_ai'] ?? 0;
-$aiPercentage = round(($totalAI / $targetValue) * 100);
+$aiPercentage = $targetValue > 0 ? round(($totalAI / $targetValue) * 100) : 0;
+
+$gradingData = $dashboardManager->calculateGrading(
+    $targetValue > 0 ? $targetValue : 1, // avoid division by zero
+    $totalAI,
+    $reportPercentage
+);
+
 
 // Calculate grading
 $gradingData = $dashboardManager->calculateGrading(
@@ -792,28 +814,37 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
         <div class="container mx-auto px-4 py-8">
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-10">
+
                 <!-- AI Services Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-gray-500 font-medium">Total AI Services</p>
                             <h3 class="text-2xl font-bold text-indigo-600"><?= number_format($summaryData['total_ai'] ?? 0) ?></h3>
-                            <p class="text-sm mt-1">       
-                                <span class="status-indicator <?= 
-                                    $aiPercentage >= 100 ? 'status-excellent' : 
-                                    ($aiPercentage >= 95 ? 'status-achieved' : 
-                                    ($aiPercentage >= 60 ? 'status-progress' : 'status-low')) ?>">
-                                    <?= $aiStatus ?>
-                                    <i class="fas <?= 
-                                        $aiPercentage >= 100 ? 'fa-check-circle' : 
-                                        ($aiPercentage >= 60 ? 'fa-arrow-up' : 'fa-arrow-down') ?> ml-1"></i>
-                                </span>
-                            </p>
+
+                            <?php if ($targetValue == 0): ?>
+                                <p class="text-sm mt-1 text-red-600">
+                                    ⚠️ No target set for the selected year (<?= htmlspecialchars($selectedYear) ?>). Grading is skipped.
+                                </p>
+                            <?php else: ?>
+                                <p class="text-sm mt-1">       
+                                    <span class="status-indicator <?= 
+                                        $aiPercentage >= 100 ? 'status-excellent' : 
+                                        ($aiPercentage >= 95 ? 'status-achieved' : 
+                                        ($aiPercentage >= 60 ? 'status-progress' : 'status-low')) ?>">
+                                        <?= $aiStatus ?>
+                                        <i class="fas <?= 
+                                            $aiPercentage >= 100 ? 'fa-check-circle' : 
+                                            ($aiPercentage >= 60 ? 'fa-arrow-up' : 'fa-arrow-down') ?> ml-1"></i>
+                                    </span>
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <div class="bg-indigo-100 p-3 rounded-full">
                             <i class="fas fa-syringe text-indigo-600 text-xl"></i>
                         </div>
                     </div>
+
                     <div class="mt-4">
                         <div class="progress-container">
                             <div class="progress-bar" style="width: <?= min($aiPercentage, 100) ?>%; 
@@ -835,20 +866,28 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-gray-500 font-medium">Performance Grade</p>
-                            <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
-                            <p class="text-sm mt-1">
-                                <span class="status-indicator <?= 
-                                    $gradingData['final_score'] >= 90 ? 'status-excellent' : 
-                                    ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
-                                    ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
-                                    Score: <?= $gradingData['final_score'] ?>%
-                                </span>
-                            </p>
+
+                            <?php if ($targetValue == 0): ?>
+                                <h3 class="text-lg font-semibold text-red-600">⚠️ No target set for <?= htmlspecialchars($selectedYear) ?></h3>
+                                <p class="text-sm mt-1 text-gray-500">Grading is skipped due to missing target.</p>
+                            <?php else: ?>
+                                <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
+                                <p class="text-sm mt-1">
+                                    <span class="status-indicator <?= 
+                                        $gradingData['final_score'] >= 90 ? 'status-excellent' : 
+                                        ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
+                                        ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
+                                        Score: <?= $gradingData['final_score'] ?>%
+                                    </span>
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <div class="bg-purple-100 p-3 rounded-full">
                             <i class="fas fa-star text-purple-600 text-xl"></i>
                         </div>
                     </div>
+
+                    <?php if ($targetValue > 0): ?>
                     <div class="mt-4">
                         <div class="progress-container">
                             <div class="progress-bar" style="width: <?= $gradingData['final_score'] ?>%; 
@@ -869,8 +908,9 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                             </div>
                         </div>
                     </div>
-                </div>                
-
+                    <?php endif; ?>
+                </div>
+               
                 <!-- Report Rating Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                     <div class="flex justify-between items-center">
@@ -907,6 +947,7 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                         </div>
                     </div>
                 </div>
+
             </div>
 
 
