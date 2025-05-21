@@ -228,7 +228,7 @@ $cdPerf = $fetcher->getCalfDropData($year, $calfDropTarget);
 
         <ul>
             <li><a href="center_dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> 4DX Report</a></li>
+            <li><a href="services.php" class="nav-link" data-section="services-section"><i class="fas fa-concierge-bell"></i> Quick Facts</a></li>
             <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cogs"></i> Settings</a></li>
             <li><a href="logout.php" class="logout-btn" id="logoutLink" onclick="confirmLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -300,76 +300,95 @@ $cdPerf = $fetcher->getCalfDropData($year, $calfDropTarget);
             Quickfacts, performance metrics, and goal-tracking updates.
         </p>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
 
                 <!-- AI Performance Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <h3 class="card-title"><i class="fas fa-syringe"></i> AI Performance</h3>
-                    <p>Total: <?= number_format($aiPerf['total']) ?> / <?= number_format($aiPerf['target']) ?></p>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: <?= min($aiPerf['percent'], 100) ?>%; background-color: <?= 
-                            $aiPerf['percent'] >= 100 ? '#10b981' : 
-                            ($aiPerf['percent'] >= 80 ? '#3b82f6' : 
-                            ($aiPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                <a href="ai_dashboard.php" class="block">
+                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                        <h3 class="card-title"><i class="fas fa-syringe"></i> AI Performance</h3>
+                        <p>Total: <?= number_format($aiPerf['total']) ?> / <?= number_format($aiPerf['target']) ?></p>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($aiPerf['percent'], 100) ?>%; background-color: <?= 
+                                $aiPerf['percent'] >= 100 ? '#10b981' : 
+                                ($aiPerf['percent'] >= 80 ? '#3b82f6' : 
+                                ($aiPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
                         </div>
+                        <p class="dashboard-description"><?= $aiPerf['percent'] ?>% of target</p>
                     </div>
-                    <p class="dashboard-description"><?= $aiPerf['percent'] ?>% of target</p>
-                </div>
+                </a>
 
                 <!-- Calf Drop Performance Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-                    <p>Total: <?= number_format($cdPerf['total']) ?> / <?= number_format($cdPerf['target']) ?></p>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                            $cdPerf['percent'] >= 100 ? '#10b981' : 
-                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                <a href="cd_dashboard.php" class="block">
+                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                        <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
+                        <p>Total: <?= number_format($cdPerf['total']) ?> / <?= number_format($cdPerf['target']) ?></p>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                                $cdPerf['percent'] >= 100 ? '#10b981' : 
+                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
                         </div>
+                        <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
                     </div>
-                    <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
-                </div>
+                </a>
 
-                <!-- Calf Drop Performance Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <h3 class="card-title"><i class="fas fa-cow"></i> Milk Production</h3>
-                    <p>Total: </p>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                            $cdPerf['percent'] >= 100 ? '#10b981' : 
-                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                <!-- Milk Production Card -->
+                <a href="milk_dashboard.php" class="block">
+                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                        <h3 class="card-title"><i class="fas fa-cow"></i> Milk Production</h3>
+                        <p>Total: </p>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                                $cdPerf['percent'] >= 100 ? '#10b981' : 
+                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
                         </div>
+                        <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
                     </div>
-                    <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
-                </div>
+                </a>
 
-                <!-- Calf Drop Performance Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <h3 class="card-title"><i class="fas fa-cow"></i> Milk Feeding</h3>
-                    <p>Total: </p>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                            $cdPerf['percent'] >= 100 ? '#10b981' : 
-                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                <!-- Milk Feeding Card -->
+                <a href="/milk-feeding" class="block">
+                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                        <h3 class="card-title"><i class="fas fa-cow"></i> Milk Feeding</h3>
+                        <p>Total: </p>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                                $cdPerf['percent'] >= 100 ? '#10b981' : 
+                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
                         </div>
+                        <p class="dashboard-description">% of target</p>
                     </div>
-                    <p class="dashboard-description">% of target</p>
-                </div>
-                <!-- Calf Drop Performance Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <h3 class="card-title"><i class="fas fa-box"></i> Dairy Box</h3>
-                    <p>Total: </p>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                            $cdPerf['percent'] >= 100 ? '#10b981' : 
-                            ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                            ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                </a>
+
+                <!-- Dairy Box Card -->
+                <a href="/dairy-box" class="block">
+                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                        <h3 class="card-title"><i class="fas fa-box"></i> Dairy Box</h3>
+                        <p>Total: </p>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
+                                $cdPerf['percent'] >= 100 ? '#10b981' : 
+                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
+                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
                         </div>
+                        <p class="dashboard-description">% of target</p>
                     </div>
-                    <p class="dashboard-description">% of target</p>
-                </div>
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="container">
+            <div class="bg-white p-6 rounded-x1">
+                <h1>Milk Production</h1>
             </div>
         </div>
 
