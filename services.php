@@ -16,8 +16,10 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="css/center.css">
 </head>
 <body>
@@ -112,12 +114,24 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
     <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
 
-    <div class="services-grid">
-        <a href="ai_dashboard.php" class="service-card">
-        <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
-        <p>Report on artificial insemination services for carabaos.</p>
-        </a>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                <a href="ai_dashboard.php" >
+                <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
+                <p>Report on artificial insemination services for carabaos.</p>
+                </a>
+            </div>
 
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
+                <a href="cd_dashboard.php" >
+                <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
+                <p>Report on successful births and calf health monitoring programs.</p>
+                </a>
+            </div>
+    </div>
+
+
+    <div class="services-grid">
         <a href="milkfeeding_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
         <p>Report on milk feeding programs and nutritional supplements for calves.</p>
@@ -128,18 +142,12 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
         <p>Report on carabao milk production metrics and quality.</p>
         </a>
 
-        <a href="cd_dashboard.php" class="service-card">
-        <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-        <p>Report on successful births and calf health monitoring programs.</p>
-        </a>
-
         <a href="dbox_dashboard.php" class="service-card">
         <h3 class="card-title"><i class="fas fa-solid fa-store"></i> Dairy box</h3>
         <p>Report on Dairy Box hubs supporting farmers through milk marketing and enterprise.</p>
         </a>
-
-        
     </div>
+
     </div>
 
 
