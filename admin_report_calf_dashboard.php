@@ -1,3 +1,18 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// I-require ang mga necessary files
+require 'db_config.php';
+require 'auth_check.php';
+
+// I-check ang user privileges
+if ($_SESSION['user']['center_type'] !== 'Headquarters') {
+    header('Location: access_denied.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,7 +65,7 @@
             <li><a class="nav-link" data-section="announcement-section">
                 <i class="fas fa-file-alt"></i> Center</a></li>
             
-            <li><a href="admin_report_calf_dashboard.php" class="nav-link" data-section="quickfacts-section">
+            <li><a href="admin_report_calf_dashboard.php" class="nav-link active" data-section="quickfacts-section">
                 <i class="fas fa-sitemap"></i> Reports</a></li>
         </ul>
 
