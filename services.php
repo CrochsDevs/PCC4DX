@@ -111,41 +111,58 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 
         <!-- Services Section -->
     <div id="services-section" class="content-section active">
-    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Services Management</h2>
+    <h2 class="dashboard-title"><i class="fas fa-concierge-bell"></i> Quick Facts</h2>
     <p class="dashboard-description">Manage all PCC services offered to farmers and report on service delivery metrics.</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
-                <a href="ai_dashboard.php" >
-                <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
-                <p>Report on artificial insemination services for carabaos.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-9">
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition min-h-[170px] ">
+                <a href="ai_dashboard.php">
+                    <h3 class="card-title"><i class="fas fa-syringe"></i> Artificial Insemination</h3>
+                    <p>Report on artificial insemination services for carabaos.</p>
                 </a>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
-                <a href="cd_dashboard.php" >
-                <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-                <p>Report on successful births and calf health monitoring programs.</p>
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition min-h-[170px]">
+                <a href="cd_dashboard.php">
+                    <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
+                    <p>Report on successful births and calf health monitoring programs.</p>
                 </a>
             </div>
-    </div>
+        </div>
+
 
 
     <div class="services-grid">
-        <a href="milkfeeding_dashboard.php" class="service-card">
-        <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
-        <p>Report on milk feeding programs and nutritional supplements for calves.</p>
-        </a>
+                <a style="pointer-events: none; opacity: 0.6;" class="service-card bg-gray-300 text-gray-600 p-6 rounded-lg text-center shadow-md cursor-not-allowed relative">
+                <h3 class="card-title"><i class="fas fa-bottle-droplet"></i> Milk Feeding</h3>
+                <p>Report on milk feeding programs and nutritional supplements for calves.<br></p>
+                
+                <!-- Under Development Label -->
+                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white py-1 px-4 rounded-full text-xs font-semibold">
+                    Under Development
+                </div>
+            </a>
 
-        <a href="milk_dashboard.php" class="service-card">
-        <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
-        <p>Report on carabao milk production metrics and quality.</p>
-        </a>
+                <a style="pointer-events: none; opacity: 0.6;" class="service-card bg-gray-300 text-gray-600 p-6 rounded-lg text-center shadow-md cursor-not-allowed relative">
+            <h3 class="card-title"><i class="fas fa-bottle-water"></i> Milk Production</h3>
+            <p>Report on carabao milk production metrics and quality.<br></p>
+            
+            <!-- Under Development Label -->
+            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white py-1 px-4 rounded-full text-xs font-semibold">
+                Under Development
+            </div>
+              </a>
 
-        <a href="dbox_dashboard.php" class="service-card">
-        <h3 class="card-title"><i class="fas fa-solid fa-store"></i> Dairy box</h3>
-        <p>Report on Dairy Box hubs supporting farmers through milk marketing and enterprise.</p>
-        </a>
+            <a style="pointer-events: none; opacity: 0.6;" class="service-card bg-gray-300 text-gray-600 p-6 rounded-lg text-center shadow-md cursor-not-allowed relative">
+                <h3 class="card-title"><i class="fas fa-solid fa-store"></i> Dairy Box</h3>
+                <p>Report on Dairy Box hubs supporting farmers through milk marketing and enterprise.<br></p>
+                
+                <!-- Under Development Label -->
+                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white py-1 px-4 rounded-full text-xs font-semibold">
+                    Under Development
+                </div>
+            </a>
+
     </div>
 
     </div>

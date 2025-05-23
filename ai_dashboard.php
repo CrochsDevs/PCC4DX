@@ -278,6 +278,8 @@ class AIDashboardManager {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    //report
+
     public function getReportRatingData($year = null) {
 
         $startDate = $year ? "{$year}-01-01" : "{$year}-01-01";
@@ -405,6 +407,12 @@ $uniqueDates = $reportRatingData['unique_dates'] ?? 0;
 $workdays = $reportRatingData['workdays'] ?? 0;
 $reportPercentage = $reportRatingData['percentage'] ?? 0;
 
+
+
+
+
+
+
 // Calculate percentage against target
 $totalAI = $summaryData['total_ai'] ?? 0;
 $aiPercentage = $targetValue > 0 ? round(($totalAI / $targetValue) * 100) : 0;
@@ -444,6 +452,13 @@ if ($aiPercentage >= 100) {
     $aiStatus = 'Getting started';
     $aiStatusClass = 'text-red-500';
 }
+
+
+
+
+
+
+
 
 // Prepare data for charts
 function prepareChartData($data) {
@@ -942,6 +957,8 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                     </div>
                 </div>
 
+
+                        
             </div>
 
 

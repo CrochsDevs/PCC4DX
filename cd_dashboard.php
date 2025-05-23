@@ -717,7 +717,7 @@ $gradingData = $dashboardManager->calculateGrading(
                     </div>
                 </div>
                 
-                <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          
             </div>
         </div>
         
@@ -780,48 +780,10 @@ $gradingData = $dashboardManager->calculateGrading(
         
         <!-- Dashboard Content -->
         <div class="container mx-auto px-4 py-8">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                <!-- AI Services Card -->
+            <!-- Top Row - 3 Columns -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <!-- Grand Total Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total AI</p>
-                            <h3 class="text-2xl font-bold text-indigo-600"><?= number_format($summaryData['total_ai'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-indigo-100 p-3 rounded-full">
-                            <i class="fas fa-cow text-indigo-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-indigo-600 rounded-full" style="width: <?= $aiPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $aiPercentage ?>% of total</p>
-                    </div>
-                </div>
-
-                <!-- BEP Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total BEP</p>
-                            <h3 class="text-2xl font-bold text-blue-600"><?= number_format($summaryData['total_bep'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-blue-600 rounded-full" style="width: <?= $bepPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $bepPercentage ?>% of total</p>
-                    </div>
-                </div>
-
-                <!-- Grand Total Card (Top Row) -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in col-span-1 lg:col-span-1">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-gray-500 font-medium">Grand Total</p>
@@ -862,9 +824,127 @@ $gradingData = $dashboardManager->calculateGrading(
                         </div>
                     </div>
                 </div>
+
+                <!-- Performance Grade Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-500 font-medium">Performance Grade</p>
+                            <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
+                            <p class="text-sm mt-1">
+                                <span class="status-indicator <?= 
+                                    $gradingData['final_score'] >= 90 ? 'status-excellent' : 
+                                    ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
+                                    ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
+                                    Score: <?= $gradingData['final_score'] ?>%
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <i class="fas fa-star text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= min($gradingData['final_score'], 100) ?>%; 
+                                background-color: <?= 
+                                    $gradingData['final_score'] >= 90 ? '#10b981' : 
+                                    ($gradingData['final_score'] >= 80 ? '#3b82f6' : 
+                                    ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
+                        </div>
+                        <div class="progress-text text-xs mt-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
+                                    <h2><?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays </h2>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Achievement:</span> <?= $gradingData['accomplished_rating'] ?>% 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Rating Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-500 font-medium">Report Rating</p>
+                            <h3 class="text-2xl font-bold text-blue-600"><?= number_format($reportPercentage) ?>%</h3>
+                            <p class="text-sm mt-1">
+                                <span class="status-indicator <?= 
+                                    $reportPercentage >= 90 ? 'status-excellent' : 
+                                    ($reportPercentage >= 75 ? 'status-achieved' : 
+                                    ($reportPercentage >= 50 ? 'status-progress' : 'status-low')) ?>">
+                                    <?= 
+                                        $reportPercentage >= 90 ? 'Excellent' : 
+                                        ($reportPercentage >= 75 ? 'Good' : 
+                                        ($reportPercentage >= 50 ? 'Average' : 'Needs Improvement')) ?>
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= $reportPercentage ?>%; 
+                                background-color: <?= 
+                                    $reportPercentage >= 90 ? '#10b981' : 
+                                    ($reportPercentage >= 75 ? '#3b82f6' : 
+                                    ($reportPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            </div>
+                        </div>
+                        <div class="progress-text">
+                            <?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <!-- Bottom Row - 4 Columns -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <!-- AI Services Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-500 font-medium">Total AI</p>
+                            <h3 class="text-2xl font-bold text-indigo-600"><?= number_format($summaryData['total_ai'] ?? 0) ?></h3>
+                        </div>
+                        <div class="bg-indigo-100 p-3 rounded-full">
+                            <i class="fas fa-cow text-indigo-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="h-2 bg-gray-200 rounded-full">
+                            <div class="h-2 bg-indigo-600 rounded-full" style="width: <?= $aiPercentage ?>%"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2"><?= $aiPercentage ?>% of total</p>
+                    </div>
+                </div>
+
+                <!-- BEP Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-500 font-medium">Total BEP</p>
+                            <h3 class="text-2xl font-bold text-blue-600"><?= number_format($summaryData['total_bep'] ?? 0) ?></h3>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="h-2 bg-gray-200 rounded-full">
+                            <div class="h-2 bg-blue-600 rounded-full" style="width: <?= $bepPercentage ?>%"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2"><?= $bepPercentage ?>% of total</p>
+                    </div>
+                </div>
+
                 <!-- Total IH Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                     <div class="flex justify-between items-center">
@@ -902,50 +982,9 @@ $gradingData = $dashboardManager->calculateGrading(
                         <p class="text-sm text-gray-500 mt-2"><?= $privatePercentage ?>% of total</p>
                     </div>
                 </div>
-                <!-- Grand Total -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-gray-500 font-medium">Performance Grade</p>
-                                <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
-                                <p class="text-sm mt-1">
-                                    <span class="status-indicator <?= 
-                                        $gradingData['final_score'] >= 90 ? 'status-excellent' : 
-                                        ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
-                                        ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
-                                        Score: <?= $gradingData['final_score'] ?>%
-                                    </span>
-                                </p>
-                            </div>
-                            <div class="bg-purple-100 p-3 rounded-full">
-                                <i class="fas fa-star text-purple-600 text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <div class="progress-container">
-                                <div class="progress-bar" style="width: <?= min($gradingData['final_score'], 100) ?>%; 
-                                    background-color: <?= 
-                                        $gradingData['final_score'] >= 90 ? '#10b981' : 
-                                        ($gradingData['final_score'] >= 80 ? '#3b82f6' : 
-                                        ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
-                                </div>
-                            </div>
-                            <div class="progress-text text-xs mt-2">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
-                                        <h2><?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays </h2>
-                                    </div>
-                                    <div>
-                                        <span class="font-medium">Achievement:</span> <?= $gradingData['accomplished_rating'] ?>% 
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                </div>
-
+            </div>
         </div>
-            
+
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
                 <!-- Bar Chart (showing filtered data) -->

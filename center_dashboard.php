@@ -126,6 +126,7 @@ $partnerValues = array_column($monthlyPerformance, 'total_value');
     <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -298,7 +299,11 @@ $partnerValues = array_column($monthlyPerformance, 'total_value');
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                    <h1>Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
+                    <h1 style=" h1{
+                        font-size: inherit;
+                        font-weight: inherit; 
+                    }
+                    ">Welcome to <?= htmlspecialchars($_SESSION['user']['center_name']) ?></h1>
             </div>
             <!-- Notification Section -->
             <div class="header-right">
@@ -361,11 +366,18 @@ $partnerValues = array_column($monthlyPerformance, 'total_value');
             
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
 
-                <!-- AI Performance Card -->
+               <!-- AI Performance Card -->
                 <a href="ai_dashboard.php" class="block">
                     <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
                         <h3 class="card-title"><i class="fas fa-syringe"></i> AI Performance</h3>
-                        <p>Total: <?= number_format($aiPerf['total']) ?> / <?= number_format($aiPerf['target']) ?></p>
+
+                        <p class="text-sm font-semibold text-gray-800">
+                            Total: 
+                            <span class="text-violet-700 text-lg px-2"><?= number_format($aiPerf['total']) ?></span> 
+                            /
+                            <span class="text-green-700 text-lg px-2"><?= number_format($aiPerf['target']) ?></span>
+                        </p>
+
                         <div class="progress-container">
                             <div class="progress-bar" style="width: <?= min($aiPerf['percent'], 100) ?>%; background-color: <?= 
                                 $aiPerf['percent'] >= 100 ? '#10b981' : 
@@ -373,15 +385,30 @@ $partnerValues = array_column($monthlyPerformance, 'total_value');
                                 ($aiPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                             </div>
                         </div>
-                        <p class="dashboard-description"><?= $aiPerf['percent'] ?>% of target</p>
+
+                        <p class="dashboard-description" style="color: <?= 
+                            $aiPerf['percent'] >= 100 ? '#10b981' : 
+                            ($aiPerf['percent'] >= 80 ? '#3b82f6' : 
+                            ($aiPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                            <?= $aiPerf['percent'] ?>% of target
+                        </p>
                     </div>
                 </a>
+
 
                 <!-- Calf Drop Performance Card -->
                 <a href="cd_dashboard.php" class="block">
                     <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
                         <h3 class="card-title"><i class="fas fa-cow"></i> Calf Drop</h3>
-                        <p>Total: <?= number_format($cdPerf['total']) ?> / <?= number_format($cdPerf['target']) ?></p>
+                        <p class="text-sm font-semibold text-gray-800">
+                                Total: 
+                                <span class="text-violet-700 text-lg px-2"><?= number_format($cdPerf['total']) ?></span> 
+                                /
+                                <span class="text-green-700 text-lg px-2"><?= number_format($cdPerf['target']) ?></span>
+                            </p>
+
+                        </p>
+
                         <div class="progress-container">
                             <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
                                 $cdPerf['percent'] >= 100 ? '#10b981' : 
@@ -389,116 +416,110 @@ $partnerValues = array_column($monthlyPerformance, 'total_value');
                                 ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                             </div>
                         </div>
-                        <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
+                         <p class="dashboard-description" style="color: <?= 
+                            $cdPerf['percent'] >= 100 ? '#10b981' :      // Green
+                            ($cdPerf['percent'] >= 80 ? '#3b82f6' :      // Blue
+                            ($cdPerf['percent'] >= 50 ? '#f59e0b' :      // Yellow/Orange
+                            '#ef4444'))                                  // Red
+                        ?>;">
+                            <?= $cdPerf['percent'] ?>% of target
+                        </p>
                     </div>
                 </a>
 
-                <!-- Milk Production Card -->
-                <a href="milk_dashboard.php" class="block">
-                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
-                        <h3 class="card-title"><i class="fas fa-cow"></i> Milk Production</h3>
-                        <p>Total: </p>
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                                $cdPerf['percent'] >= 100 ? '#10b981' : 
-                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
-                            </div>
+               <!-- Milk Production Card - Under Development -->
+                <a href="#" class="block cursor-not-allowed" title="Feature under development">
+                    <div class="bg-gray-200 p-6 rounded-xl shadow-inner opacity-60 card-hover fade-in transition relative min-h-[213px]">
+                        <h3 class="card-title text-gray-600 flex items-center space-x-2 text-base font-semibold">
+                            <i class="fas fa-glass-whiskey"></i> 
+                            <span>Milk Production</span>
+                        </h3>
+                        <p class="text-sm font-semibold text-gray-600 mt-2">
+                            Total: 
+                            <span class="text-gray-500 text-lg px-1">--</span> 
+                            /
+                            <span class="text-gray-500 text-lg px-1">--</span>
+                        </p>
+
+                        <div class="progress-container bg-gray-300 h-2 rounded mt-2 mb-3">
+                            <div class="progress-bar bg-gray-400 h-full rounded w-0"></div>
                         </div>
-                        <p class="dashboard-description"><?= $cdPerf['percent'] ?>% of target</p>
+
+                        <p class="dashboard-description text-gray-500 italic text-sm">
+                            % of target
+                        </p>
+
+                        <div class="absolute top-0 right-0 bg-yellow-400 text-[10px] font-bold text-gray-900 px-1.5 py-0.5 rounded-bl">
+                            Under Development
+                        </div>
                     </div>
                 </a>
 
-                <!-- Milk Feeding Card -->
-                <a href="/milk-feeding" class="block">
-                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
-                        <h3 class="card-title"><i class="fas fa-cow"></i> Milk Feeding</h3>
-                        <p>Total: </p>
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                                $cdPerf['percent'] >= 100 ? '#10b981' : 
-                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
-                            </div>
+
+
+                <!-- Milk Feeding Card - Under Development -->
+                <a href="#" class="block cursor-not-allowed" title="Feature under development">
+                    <div class="bg-gray-200 p-6 rounded-xl shadow-inner opacity-60 card-hover fade-in transition relative min-h-[213px]">
+                        <h3 class="card-title text-gray-600 flex items-center space-x-2 text-base font-semibold">
+                            <i class="fas fa-bottle-water"></i> 
+                            <span>Milk Feeding</span>
+                        </h3>
+                        <p class="text-sm font-semibold text-gray-600 mt-2">
+                            Total: 
+                            <span class="text-gray-500 text-lg px-1">--</span> 
+                            /
+                            <span class="text-gray-500 text-lg px-1">--</span>
+                        </p>
+
+                        <div class="progress-container bg-gray-300 h-2 rounded mt-2 mb-3">
+                            <div class="progress-bar bg-gray-400 h-full rounded w-0"></div>
                         </div>
-                        <p class="dashboard-description">% of target</p>
+
+                        <p class="dashboard-description text-gray-500 italic text-sm">
+                            % of target
+                        </p>
+
+                        <div class="absolute top-0 right-0 bg-yellow-400 text-[10px] font-bold text-gray-900 px-1.5 py-0.5 rounded-bl">
+                            Under Development
+                        </div>
                     </div>
                 </a>
 
-                <!-- Dairy Box Card -->
-                <a href="/dairy-box" class="block">
-                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in hover:shadow-lg transition">
-                        <h3 class="card-title"><i class="fas fa-box"></i> Dairy Box</h3>
-                        <p>Total: </p>
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width: <?= min($cdPerf['percent'], 100) ?>%; background-color: <?= 
-                                $cdPerf['percent'] >= 100 ? '#10b981' : 
-                                ($cdPerf['percent'] >= 80 ? '#3b82f6' : 
-                                ($cdPerf['percent'] >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
-                            </div>
+
+                <!-- Dairy Box Card - Under Development -->
+                <a href="#" class="block cursor-not-allowed" title="Feature under development">
+                    <div class="bg-gray-200 p-6 rounded-xl shadow-inner opacity-60 card-hover fade-in transition relative min-h-[213px]">
+                        <h3 class="card-title text-gray-600 flex items-center space-x-2 text-base font-semibold">
+                            <i class="fas fa-box"></i> 
+                            <span>Dairy Box</span>
+                        </h3>
+                        <p class="text-sm font-semibold text-gray-600 mt-2">
+                            Total: 
+                            <span class="text-gray-500 text-lg px-1">--</span> 
+                            /
+                            <span class="text-gray-500 text-lg px-1">--</span>
+                        </p>
+
+                        <div class="progress-container bg-gray-300 h-2 rounded mt-2 mb-3">
+                            <div class="progress-bar bg-gray-400 h-full rounded w-0"></div>
                         </div>
-                        <p class="dashboard-description">% of target</p>
+
+                        <p class="dashboard-description text-gray-500 italic text-sm">
+                            % of target
+                        </p>
+
+                        <div class="absolute top-0 right-0 bg-yellow-400 text-[10px] font-bold text-gray-900 px-1.5 py-0.5 rounded-bl">
+                            Under Development
+                        </div>
                     </div>
                 </a>
+
 
             </div>
 
         </div>
 
-    <div class="container mt-5">
-    <div class="bg-white p-4 rounded-3 shadow">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="fw-bold text-primary mb-0">
-                <i class="fas fa-tint me-2"></i>Milk Production
-            </h1>
 
-            <!-- Year Filter -->
-            <form method="GET" id="yearFilterForm" class="d-flex align-items-center">
-                <label for="year" class="me-2 mb-0 fw-semibold">Filter by Year:</label>
-                <select class="form-select" name="year" id="year" onchange="document.getElementById('yearFilterForm').submit();">
-                    <?php
-                        $currentYear = date('Y');
-                        $selectedYear = isset($_GET['year']) ? $_GET['year'] : $currentYear;
-                        for ($y = $currentYear; $y >= $currentYear - 5; $y--) {
-                            $selected = ($selectedYear == $y) ? 'selected' : '';
-                            echo "<option value='$y' $selected>$y</option>";
-                        }
-                    ?>
-                </select>
-            </form>
-        </div>
-
-        <div class="row g-4">
-            <!-- Annual Production Trend Chart -->
-            <div class="col-lg-8">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0 text-secondary">
-                            <i class="fas fa-chart-line me-2 text-primary"></i>Annual Production Trend
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="annualTrendChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Monthly Performance Chart -->
-            <div class="col-lg-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0 text-secondary">
-                            <i class="fas fa-chart-bar me-2 text-success"></i>Current Month Top Partners
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="monthlyPerformanceChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 
         <!-- Services Section -->

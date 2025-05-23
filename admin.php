@@ -25,69 +25,144 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/admin.css">
 
-    <style>
-  .dropdown-menu {
-    display: none;
-    list-style: none;
-    padding-left: 20px;
-  }
-
-  .dropdown-menu.show {
-    display: block;
-  }
-</style>
-    
-    <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const dropdownToggle = document.querySelector(".dropdown-toggle");
-    const dropdownMenu = document.querySelector(".dropdown-menu");
-
-    dropdownToggle.addEventListener("click", function (e) {
-      e.preventDefault();
-      dropdownMenu.classList.toggle("show");
-    });
-  });
-</script>
-
-
 </head>
+
+<style>
+/* Quick Facts Section Styles */
+.quickfacts-container {
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.quickfacts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.quickfact-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.quickfact-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.quickfact-link {
+    display: block;
+    padding: 25px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.quickfact-content {
+    padding: 25px;
+}
+
+.quickfact-icon {
+    font-size: 2rem;
+    color: #0056b3;
+    margin-bottom: 15px;
+}
+
+.quickfact-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #2d3748;
+}
+
+.quickfact-desc {
+    color: #4a5568;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Service Status Styles */
+.active-service {
+    border-left: 4px solid #0056b3;
+}
+
+.disabled-service {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+    border-left: 4px solid #6c757d;
+}
+
+.disabled-service .quickfact-icon {
+    color: #6c757d;
+}
+
+.disabled-service .quickfact-title,
+.disabled-service .quickfact-desc {
+    color: #6c757d;
+}
+
+.development-badge {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffc107;
+    color: #212529;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center; 
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .quickfacts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 <body>
+    
 <div class="sidebar">
-   <!-- User Profile Section -->
-<div class="user-profile" id="sidebar-profile">
-    <div class="profile-picture">
-        <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-            <!-- Display the uploaded profile image -->
-            <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture" id="sidebar-profile-img">
-        <?php else: ?>
-            <!-- Fallback to the generated avatar -->
-            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture" id="sidebar-profile-img">
-        <?php endif; ?>
-    </div>
-    <div class="profile-info">
-        <h3 class="user-name" id="sidebar-profile-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-        <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-    </div>                          
-</div>
+        <!-- User Profile Section -->
+        <div class="user-profile" id="sidebar-profile">
+            <div class="profile-picture">
+                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                    <!-- Display the uploaded profile image -->
+                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture" id="sidebar-profile-img">
+                <?php else: ?>
+                    <!-- Fallback to the generated avatar -->
+                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture" id="sidebar-profile-img">
+                <?php endif; ?>
+            </div>
+            <div class="profile-info">
+                <h3 class="user-name" id="sidebar-profile-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+                <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+            </div>                          
+        </div>
 
-<ul>
-    <li><a href="dashboard.php" class="nav-link active" data-section="dashboard-section"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-    <li><a href="announcements.php" class="nav-link" data-section="announcement-section"><i class="fas fa-bullhorn"></i> Announcement</a></li>
-    <li class="dropdown">
-<a href="#" class="nav-link dropdown-toggle" data-section="services-section" data-toggle="dropdown">
-  <i class="fas fa-sitemap"></i> Services <i class="fas fa-caret-down"></i>
-</a>
+            <ul>
+            <li><a class="nav-link active" data-section="dashboard-section">
+                <i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
 
-  <ul class="dropdown-menu">
-    <li><a href="admin_ai_dashboard.php" class="nav-link" data-section="ai-insemination"><i class="fas fa-syringe"></i> AI Insemination</a></li>
-    <li><a href="admin_calf_drop.php" class="nav-link" data-section="calf-drop"><i class="fas fa-cow"></i> Calf Drop</a></li>
-    <li><a href="admin_milk_feeding.php" class="nav-link" data-section="milk-feeding"><i class="fas fa-wine-bottle"></i> Milk Feeding</a></li>
-    <li><a href="admin_milk_production.php" class="nav-link" data-section="milk-production"><i class="fas fa-flask"></i> Milk Production</a></li>
-  </ul>
-</li>
-<li><a href="programs.php" class="nav-link" data-section="programs-section"><i class="fas fa-user"></i> Coordinators</a></li>
-    <li><a href="settings.php" class="nav-link" data-section="settings-section"><i class="fas fa-cog"></i> Settings</a></li>
-</ul>
+            <li><a class="nav-link" data-section="announcement-section">
+                <i class="fas fa-bullhorn"></i> Announcement</a></li>
+            
+            <li><a class="nav-link" data-section="quickfacts-section">
+                <i class="fas fa-sitemap"></i> Quick Facts</a></li>
+
+
+            <li><a class="nav-link" data-section="programs-section">
+                <i class="fas fa-user"></i> Coordinators</a></li>
+
+            <li><a class="nav-link" data-section="settings-section">
+                <i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+
     </div>
 
     <!-- Main Content -->
@@ -277,6 +352,72 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             </div>
         </div>
 
+                            
+ <!-- Quick Facts Section -->
+<div id="quickfacts-section" class="content-section">
+    <h2 class="dashboard-title"><i class="fas fa-sitemap"></i> Quick Facts</h2>
+    <p class="dashboard-description">Access quick information and resources about PCC services.</p>
+
+    <div class="quickfacts-container">
+        <div class="quickfacts-grid">
+            <!-- Active Services -->
+            <div class="quickfact-card active-service">
+                <a href="admin_ai_dashboard.php" class="quickfact-link">
+                    <div class="quickfact-icon">
+                        <i class="fas fa-syringe"></i>
+                    </div>
+                    <h3 class="quickfact-title">Artificial Insemination</h3>
+                    <p class="quickfact-desc">Report on artificial insemination services for carabaos.</p>
+                </a>
+            </div>
+
+            <div class="quickfact-card active-service">
+                <a href="admin_cd_dashboard.php" class="quickfact-link">
+                    <div class="quickfact-icon">
+                        <i class="fas fa-cow"></i>
+                    </div>
+                    <h3 class="quickfact-title">Calf Drop</h3>
+                    <p class="quickfact-desc">Report on successful births and calf health monitoring programs.</p>
+                </a>
+            </div>
+
+            <!-- Under Development Services -->
+            <div class="quickfact-card disabled-service">
+                <div class="quickfact-content">
+                    <div class="quickfact-icon">
+                        <i class="fas fa-bottle-droplet"></i>
+                    </div>
+                    <h3 class="quickfact-title">Milk Feeding</h3>
+                    <p class="quickfact-desc">Report on milk feeding programs and nutritional supplements for calves.</p>
+                    <span class="development-badge">Under Development</span>
+                </div>
+            </div>
+
+            <div class="quickfact-card disabled-service">
+                <div class="quickfact-content">
+                    <div class="quickfact-icon">
+                        <i class="fas fa-bottle-water"></i>
+                    </div>
+                    <h3 class="quickfact-title">Milk Production</h3>
+                    <p class="quickfact-desc">Report on carabao milk production metrics and quality.</p>
+                    <span class="development-badge">Under Development</span>
+                </div>
+            </div>
+
+            <div class="quickfact-card disabled-service">
+                <div class="quickfact-content">
+                    <div class="quickfact-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <h3 class="quickfact-title">Dairy Box</h3>
+                    <p class="quickfact-desc">Report on Dairy Box hubs supporting farmers through milk marketing.</p>
+                    <span class="development-badge">Under Development</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
       <!-- Announcements Section -->
       <div id="announcement-section" class="content-section">
@@ -324,241 +465,226 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             </table>
         </div>
     </div>
-
-
         
        <!-- Settings Section -->
-<div id="settings-section" class="content-section">
-    <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
-    <p class="dashboard-description">Configure system settings and user preferences.</p>
-    
-    <div class="settings-grid">
-        <div class="dashboard-card">
-            <a href="update_profile.php" class="card-link">    
-                <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
-                <p>Update your account information and password.</p>
-            </a>
-        </div>
+        <div id="settings-section" class="content-section">
+            <h2 class="dashboard-title"><i class="fas fa-cogs"></i> Settings</h2>
+            <p class="dashboard-description">Configure system settings and user preferences.</p>
+            
+            <div class="settings-grid">
+                <div class="dashboard-card">
+                    <a href="update_profile.php" class="card-link">    
+                        <h3 class="card-title"><i class="fas fa-user-cog"></i> Account Settings</h3>
+                        <p>Update your account information and password.</p>
+                    </a>
+                </div>
 
-        <div class="dashboard-card">
-            <a href="update_password.php" class="card-link">
-                <h3 class="card-title"><i class="fas fa-lock"></i> Password and Security</h3>
-                <p>Update your account password.</p>
-            </a>
-        </div>
+                <div class="dashboard-card">
+                    <a href="update_password.php" class="card-link">
+                        <h3 class="card-title"><i class="fas fa-lock"></i> Password and Security</h3>
+                        <p>Update your account password.</p>
+                    </a>
+                </div>
 
-        <div class="dashboard-card">
-    <div class="card-link theme-toggle-card" onclick="toggleDarkMode()">
-        <div class="theme-header">
-            <h3 class="card-title">
-                <i class="fas" id="theme-icon"></i> 
-                Appearance Settings
-            </h3>
-            <label class="theme-switch">
-                <input type="checkbox" id="theme-toggle">
-                <span class="slider round"></span>
-            </label>
-        </div>
-        <p>Toggle between light and dark mode</p>
-    </div>
-</div>
-        
-        <div class="dashboard-card">
-            <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
-            <p>Configure how you receive notifications.</p>
-            <div class="notification-settings">
-                <label>
-                    <input type="checkbox" checked> Email Notifications
-                </label>
-                <label>
-                    <input type="checkbox" checked> SMS Notifications
-                </label>
+                <div class="dashboard-card">
+            <div class="card-link theme-toggle-card" onclick="toggleDarkMode()">
+                <div class="theme-header">
+                    <h3 class="card-title">
+                        <i class="fas" id="theme-icon"></i> 
+                        Appearance Settings
+                    </h3>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <p>Toggle between light and dark mode</p>
             </div>
         </div>
     </div>
 </div>
-        </div>
-    </div>
-<script src="js/admin.js"></script>
-<script>
-    function confirmLogout(e) {
-    e.preventDefault();
-    
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You want to logout?",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, logout!',
-        cancelButtonText: 'Cancel',
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-        window.location.href = 'logout.php';
-        }
-    })
-    }
 
-    // Dark Mode Functions
-    function checkTheme() {
-        const isDark = localStorage.getItem('theme') === 'dark';
-        document.body.classList.toggle('dark-theme', isDark);
-        document.getElementById('theme-toggle').checked = isDark;
-        updateChartColors(isDark);
-    }
 
-    function toggleDarkMode() {
-        const body = document.body;
-        const isDark = body.classList.toggle('dark-theme');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        document.getElementById('theme-toggle').checked = isDark;
-        updateChartColors(isDark);
-    }
-
-    function updateChartColors(isDark) {
-        const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
-        charts.forEach(chartId => {
-            const chart = Chart.getChart(chartId);
-            if (chart) {
-                chart.options.scales.x.ticks.color = isDark ? '#fff' : '#666';
-                chart.options.scales.y.ticks.color = isDark ? '#fff' : '#666';
-                chart.update();
-            }
-        });
-    }
-
-    function updateChartColors(isDark) {
-        const textColor = isDark ? '#ffffff' : '#2d3748';
-        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    <script src="js/admin.js"></script>
+    <script>
+        function confirmLogout(e) {
+        e.preventDefault();
         
-        const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
-        charts.forEach(chartId => {
-            const chart = Chart.getChart(chartId);
-            if (chart) {
-                // Update axis colors
-                chart.options.scales.x.ticks.color = textColor;
-                chart.options.scales.y.ticks.color = textColor;
-                chart.options.scales.x.grid.color = gridColor;
-                chart.options.scales.y.grid.color = gridColor;
-                
-                // Update dataset colors
-                chart.data.datasets.forEach(dataset => {
-                    dataset.borderColor = textColor;
-                    dataset.backgroundColor = isDark ? 
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You want to logout?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+            window.location.href = 'logout.php';
+            }
+        })
+        }
+
+        // Dark Mode Functions
+        function checkTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark';
+            document.body.classList.toggle('dark-theme', isDark);
+            document.getElementById('theme-toggle').checked = isDark;
+            updateChartColors(isDark);
+        }
+
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDark = body.classList.toggle('dark-theme');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-toggle').checked = isDark;
+            updateChartColors(isDark);
+        }
+
+        function updateChartColors(isDark) {
+            const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+            charts.forEach(chartId => {
+                const chart = Chart.getChart(chartId);
+                if (chart) {
+                    chart.options.scales.x.ticks.color = isDark ? '#fff' : '#666';
+                    chart.options.scales.y.ticks.color = isDark ? '#fff' : '#666';
+                    chart.update();
+                }
+            });
+        }
+
+        function updateChartColors(isDark) {
+            const textColor = isDark ? '#ffffff' : '#2d3748';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            
+            const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+            charts.forEach(chartId => {
+                const chart = Chart.getChart(chartId);
+                if (chart) {
+                    // Update axis colors
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.options.scales.x.grid.color = gridColor;
+                    chart.options.scales.y.grid.color = gridColor;
+                    
+                    // Update dataset colors
+                    chart.data.datasets.forEach(dataset => {
+                        dataset.borderColor = textColor;
+                        dataset.backgroundColor = isDark ? 
+                            'rgba(255, 255, 255, 0.5)' : 
+                            'rgba(0, 86, 179, 0.5)';
+                    });
+                    
+                    chart.update();
+                }
+            });
+        }
+
+        // Initialize charts with theme-appropriate colors
+        function initializeCharts() {
+        const isDark = document.body.classList.contains('dark-theme');
+        const textColor = isDark ? '#ffffff' : '#2d3748';
+        
+        // Users Chart
+        new Chart(document.getElementById('usersChart'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Farmers Registered',
+                    data: [65, 59, 80, 81, 56, 55],
+                    borderColor: textColor,
+                    backgroundColor: isDark ? 
                         'rgba(255, 255, 255, 0.5)' : 
-                        'rgba(0, 86, 179, 0.5)';
-                });
-                
-                chart.update();
+                        'rgba(0, 86, 179, 0.5)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    }
+                }
             }
         });
-    }
 
-    // Initialize charts with theme-appropriate colors
-    function initializeCharts() {
-    const isDark = document.body.classList.contains('dark-theme');
-    const textColor = isDark ? '#ffffff' : '#2d3748';
-    
-    // Users Chart
-    new Chart(document.getElementById('usersChart'), {
-        type: 'line',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Farmers Registered',
-                data: [65, 59, 80, 81, 56, 55],
-                borderColor: textColor,
-                backgroundColor: isDark ? 
-                    'rgba(255, 255, 255, 0.5)' : 
-                    'rgba(0, 86, 179, 0.5)',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkTheme();
+            initializeCharts();
+        });
+
+        // Initialize theme and charts
+        document.addEventListener('DOMContentLoaded', function() {
+            checkTheme();
+        
+        // Initialize all charts with theme-appropriate colors
+        const chartOptions = {
             scales: {
                 x: {
-                    grid: {
-                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                    },
                     ticks: {
-                        color: textColor
+                        color: document.body.classList.contains('dark-theme') ? '#fff' : '#666'
                     }
                 },
                 y: {
-                    grid: {
-                        color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                    },
                     ticks: {
-                        color: textColor
+                        color: document.body.classList.contains('dark-theme') ? '#fff' : '#666'
                     }
                 }
             }
+        };
+        
+        // Example for usersChart
+        new Chart(document.getElementById('usersChart'), {
+            type: 'line',
+            data: {/* your chart data */},
+            options: chartOptions
+        });
+        
+        // Repeat for other charts
+
+        function updateThemeIcon(isDark) {
+        const themeIcon = document.getElementById('theme-icon');
+        themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
         }
-    });
 
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        checkTheme();
-        initializeCharts();
-    });
-
-    // Initialize theme and charts
-    document.addEventListener('DOMContentLoaded', function() {
-        checkTheme();
-    
-    // Initialize all charts with theme-appropriate colors
-    const chartOptions = {
-        scales: {
-            x: {
-                ticks: {
-                    color: document.body.classList.contains('dark-theme') ? '#fff' : '#666'
-                }
-            },
-            y: {
-                ticks: {
-                    color: document.body.classList.contains('dark-theme') ? '#fff' : '#666'
-                }
-            }
+        // Update sa toggleDarkMode function
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDark = body.classList.toggle('dark-theme');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateChartColors(isDark);
+            updateThemeIcon(isDark);
         }
-    };
-    
-    // Example for usersChart
-    new Chart(document.getElementById('usersChart'), {
-        type: 'line',
-        data: {/* your chart data */},
-        options: chartOptions
-    });
-    
-    // Repeat for other charts
 
-    function updateThemeIcon(isDark) {
-    const themeIcon = document.getElementById('theme-icon');
-    themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    }
+        // Update sa checkTheme function
+        function checkTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark';
+            document.body.classList.toggle('dark-theme', isDark);
+            document.getElementById('theme-toggle').checked = isDark;
+            updateChartColors(isDark);
+            updateThemeIcon(isDark);
+        }
+        });
 
-    // Update sa toggleDarkMode function
-    function toggleDarkMode() {
-        const body = document.body;
-        const isDark = body.classList.toggle('dark-theme');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        updateChartColors(isDark);
-        updateThemeIcon(isDark);
-    }
-
-    // Update sa checkTheme function
-    function checkTheme() {
-        const isDark = localStorage.getItem('theme') === 'dark';
-        document.body.classList.toggle('dark-theme', isDark);
-        document.getElementById('theme-toggle').checked = isDark;
-        updateChartColors(isDark);
-        updateThemeIcon(isDark);
-    }
-    });
-
-</script>
-</html>
+    </script>
+ </html>
