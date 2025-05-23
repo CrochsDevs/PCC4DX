@@ -1,3 +1,19 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// I-require ang mga necessary files
+require 'db_config.php';
+require 'auth_check.php';
+
+// I-check ang user privileges
+if ($_SESSION['user']['center_type'] !== 'Headquarters') {
+    header('Location: access_denied.php');
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +23,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/admin.css">
     <style>
         .progress-bar {
             height: 20px;
@@ -31,6 +48,41 @@
             to { opacity: 1; }
         }
     </style>
+
+<div class="sidebar">
+        <!-- User Profile Section -->
+        <div class="user-profile" id="sidebar-profile">
+            <div class="profile-picture">
+                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                    <!-- Display the uploaded profile image -->
+                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture" id="sidebar-profile-img">
+                <?php else: ?>
+                    <!-- Fallback to the generated avatar -->
+                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture" id="sidebar-profile-img">
+                <?php endif; ?>
+            </div>
+            <div class="profile-info">
+                <h3 class="user-name" id="sidebar-profile-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+                <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+            </div>                          
+        </div>
+
+            <ul>
+                <li><a href="admin.php#quickfacts-section" class="nav-link">
+                <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
+
+            <li><a class="nav-link active" data-section="dashboard-section">
+                <i class="fas fa-chart-line"></i> Dashboard</a></li>
+
+            <li><a class="nav-link" data-section="announcement-section">
+                <i class="fas fa-file-alt"></i> Center</a></li>
+            
+            <li><a class="nav-link" data-section="quickfacts-section">
+                <i class="fas fa-sitemap"></i> Reports</a></li>
+        </ul>
+
+    </div>
+
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="container mx-auto px-4 py-8">
@@ -442,5 +494,7 @@
             });
         });
     </script>
+    
 </body>
+
 </html>
