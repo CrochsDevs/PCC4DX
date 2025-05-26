@@ -292,8 +292,8 @@ $allCenters = $reportManager->getAllCenters();
         <header class="mb-10">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="title">Artificial Insemination Reports</h1>
-                    <p class="subtitle">HQ Dashboard - View Center AI Reports</p>
+                    <h1 class="title">Calf Drop Reports</h1>
+                    <p class="subtitle">HQ Dashboard - View Center Calf Drop Reports</p>
                 </div>
             </div>
         </header>
