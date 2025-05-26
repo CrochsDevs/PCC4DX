@@ -152,7 +152,7 @@ $allCenters = $reportManager->getAllCenters();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HQ Calf Drop Dashboard</title>
+    <title>HQ AI Score Card Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -277,20 +277,16 @@ $allCenters = $reportManager->getAllCenters();
         </div>                          
     </div>
 
-        <ul>
-                <li><a href="admin.php#quickfacts-section" class="nav-link">
-                <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
-
-            <li><a href="admin_cd_dashboard.php" class="nav-link" data-section="dashboard-section">
-                <i class="fas fa-chart-line"></i> Dashboard</a></li>
-
-            <li><a href="admin_centertarget_calf_dashboard.php" class="nav-link" data-section="announcement-section">
-                <i class="fas fa-file-alt"></i> Center</a></li>
-            
-            <li><a class="nav-link active" data-section="quickfacts-section">
-                <i class="fas fa-sitemap"></i> Reports</a></li>
-
-        </ul>
+    <ul>
+        <li><a href="admin.php" class="nav-link">
+        <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
+        <li><a href="admin_ai_dashboard.php" class="nav-link" data-section="dashboard-section">
+        <i class="fas fa-chart-line"></i> Dashboard</a></li>
+        <li><a href = "admin_centertarget_ai_dashboard.php" class="nav-link" data-section="announcement-section">
+        <i class="fas fa-file-alt"></i> Center</a></li>
+        <li><a href="admin_report_dashboard.php" class="nav-link active" data-section="quickfacts-section">
+        <i class="fas fa-sitemap"></i> Reports</a></li>
+    </ul>
 </div>
 
 <body class="bg-gray-50">
@@ -299,7 +295,7 @@ $allCenters = $reportManager->getAllCenters();
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="title">Calf Drop Reports</h1>
-                    <p class="subtitle">HQ Dashboard - View Center Calf Drop Reports</p>
+                    <p class="subtitle">HQ Dashboard - View Center CD Reports</p>
                 </div>
             </div>
         </header>
@@ -425,6 +421,7 @@ $allCenters = $reportManager->getAllCenters();
                 });
             }
             
+            // Load reports based on current filters
             function loadReports() {
                 if (!currentCenter) {
                     $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
@@ -478,6 +475,8 @@ $allCenters = $reportManager->getAllCenters();
 
                         data.reports.forEach(row => {
                             const dateObj = new Date(row.date);
+                            
+                            const formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long',day: 'numeric'});
                             const firstJan = new Date(dateObj.getFullYear(), 0, 1);
                             const pastDaysOfYear = (dateObj - firstJan) / 86400000;
                             const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
@@ -493,7 +492,7 @@ $allCenters = $reportManager->getAllCenters();
 
                             html += `
                             <tr class="${rowClass}">
-                                <td>${row.date}</td>
+                                <td>${formattedDate}</td>
                                 <td>${dayOfWeek}</td>
                                 <td>${row.ai}</td>
                                 <td>${row.bep}</td>

@@ -17,6 +17,7 @@ class AIReportManager {
     }
     
     public function getReports($centerCode, $year = null, $month = null, $week = null, $date = null) {
+        
         $query = "SELECT aiID, aiServices, date, remarks, center 
                 FROM ai_services 
                 WHERE center = :center";
@@ -479,11 +480,16 @@ $allCenters = $reportManager->getAllCenters();
                                 }
 
                                 const rowClass = toggleColor ? 'week-grey' : 'week-white';
-                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
+                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                                const formattedDate = dateObj.toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                });
 
                                 html += `
                                 <tr class="${rowClass}">
-                                    <td>${row.date}</td>
+                                    <td>${formattedDate}</td>
                                     <td>${dayOfWeek}</td>
                                     <td>${row.aiServices}</td>
                                     <td>${row.remarks ? row.remarks : ''}</td>
