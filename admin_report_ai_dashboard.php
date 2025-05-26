@@ -142,15 +142,7 @@ if (isset($_GET['ajax'])) {
     exit;
 }
 
-$centerCode = isset($_GET['center']) ? $_GET['center'] : null;
-$year = isset($_GET['year']) ? $_GET['year'] : null;
-$month = isset($_GET['month']) ? $_GET['month'] : null;
-$week = isset($_GET['week']) ? $_GET['week'] : null;
-
 $allCenters = $reportManager->getAllCenters();
-if ($centerCode) {
-    $reports = $reportManager->getReports($centerCode, $year, $month, $week);
-}
 ?>
 
 <!DOCTYPE html>
@@ -302,8 +294,8 @@ if ($centerCode) {
                 <select id="centerSelect" class="center-selector">
                     <option value="">Select Center</option>
                     <?php foreach ($allCenters as $center): ?>
-                        <option value="<?= $center['center_code'] ?>" <?= ($centerCode == $center['center_code']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($center['center_name']) ?>
+                        <option value="<?= $center['center_code'] ?>">
+                            <?= htmlspecialchars($center['center_name']) ?> (<?= htmlspecialchars($center['center_code']) ?>)
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -374,7 +366,7 @@ if ($centerCode) {
                 }
             }
             
-            // Load available years
+            // Load available years for the selected center
             function loadYears() {
                 if (!currentCenter) {
                     $('#yearFilter').empty();
@@ -385,7 +377,7 @@ if ($centerCode) {
                 
                 $('#loadingIndicator').show();
                 $.ajax({
-                    url: 'ai_report.php?ajax=get_years',
+                    url: window.location.href.split('?')[0] + '?ajax=get_years',
                     type: 'GET',
                     data: { center: currentCenter },
                     success: function(years) {
@@ -428,7 +420,7 @@ if ($centerCode) {
                 $('#reportResults').empty();
                 
                 $.ajax({
-                    url: 'ai_report.php?ajax=get_reports',
+                    url: window.location.href.split('?')[0] + '?ajax=get_reports',
                     type: 'GET',
                     data: { 
                         center: currentCenter,
@@ -504,7 +496,7 @@ if ($centerCode) {
                 }
                 
                 $.ajax({
-                    url: 'ai_report.php?ajax=get_weeks',
+                    url: window.location.href.split('?')[0] + '?ajax=get_weeks',
                     type: 'GET',
                     data: { 
                         center: currentCenter,
@@ -528,9 +520,6 @@ if ($centerCode) {
             
             // Initialize the report
             updateExportButtonState();
-            if (currentCenter) {
-                loadYears();
-            }
             
             // Center selection change
             $('#centerSelect').change(function() {
