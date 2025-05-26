@@ -19,41 +19,49 @@ class CalfDropManager {
     }
     
     public function saveRecord($data) {
-        $query = "INSERT INTO calf_drop (ai, bep, ih, private, center, date) 
-                  VALUES (:ai, :bep, :ih, :private, :center, :date)";
-        $stmt = $this->db->prepare($query);
-        
-        return $stmt->execute([
-            ':ai' => $data['ai'],
-            ':bep' => $data['bep'],
-            ':ih' => $data['ih'],
-            ':private' => $data['private'],
-            ':center' => $this->centerCode,
-            ':date' => $data['date']
-        ]);
+        if (empty($data['remarks'])) {
+            $query = "INSERT INTO calf_drop (ai, bep, ih, private, center, date) 
+                      VALUES (:ai, :bep, :ih, :private, :center, :date)";
+            $stmt = $this->db->prepare($query);
+            return $stmt->execute([
+                ':ai' => $data['ai'],
+                ':bep' => $data['bep'],
+                ':ih' => $data['ih'],
+                ':private' => $data['private'],
+                ':center' => $this->centerCode,
+                ':date' => $data['date']
+            ]);
+        } else {
+            $query = "INSERT INTO calf_drop (ai, bep, ih, private, center, date, remarks) 
+                      VALUES (:ai, :bep, :ih, :private, :center, :date, :remarks)";
+            $stmt = $this->db->prepare($query);
+            return $stmt->execute([
+                ':ai' => $data['ai'],
+                ':bep' => $data['bep'],
+                ':ih' => $data['ih'],
+                ':private' => $data['private'],
+                ':center' => $this->centerCode,
+                ':date' => $data['date'],
+                ':remarks' => $data['remarks']
+            ]);
+        }
     }
     
-    public function validateInput($data) {
-        $errors = [];
-        
-        if (!is_numeric($data['ai']) || $data['ai'] < 0) {
-            $errors[] = "AI must be a positive number";
-        }
-        
-        if (!is_numeric($data['bep']) || $data['bep'] < 0) {
-            $errors[] = "BEP must be a positive number";
-        }
-        
-        if (!is_numeric($data['ih']) || $data['ih'] < 0) {
-            $errors[] = "IH must be a positive number";
-        }
-        
-        if (!is_numeric($data['private']) || $data['private'] < 0) {
-            $errors[] = "Private must be a positive number";
-        }
-        
-        return $errors;
+public function validateInput($data) {
+    $errors = [];
+    
+    $aiValid = isset($data['ai']) && is_numeric($data['ai']) && $data['ai'] > 0;
+    $bepValid = isset($data['bep']) && is_numeric($data['bep']) && $data['bep'] > 0;
+    $ihValid = isset($data['ih']) && is_numeric($data['ih']) && $data['ih'] > 0;
+    $privateValid = isset($data['private']) && is_numeric($data['private']) && $data['private'] > 0;
+    
+    if (!($aiValid || $bepValid || $ihValid || $privateValid)) {
+        $errors[] = "At least one of AI, BEP, IH, or Private must be a positive number greater than zero.";
     }
+    
+    return $errors;
+}
+
 }
 
 $centerCode = $_SESSION['center_code'];
@@ -75,16 +83,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
     if (empty($errors)) {
         $success = $calfDropManager->saveRecord($data);
         if ($success) {
-            $_SESSION['success_message'] = "Record saved successfully!";
-            // header("Location: ".$_SERVER['PHP_SELF']);
-            // exit;
+            $_SESSION['success_message'] = "Calf Drop record saved successfully!";
             echo "<script>sessionStorage.setItem('showSuccess', '1'); window.location.href = '".$_SERVER['PHP_SELF']."';</script>";
             exit;
         } else {
             $errors[] = "Failed to save record. Please try again.";
         }
     }
-    
 }
 ?>
 <!DOCTYPE html>
@@ -160,11 +165,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         }
 
         .entry-form {
-            width: 80%; /* Adjust width as needed */
-            max-width: 600px; /* Optional: limits the maximum width */
-            margin: 0 auto; /* Centers horizontally */
+            width: 80%;
+            max-width: 600px;
+            margin: 0 auto;
             padding: 20px;
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
+            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -174,13 +179,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
 
         form {
             width: 100%;
-            max-width: 600px;        /* Set a maximum width for the form */
+            max-width: 600px;
             padding: 20px;
-            background-color: #f9f9f9;  /* Optional: for better visibility */
-            border-radius: 8px;      /* Optional: rounded corners */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional: subtle shadow for form */
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
     </style>
 </head>
 <body>
@@ -314,6 +318,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                         <input type="date" name="date" id="date" class="form-input" value="<?= date('Y-m-d') ?>">
                     </div>
 
+                    <div class="form-group" id="remarksGroup" style="display: none;">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" id="remarks" class="form-input" placeholder="Provide remarks for past date..." required></textarea>
+
+                    </div>
+
                     <button type="button" id="submitBtn" class="form-input" style="background-color: var(--primary); color: white; cursor: pointer;">
                         Submit Entry
                     </button>
@@ -340,7 +350,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
             // Show confirmation modal when submit button is clicked
@@ -398,14 +407,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Success!',
-                    text: 'Calf Drop entry saved successfully.',
+                    text: 'Calf Drop record saved successfully.',
                     confirmButtonColor: '#28a745'
                 });
                 sessionStorage.removeItem('showSuccess');
             }
         });
 
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateInput = document.getElementById("date");
+            const remarksGroup = document.getElementById("remarksGroup");
+            const today = new Date().toISOString().split("T")[0];
 
+            dateInput.setAttribute("max", today); // Restrict future dates
+            dateInput.value = today;
+
+            dateInput.addEventListener("change", function () {
+                if (this.value < today) {
+                    remarksGroup.style.display = "block";
+                } else {
+                    remarksGroup.style.display = "none";
+                    document.getElementById("remarks").value = '';
+                }
+            });
+        });
+
+        $('#submitBtn').click(function(e) {
+            e.preventDefault();
+            
+            const ai = parseInt($('#ai').val()) || 0;
+            const bep = parseInt($('#bep').val()) || 0;
+            const ih = parseInt($('#ih').val()) || 0;
+            const privateVal = parseInt($('#private').val()) || 0;
+            
+            if (ai < 0 || bep < 0 || ih < 0 || privateVal < 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Entry',
+                    text: 'All values must be positive numbers.',
+                    confirmButtonColor: '#dc3545'
+                });
+                return; // Prevent modal and submission
+            }
+            
+            const date = $('#date').val();
+            const total = ai + bep + ih + privateVal;
+            
+            // Build summary HTML
+            let summaryHtml = `
+                <div class="summary-item"><span>AI:</span><span>${ai}</span></div>
+                <div class="summary-item"><span>BEP:</span><span>${bep}</span></div>
+                <div class="summary-item"><span>IH:</span><span>${ih}</span></div>
+                <div class="summary-item"><span>Private:</span><span>${privateVal}</span></div>
+                <div class="summary-item"><span>Date:</span><span>${date}</span></div>
+
+                <div class="summary-total"><span>Total Calves:</span><span>${total}</span></div>
+            `;
+            
+            $('#summaryContent').html(summaryHtml);
+            $('#confirmationModal').show();
+        });
     </script>
 </body>
 </html>

@@ -43,15 +43,25 @@ class AIServicesManager {
         }
     }
 
-    public function validateInput($data) {
-        $errors = [];
-        
-        if (!is_numeric($data['aiServices']) || $data['aiServices'] < 0) {
-            $errors[] = "AI Services must be a positive number";
-        }
-        
-        return $errors;
+public function validateInput($data) {
+    $errors = [];
+    
+    if (!is_numeric($data['aiServices']) || $data['aiServices'] <= 0) {
+        $errors[] = "AI Services must be a positive number greater than zero";
     }
+
+    // Validate remarks if date is past date
+    $date = $data['date'] ?? date('Y-m-d');
+    $today = date('Y-m-d');
+
+    if ($date < $today && empty(trim($data['remarks']))) {
+        $errors[] = "Remarks are required when the selected date is a past date.";
+    }
+
+    return $errors;
+}
+
+
 }
 
 $centerCode = $_SESSION['center_code'];
@@ -93,7 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
     <link rel="stylesheet" href="css/milk_report.css">
     <link rel="stylesheet" href="css/calf.css">
     <style>
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -282,7 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                 <form id="aiServicesForm" method="POST">
                     <div class="form-group">
                         <label class="form-label">AI Services Performed</label>
-                        <input type="number" step="1" name="aiServices" id="aiServices" class="form-input" value="0" min="0">
+                        <input type="number" step="1" name="aiServices" id="aiServices" class="form-input" value="0" min="1">
                     </div>
 
                     <div class="form-group">
@@ -292,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
 
                     <div class="form-group" id="remarksGroup" style="display: none;">
                         <label class="form-label">Remarks</label>
-                        <textarea name="remarks" id="remarks" class="form-input" placeholder="Provide remarks for past date..."></textarea>
+                        <textarea name="remarks" id="remarks" class="form-input" placeholder="Provide remarks for past date..." required></textarea>
                     </div>
 
                     <button type="button" id="submitBtn" class="form-input" style="background-color: var(--primary); color: white; cursor: pointer;">
@@ -326,24 +335,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
             // Show confirmation modal when submit button is clicked
             $('#submitBtn').click(function(e) {
                 e.preventDefault();
-                
-                // Get form values
+
                 const aiServices = parseInt($('#aiServices').val()) || 0;
+                if (aiServices <= 0) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Entry',
+                        text: 'AI Services must be greater than zero.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+
                 const date = $('#date').val();
-                
+                const remarks = $('#remarks').val().trim();
+                const today = new Date().toISOString().split('T')[0];
+
+                // If date is in the past, remarks must not be empty
+                if (date < today && remarks === '') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Remarks Required',
+                        text: 'Please provide remarks for a past date.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+
                 // Build summary HTML
                 let summaryHtml = `
                     <div class="summary-item"><span>AI Services:</span><span>${aiServices}</span></div>
                     <div class="summary-item"><span>Date:</span><span>${date}</span></div>
                 `;
-                
-                // Insert summary into modal
+
+                if (date < today) {
+                    summaryHtml += `<div class="summary-item"><span>Remarks:</span><span>${remarks}</span></div>`;
+                }
+
                 $('#summaryContent').html(summaryHtml);
-                
-                // Show modal
                 $('#confirmationModal').show();
             });
-            
+
             // Handle cancel button
             $('#cancelBtn').click(function() {
                 $('#confirmationModal').hide();
@@ -381,6 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
         document.addEventListener("DOMContentLoaded", function () {
             const dateInput = document.getElementById("date");
             const remarksGroup = document.getElementById("remarksGroup");
+            const remarksTextarea = document.getElementById("remarks");
             const today = new Date().toISOString().split("T")[0];
 
             dateInput.setAttribute("max", today); // Restrict future dates
@@ -389,11 +422,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
             dateInput.addEventListener("change", function () {
                 if (this.value < today) {
                     remarksGroup.style.display = "block";
+                    remarksTextarea.setAttribute("required", "required");
                 } else {
                     remarksGroup.style.display = "none";
-                    document.getElementById("remarks").value = '';
+                    remarksTextarea.removeAttribute("required");
+                    remarksTextarea.value = '';
                 }
             });
+        });
+
+
+        $('#submitBtn').click(function(e) {
+            e.preventDefault();
+            
+            const aiServices = parseInt($('#aiServices').val()) || 0;
+            if (aiServices <= 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Entry',
+                    text: 'AI Services must be greater than zero.',
+                    confirmButtonColor: '#dc3545'
+                });
+                return; // Prevent modal and submission
+            }
+            
+            const date = $('#date').val();
+            
+            // Build summary HTML
+            let summaryHtml = `
+                <div class="summary-item"><span>AI Services:</span><span>${aiServices}</span></div>
+                <div class="summary-item"><span>Date:</span><span>${date}</span></div>
+            `;
+            
+            $('#summaryContent').html(summaryHtml);
+            $('#confirmationModal').show();
         });
 
 

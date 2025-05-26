@@ -84,6 +84,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     </div>
 
 </head>
+
 <body class="bg-gray-50 font-sans">
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
@@ -470,7 +471,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                         stacked: true, // Ensures bars stack on top of each other
                         ticks: {
                             callback: function(value) {
-                                return value.toLocaleString(); // Format numbers with commas
+                                return value.toLocaleString(); 
                             }
                         }
                     }

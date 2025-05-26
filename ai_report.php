@@ -371,6 +371,12 @@ $reports = $reportManager->getReports($year, $month, $week);
 
                             data.reports.forEach(row => {
                                 const dateObj = new Date(row.date);
+                                const formattedDate = dateObj.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                }); 
+                                
                                 const firstJan = new Date(dateObj.getFullYear(), 0, 1);
                                 const pastDaysOfYear = (dateObj - firstJan) / 86400000;
                                 const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
@@ -385,7 +391,7 @@ $reports = $reportManager->getReports($year, $month, $week);
 
                                 html += `
                                 <tr class="${rowClass}">
-                                    <td>${row.date}</td>
+                                    <td>${formattedDate}</td>
                                     <td>${dayOfWeek}</td>
                                     <td>${row.aiServices}</td>
                                     <td>${row.remarks ? row.remarks : ''}</td>
