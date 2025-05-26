@@ -295,7 +295,7 @@ $allCenters = $reportManager->getAllCenters();
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="title">Calf Drop Reports</h1>
-                    <p class="subtitle">HQ Dashboard - View Center CD Reports</p>
+                    <p class="subtitle">HQ Dashboard - View Center Calf Drop Reports</p>
                 </div>
             </div>
         </header>
