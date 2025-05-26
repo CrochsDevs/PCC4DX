@@ -9,7 +9,7 @@ if ($_SESSION['user']['center_code'] !== 'HQ') {
     exit;
 }
 
-class AIReportManager {
+class CalfDropReportManager {
     private $db;
 
     public function __construct($db) {
@@ -17,68 +17,71 @@ class AIReportManager {
     }
 
     public function getReports($centerCode, $year = null, $month = null, $week = null, $date = null) {
-        $query = "SELECT cdID, ai, bep, ih, private, date, remarks, center 
-                  FROM pcc_auth_system.calf_drop 
+        $query = "SELECT ai, bep, ih, private, remarks, date, center
+                  FROM pcc_auth_system.calf_drop
                   WHERE center = :center";
-
         $params = [':center' => $centerCode];
-
-        if ($year) {
-            $query .= " AND YEAR(date) = :year";
-            $params[':year'] = $year;
-        }
-
-        if ($month) {
-            $query .= " AND MONTH(date) = :month";
-            $params[':month'] = $month;
-        }
-
-        if ($week) {
-            $query .= " AND WEEK(date, 1) = :week";
-            $params[':week'] = $week;
-        }
 
         if ($date) {
             $query .= " AND date = :date";
             $params[':date'] = $date;
+        } else {
+            if ($year) {
+                $query .= " AND YEAR(date) = :year";
+                $params[':year'] = $year;
+            }
+            if ($month) {
+                $query .= " AND MONTH(date) = :month";
+                $params[':month'] = $month;
+            }
+            if ($week) {
+                $query .= " AND WEEK(date, 3) = :week";
+                $params[':week'] = $week;
+            }
         }
 
         $query .= " ORDER BY date DESC";
-
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
+
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $total = 0;
+        // Calculate totals
+        $totals = ['ai' => 0, 'bep' => 0, 'ih' => 0, 'private' => 0, 'total' => 0];
         foreach ($reports as $row) {
-            $total += $row['ai'];
+            $totals['ai'] += (int)$row['ai'];
+            $totals['bep'] += (int)$row['bep'];
+            $totals['ih'] += (int)$row['ih'];
+            $totals['private'] += (int)$row['private'];
+            $totals['total'] += (int)$row['ai'] + (int)$row['bep'] + (int)$row['ih'] + (int)$row['private'];
         }
+
+        $count = count($reports);
 
         return [
             'reports' => $reports,
-            'total' => $total,
-            'count' => count($reports)
+            'totals' => $totals,
+            'count' => $count
         ];
     }
 
     public function getAvailableYears($centerCode) {
-        $query = "SELECT DISTINCT YEAR(date) as year 
-                  FROM pcc_auth_system.calf_drop 
-                  WHERE center = :center 
+        $query = "SELECT DISTINCT YEAR(date) as year
+                  FROM pcc_auth_system.calf_drop
+                  WHERE center = :center
                   ORDER BY year DESC";
 
         $stmt = $this->db->prepare($query);
         $stmt->execute([':center' => $centerCode]);
-
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     public function getAvailableWeeks($year, $month, $centerCode) {
-        $query = "SELECT DISTINCT WEEK(date, 3) as week 
-                  FROM pcc_auth_system.calf_drop 
-                  WHERE center = :center 
-                  AND YEAR(date) = :year 
-                  AND MONTH(date) = :month 
+        $query = "SELECT DISTINCT WEEK(date, 3) as week
+                  FROM pcc_auth_system.calf_drop
+                  WHERE center = :center
+                  AND YEAR(date) = :year
+                  AND MONTH(date) = :month
                   ORDER BY week";
 
         $stmt = $this->db->prepare($query);
@@ -87,25 +90,18 @@ class AIReportManager {
             ':year'   => $year,
             ':month'  => $month
         ]);
-
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     public function getAllCenters() {
-        $query = "SELECT center_code, center_name 
-                  FROM centers 
-                  WHERE center_code != 'HQ' 
-                  ORDER BY center_name";
-
+        $query = "SELECT center_code, center_name FROM centers WHERE center_code != 'HQ' ORDER BY center_name";
         $stmt = $this->db->prepare($query);
         $stmt->execute();
-
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
-// Instantiate the report manager
-$reportManager = new AIReportManager($conn);
+$reportManager = new CalfDropReportManager($conn);
 
 // Handle AJAX requests
 if (isset($_GET['ajax'])) {
@@ -113,25 +109,27 @@ if (isset($_GET['ajax'])) {
 
     switch ($_GET['ajax']) {
         case 'get_years':
-            echo isset($_GET['center'])
-                ? json_encode($reportManager->getAvailableYears($_GET['center']))
-                : json_encode([]);
+            if (isset($_GET['center'])) {
+                echo json_encode($reportManager->getAvailableYears($_GET['center']));
+            } else {
+                echo json_encode([]);
+            }
             break;
 
         case 'get_weeks':
-            echo (isset($_GET['year'], $_GET['month'], $_GET['center']))
-                ? json_encode($reportManager->getAvailableWeeks($_GET['year'], $_GET['month'], $_GET['center']))
-                : json_encode([]);
+            if (isset($_GET['year']) && isset($_GET['month']) && isset($_GET['center'])) {
+                echo json_encode($reportManager->getAvailableWeeks($_GET['year'], $_GET['month'], $_GET['center']));
+            } else {
+                echo json_encode([]);
+            }
             break;
 
         case 'get_reports':
             if (isset($_GET['center'])) {
-                $year  = $_GET['year'] ?? null;
-                $month = $_GET['month'] ?? null;
-                $week  = $_GET['week'] ?? null;
-                $date  = $_GET['date'] ?? null;
-
-                echo json_encode($reportManager->getReports($_GET['center'], $year, $month, $week, $date));
+                $year = isset($_GET['year']) ? $_GET['year'] : null;
+                $month = isset($_GET['month']) ? $_GET['month'] : null;
+                $week = isset($_GET['week']) ? $_GET['week'] : null;
+                echo json_encode($reportManager->getReports($_GET['center'], $year, $month, $week));
             } else {
                 echo json_encode(['error' => 'Center not specified']);
             }
@@ -149,7 +147,6 @@ if (isset($_GET['ajax'])) {
     exit;
 }
 
-// Load all centers for default page
 $allCenters = $reportManager->getAllCenters();
 ?>
 
@@ -372,126 +369,139 @@ $allCenters = $reportManager->getAllCenters();
     </div>
 
     <script>
-    $(document).ready(function () {
-        let currentCenter = $('#centerSelect').val();
-        let currentYear = null;
-        let currentMonth = null;
-        let currentWeek = null;
-
-        // Enable or disable Export button based on center selection
-        function updateExportButtonState() {
-            $('#exportToExcel').prop('disabled', !currentCenter).toggleClass('disabled', !currentCenter);
-        }
-
-        // Load years for selected center
-        function loadYears() {
-            if (!currentCenter) {
-                $('#yearFilter, #weekFilter').empty();
-                $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
-                return;
-            }
-
-            $('#loadingIndicator').show();
-
-            $.ajax({
-                url: window.location.href.split('?')[0] + '?ajax=get_years',
-                type: 'GET',
-                data: { center: currentCenter },
-                success: function (years) {
-                    const yearFilter = $('#yearFilter').empty();
-
-                    if (years.length > 0) {
-                        years.forEach(year => {
-                            yearFilter.append(`<button class="filter-btn" data-year="${year}">${year}</button>`);
-                        });
-
-                        if (!currentYear) {
-                            currentYear = years[0];
-                            $(`[data-year="${currentYear}"]`).addClass('active');
-                        }
-
-                        loadReports();
-                    } else {
-                        $('#reportResults').html('<div class="no-data">No report data available for selected center</div>');
-                    }
-
-                    $('#loadingIndicator').hide();
-                },
-                error: function () {
-                    $('#loadingIndicator').hide();
-                    $('#reportResults').html('<div class="no-data">Error loading data</div>');
+        $(document).ready(function() {
+            let currentCenter = $('#centerSelect').val();
+            let currentYear = null;
+            let currentMonth = null;
+            let currentWeek = null;
+            
+            function updateExportButtonState() {
+                if (!currentCenter) {
+                    $('#exportToExcel').prop('disabled', true).addClass('disabled');
+                } else {
+                    $('#exportToExcel').prop('disabled', false).removeClass('disabled');
                 }
-            });
-        }
-
-        // Load reports
-        function loadReports() {
-            if (!currentCenter) {
-                $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
-                return;
             }
-
-            $('#loadingIndicator').show();
-            $('#reportResults').empty();
-
-            $.ajax({
-                url: window.location.href.split('?')[0] + '?ajax=get_reports',
-                type: 'GET',
-                data: {
-                    center: currentCenter,
-                    year: currentYear,
-                    month: currentMonth,
-                    week: currentWeek
-                },
-                success: function (data) {
-                    $('#loadingIndicator').hide();
-
+            
+            // Load available years for the selected center
+            function loadYears() {
+                if (!currentCenter) {
+                    $('#yearFilter').empty();
+                    $('#weekFilter').empty();
+                    $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
+                    return;
+                }
+                
+                $('#loadingIndicator').show();
+                $.ajax({
+                    url: window.location.href.split('?')[0] + '?ajax=get_years',
+                    type: 'GET',
+                    data: { center: currentCenter },
+                    success: function(years) {
+                        const yearFilter = $('#yearFilter');
+                        yearFilter.empty();
+                        
+                        if (years.length > 0) {
+                            years.forEach(year => {
+                                yearFilter.append(
+                                    `<button class="filter-btn" data-year="${year}">${year}</button>`
+                                );
+                            });
+                            
+                            // Set current year to the most recent one if not set
+                            if (!currentYear && years.length > 0) {
+                                currentYear = years[0];
+                                $('[data-year="' + currentYear + '"]').addClass('active');
+                            }
+                            loadReports();
+                        } else {
+                            $('#reportResults').html('<div class="no-data">No report data available for selected center</div>');
+                        }
+                        $('#loadingIndicator').hide();
+                    },
+                    error: function() {
+                        $('#loadingIndicator').hide();
+                        $('#reportResults').html('<div class="no-data">Error loading data</div>');
+                    }
+                });
+            }
+            
+            // Load reports based on current filters
+            function loadReports() {
+                if (!currentCenter) {
+                    $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
+                    return;
+                }
+                
+                $('#loadingIndicator').show();
+                $('#reportResults').empty();
+                
+                $.ajax({
+                    url: window.location.href.split('?')[0] + '?ajax=get_reports',
+                    type: 'GET',
+                    data: { 
+                        center: currentCenter,
+                        year: currentYear,
+                        month: currentMonth,
+                        week: currentWeek
+                    },
+                    success: function(data) {
+                        $('#loadingIndicator').hide();
+                        
                     if (data.reports && data.reports.length > 0) {
                         let html = `
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Day</th>
-                                    <th>BEP</th>
-                                    <th>IH</th>
-                                    <th>Private</th>
-                                    <th>Remarks</th>
-                                </tr>
-                                <tr class="total-row">
-                                    <td>Total</td>
-                                    <td>Count: ${data.count}</td>
-                                    <td>${data.total}</td>
-                                    <td colspan="4"></td>
-                                </tr>
-                            </thead>
-                            <tbody>`;
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Day</th>
+                                        <th>AI</th>
+                                        <th>BEP</th>
+                                        <th>IH</th>
+                                        <th>Private</th>
+                                        <th>Remarks</th>
+                                        <th>Total</th>
+                                    </tr>
+                                    <tr class="total-row">
+                                        <td>Total</td>
+                                        <td>Count: ${data.count}</td>
+                                        <td>${data.totals.ai}</td>
+                                        <td>${data.totals.bep}</td>
+                                        <td>${data.totals.ih}</td>
+                                        <td>${data.totals.private}</td>
+                                        <td></td>
+                                        <td>${data.totals.total}</td>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
 
                         let previousWeek = null;
                         let toggleColor = false;
 
-                        data.reports.forEach(row => {
-                            const dateObj = new Date(row.date);
-                            const firstJan = new Date(dateObj.getFullYear(), 0, 1);
-                            const daysPassed = (dateObj - firstJan) / 86400000;
-                            const week = Math.ceil((daysPassed + firstJan.getDay() + 1) / 7);
+                            data.reports.forEach(row => {
+                                const dateObj = new Date(row.date);
+                                const firstJan = new Date(dateObj.getFullYear(), 0, 1);
+                                const pastDaysOfYear = (dateObj - firstJan) / 86400000;
+                                const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
 
                             if (week !== previousWeek) {
                                 toggleColor = !toggleColor;
                                 previousWeek = week;
                             }
 
-                            const rowClass = toggleColor ? 'week-grey' : 'week-white';
-                            const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                                const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
 
                             html += `
                             <tr class="${rowClass}">
                                 <td>${row.date}</td>
                                 <td>${dayOfWeek}</td>
-                                <td>${row.bepServices || ''}</td>
-                                <td>${row.ihServices || ''}</td>
-                                <td>${row.privateServices || ''}</td>
-                                <td>${row.remarks || ''}</td>
+                                <td>${row.ai}</td>
+                                <td>${row.bep}</td>
+                                <td>${row.ih}</td>
+                                <td>${row.private}</td>
+                                <td>${row.remarks ? row.remarks : ''}</td>
+                                <td>${total}</td>
                             </tr>`;
                         });
 
@@ -500,13 +510,14 @@ $allCenters = $reportManager->getAllCenters();
                     } else {
                         $('#reportResults').html('<div class="no-data">No data found for the selected filters</div>');
                     }
-                },
-                error: function () {
-                    $('#loadingIndicator').hide();
-                    $('#reportResults').html('<div class="no-data">Error loading reports</div>');
-                }
-            });
-        }
+
+                    },
+                    error: function() {
+                        $('#loadingIndicator').hide();
+                        $('#reportResults').html('<div class="no-data">Error loading reports</div>');
+                    }
+                });
+            }
 
         // Load weeks for selected month/year
         function loadWeeks(year, month) {
