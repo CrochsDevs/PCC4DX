@@ -35,12 +35,10 @@ class ReportManager {
                 $query .= " AND YEAR(date) = :year";
                 $params[':year'] = $year;
             }
-            
             if ($month) {
                 $query .= " AND MONTH(date) = :month";
                 $params[':month'] = $month;
             }
-            
             if ($week) {
                 $query .= " AND WEEK(date, 3) = :week";
                 $params[':week'] = $week;
@@ -53,7 +51,7 @@ class ReportManager {
         $stmt->execute($params);
         
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
         // Calculate totals
         $totals = ['ai' => 0, 'bep' => 0, 'ih' => 0, 'private' => 0, 'total' => 0];
         foreach ($reports as $row) {
@@ -63,11 +61,12 @@ class ReportManager {
             $totals['private'] += $row['private'];
             $totals['total'] += $row['total'];
         }
-    
-        return ['reports' => $reports, 'totals' => $totals];
+
+        $count = count($reports);
+
+        return ['reports' => $reports, 'totals' => $totals, 'count' => $count];
     }
-    
-    
+
     public function getAvailableYears() {
         $query = "SELECT DISTINCT YEAR(date) as year 
                   FROM calf_drop 
@@ -363,32 +362,32 @@ $reports = $reportManager->getReports($year, $month, $week);
                         $('#loadingIndicator').hide();
                         
                         if (data.reports.length > 0) {
-                            let html = `
-                                <table class="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Day</th>
-                                        <th>AI</th>
-                                        <th>BEP</th>
-                                        <th>IH</th>
-                                        <th>Private</th>
-                                        <th>Remarks</th>
-                                        <th>Total</th>
-                                    </tr>
-                                        <tr class="total-row" style="background-color:rgb(125, 139, 139);">
-                                            <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
-                                            <td style="color: black; font-weight: bold;"></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.ai}</strong></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.bep}</strong></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.ih}</strong></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.private}</strong></td>
-                                            <td style="color: black; font-weight: bold;"></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.total}</strong></td>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                            
+                        let html = `
+                            <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>AI</th>
+                                    <th>BEP</th>
+                                    <th>IH</th>
+                                    <th>Private</th>
+                                    <th>Remarks</th>
+                                    <th>Total</th>
+                                </tr>
+                                <tr class="total-row" style="background-color:rgb(125, 139, 139);">
+                                    <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
+                                    <td style="color: black; font-weight: bold;"><strong>Count: ${data.count}</strong></td>
+                                    <td style="color: black; font-weight: bold;"><strong>${data.totals.ai}</strong></td>
+                                    <td style="color: black; font-weight: bold;"><strong>${data.totals.bep}</strong></td>
+                                    <td style="color: black; font-weight: bold;"><strong>${data.totals.ih}</strong></td>
+                                    <td style="color: black; font-weight: bold;"><strong>${data.totals.private}</strong></td>
+                                    <td style="color: black; font-weight: bold;"></td>
+                                    <td style="color: black; font-weight: bold;"><strong>${data.totals.total}</strong></td>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
                                     let previousWeek = null;
                                     let toggleColor = false;
 

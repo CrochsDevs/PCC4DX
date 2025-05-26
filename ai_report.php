@@ -19,9 +19,9 @@ class AIReportManager {
     }
     
     public function getReports($year = null, $month = null, $week = null, $date = null) {
-    $query = "SELECT aiID, aiServices, date, remarks 
-              FROM ai_services 
-              WHERE center = :center";
+        $query = "SELECT aiID, aiServices, date, remarks 
+                FROM ai_services 
+                WHERE center = :center";
         $params = [':center' => $this->centerCode];
         
         if ($date) {
@@ -50,16 +50,19 @@ class AIReportManager {
         $stmt->execute($params);
         
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
         // Calculate totals
         $total = 0;
         foreach ($reports as $row) {
             $total += $row['aiServices'];
         }
-    
-        return ['reports' => $reports, 'total' => $total];
+
+        // Add count of records
+        $count = count($reports);
+
+        return ['reports' => $reports, 'total' => $total, 'count' => $count];
     }
-    
+
     public function getAvailableYears() {
         $query = "SELECT DISTINCT YEAR(date) as year 
                   FROM ai_services 
@@ -147,7 +150,7 @@ $reports = $reportManager->getReports($year, $month, $week);
     <link rel="stylesheet" href="css/calf.css">
     <link rel="stylesheet" href="css/cd_report.css">
     <style>
-    /* Week-based alternating colors */
+
         .week-white {
             background-color: #ffffff;
         }
@@ -359,13 +362,15 @@ $reports = $reportManager->getReports($year, $month, $week);
                                         </tr>
                                         <tr class="total-row" style="background-color:rgb(125, 139, 139);">
                                             <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
-                                            <td style="color: black; font-weight: bold;"></td>
+                                            <td style="color: black; font-weight: bold;">
+                                                <strong>Count: ${data.count}</strong>
+                                            </td>
                                             <td style="color: black; font-weight: bold;"><strong>${data.total}</strong></td>
                                             <td></td>
                                         </tr>
                                     </thead>
                                 <tbody>`;
-                            
+                                
                             let previousWeek = null;
                             let toggleColor = false;
 
