@@ -278,8 +278,6 @@ class AIDashboardManager {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    //report
-
     public function getReportRatingData($year = null) {
 
         $startDate = $year ? "{$year}-01-01" : "{$year}-01-01";
@@ -373,8 +371,6 @@ if (isset($_GET['ajax'])) {
 $centerCode = $_SESSION['center_code'];
 $dashboardManager = new AIDashboardManager($conn, $centerCode);
 
-
-
 // Get current year and month for default filter
 $currentYear = date('Y');
 $currentMonth = date('n');
@@ -406,11 +402,6 @@ $reportRatingData = $dashboardManager->getReportRatingData($selectedYear);
 $uniqueDates = $reportRatingData['unique_dates'] ?? 0;
 $workdays = $reportRatingData['workdays'] ?? 0;
 $reportPercentage = $reportRatingData['percentage'] ?? 0;
-
-
-
-
-
 
 
 // Calculate percentage against target
@@ -452,11 +443,6 @@ if ($aiPercentage >= 100) {
     $aiStatus = 'Getting started';
     $aiStatusClass = 'text-red-500';
 }
-
-
-
-
-
 
 
 
@@ -573,7 +559,7 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
         }
         .progress-text {
             margin-top: 5px;
-            font-size: 0.8rem;
+            font-size: 1rem;
             color: #6b7280;
         }
         .status-indicator {
@@ -648,19 +634,6 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
         .filter-btn.active {
             background: #3b82f6;
             color: white;
-        }
-        .export-btn {
-            padding: 6px 12px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .export-btn:hover {
-            background: #059669;
         }
 
         .chart-container {
@@ -814,9 +787,6 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                 </div>
             </div>
 
-            <div class="export-btn-container">
-                <button id="exportToExcel" class="export-btn">Export</button>
-            </div>
         </div>
         
         <!-- Dashboard Content -->
@@ -864,7 +834,7 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                             </div>
                             <div class="target-marker" style="left: 100%"></div>
                         </div>
-                        <div class="progress-text">
+                        <div class="progress-text text-large mt-2">
                             <?= $aiPercentage ?>% of target (<?= number_format($summaryData['total_ai'] ?? 0) ?>/<?= number_format($targetValue) ?>)
                         </div>
                     </div>
@@ -906,7 +876,7 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                                     ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
                             </div>
                         </div>
-                        <div class="progress-text text-xs mt-2">
+                        <div class="progress-text text-large mt-2">
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
@@ -951,16 +921,13 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                                     ($reportPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                             </div>
                         </div>
-                        <div class="progress-text">
+                        <div class="progress-text text-large mt-2">
                             <?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays
                         </div>
                     </div>
                 </div>
-
-
                         
             </div>
-
 
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
@@ -995,24 +962,29 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                 </div>
             </div>
 
+
             <!-- Filtered Total AI Services Card -->
-            <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-gray-500 font-medium">Filtered AI Services</p>
-                        <h3 class="text-2xl font-bold text-blue-700"><?= number_format($totalFilteredAI) ?></h3>
-                        <p class="text-sm mt-1 text-gray-500">
-                            Based on selected filters 
-                            <?= $selectedYear ? "Year: $selectedYear" : "" ?>
-                            <?= $selectedMonths ? " | Month(s): " . implode(', ', $selectedMonths) : "" ?>
-                            <?= $selectedWeek ? " | Week: $selectedWeek" : "" ?>
-                        </p>
+            <div class="grid grid-cols-1 lg:grid-cols-1 gap-8 mb-10">
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500 font-medium">Filtered AI Services</p>
+                                <h3 class="text-2xl font-bold text-blue-700"><?= number_format($totalFilteredAI) ?></h3>
+                                <p class="text-sm mt-1 text-gray-500">
+                                    Based on selected filters 
+                                    <?= $selectedYear ? "Year: $selectedYear" : "" ?>
+                                    <?= $selectedMonths ? " | Month(s): " . implode(', ', $selectedMonths) : "" ?>
+                                    <?= $selectedWeek ? " | Week: $selectedWeek" : "" ?>
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <i class="fas fa-filter text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <i class="fas fa-filter text-blue-600 text-xl"></i>
-                    </div>
-                </div>
             </div>
+                        
         </div>
 
         <script>
@@ -1388,37 +1360,6 @@ $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonth
                     window.location.href = newUrl;
                 }
 
-                // Export to Excel functionality
-                $('#exportToExcel').click(function() {
-                    // Prepare data for export
-                    const data = [
-                        ['Metric', 'Value'],
-                        ['AI Services', <?= $totalAI ?>],
-                        ['Target Percentage', <?= $aiPercentage ?> + '%'],
-                        ['Report Rating', <?= $reportPercentage ?> + '%']
-                    ];
-                    
-                    // Create worksheet
-                    const ws = XLSX.utils.aoa_to_sheet(data);
-                    
-                    // Create workbook
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "AIServicesData");
-                    
-                    // Generate file name
-                    let fileName = 'AI_Services_';
-                    let centerCode = '<?= $centerCode ?>';
-
-                    if (<?= $selectedYear ?>) fileName += <?= $selectedYear ?> + '_';
-                    if (<?= $selectedMonths ? json_encode(implode('-', $selectedMonths)) : 'null' ?>) fileName += <?= $selectedMonths ? json_encode(implode('-', $selectedMonths)) : 'null' ?> + '_';
-                    if (<?= $selectedWeek ?? 'null' ?>) fileName += <?= $selectedWeek ?? 'null' ?>;
-
-                    fileName += '_' + centerCode ;  
-                    fileName += '.xlsx';
-                    
-                    // Export to Excel
-                    XLSX.writeFile(wb, fileName);
-                });
             });
 
             // Add fade-in animation to elements when scrolling

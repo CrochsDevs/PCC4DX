@@ -9,21 +9,37 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
     exit;
 }
 
-// Define target value for grand total only
-$targetValues = [
-    'grand_total' => 5000
-];
-
 class DashboardManager {
     private $db;
     private $centerCode;
-    
-    public function __construct($db, $centerCode) {
+    private $targetValue;
+    private $selectedYear;
+
+    public function __construct($db, $centerCode, $selectedYear = null) {
         $this->db = $db;
         $this->centerCode = $centerCode;
+        $this->selectedYear = $selectedYear ?? date('Y');
+        $this->targetValue = $this->fetchTarget($this->centerCode, $this->selectedYear);
     }
-    
-    // Get cumulative totals (all-time)
+
+    private function fetchTarget($centerCode, $year) {
+        $targetQuery = "SELECT target FROM cd_target 
+                        WHERE center_code = :center_code AND year = :year";
+        $stmt = $this->db->prepare($targetQuery);
+        $stmt->execute([
+            ':center_code' => $centerCode,
+            ':year' => $year
+        ]);
+        $targetData = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $targetData['target'] ?? 0;
+    }
+
+    public function getTargetValue() {
+        return $this->targetValue;
+    }
+
+    // All existing methods refactored from your code follow
+
     public function getSummaryData() {
         $query = "SELECT 
                     SUM(ai) as total_ai,
@@ -33,14 +49,11 @@ class DashboardManager {
                     SUM(ai + bep + ih + private) as grand_total
                   FROM calf_drop 
                   WHERE center = :center";
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute([':center' => $this->centerCode]);
-        
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
-    // Get yearly summary data
+
     public function getYearlySummaryData($year = null) {
         $query = "SELECT 
                     SUM(ai) as total_ai,
@@ -50,21 +63,16 @@ class DashboardManager {
                     SUM(ai + bep + ih + private) as grand_total
                   FROM calf_drop 
                   WHERE center = :center";
-        
         $params = [':center' => $this->centerCode];
-        
         if ($year !== null) {
             $query .= " AND YEAR(date) = :year";
             $params[':year'] = $year;
         }
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-        
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
-    // Get filtered data for charts
+
     public function getFilteredData($year = null, $months = null, $week = null) {
         $query = "SELECT 
                     SUM(ai) as total_ai,
@@ -74,14 +82,12 @@ class DashboardManager {
                     SUM(ai + bep + ih + private) as grand_total
                   FROM calf_drop 
                   WHERE center = :center";
-        
         $params = [':center' => $this->centerCode];
-        
+
         if ($year !== null) {
             $query .= " AND YEAR(date) = :year";
             $params[':year'] = $year;
         }
-        
         if ($months !== null && !empty($months)) {
             if (is_array($months)) {
                 $placeholders = [];
@@ -95,18 +101,15 @@ class DashboardManager {
                 $params[':month'] = $months;
             }
         }
-        
         if ($week !== null) {
             $query .= " AND WEEK(date, 1) = :week";
             $params[':week'] = $week;
         }
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-        
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
+
     public function getMonthlyData($year = null, $months = null) {
         $query = "SELECT 
                     YEAR(date) as year,
@@ -117,14 +120,11 @@ class DashboardManager {
                     SUM(private) as private
                   FROM calf_drop 
                   WHERE center = :center";
-        
         $params = [':center' => $this->centerCode];
-        
         if ($year !== null) {
             $query .= " AND YEAR(date) = :year";
             $params[':year'] = $year;
         }
-        
         if ($months !== null && !empty($months)) {
             if (is_array($months)) {
                 $placeholders = [];
@@ -138,17 +138,14 @@ class DashboardManager {
                 $params[':month'] = $months;
             }
         }
-        
         $query .= " GROUP BY YEAR(date), MONTH(date)
                     ORDER BY year DESC, month DESC
                     LIMIT 12";
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     public function getYearlyData() {
         $query = "SELECT 
                     YEAR(date) as year,
@@ -161,38 +158,31 @@ class DashboardManager {
                   GROUP BY YEAR(date)
                   ORDER BY year DESC
                   LIMIT 5";
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute([':center' => $this->centerCode]);
-        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     public function getAvailableYears() {
         $query = "SELECT DISTINCT YEAR(date) as year 
                   FROM calf_drop 
                   WHERE center = :center
                   ORDER BY year DESC";
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute([':center' => $this->centerCode]);
-        
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
-    
+
     public function getWeeksInMonth($year, $months) {
         if (empty($months)) return [];
-        
         $query = "SELECT DISTINCT WEEK(date, 1) as week 
                   FROM calf_drop 
                   WHERE center = :center 
                   AND YEAR(date) = :year";
-        
         $params = [
             ':center' => $this->centerCode,
             ':year' => $year
         ];
-        
         if (is_array($months)) {
             $monthParams = [];
             foreach ($months as $i => $month) {
@@ -205,18 +195,14 @@ class DashboardManager {
             $query .= " AND MONTH(date) = :month";
             $params[':month'] = $months;
         }
-        
         $query .= " ORDER BY week";
-        
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-        
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     public function getDailyData($year, $months, $week) {
         if (empty($months)) return [];
-    
         $query = "SELECT 
                     DAYNAME(date) as day_name,
                     DATE_FORMAT(date, '%Y-%m-%d') as full_date,
@@ -229,13 +215,11 @@ class DashboardManager {
                   WHERE center = :center
                   AND YEAR(date) = :year
                   AND WEEK(date, 1) = :week";
-    
         $params = [
             ':center' => $this->centerCode,
             ':year' => $year,
             ':week' => $week
         ];
-    
         if (!empty($months)) {
             $placeholders = [];
             foreach ($months as $i => $month) {
@@ -244,64 +228,55 @@ class DashboardManager {
             }
             $query .= " AND MONTH(date) IN (" . implode(',', $placeholders) . ")";
         }
-    
         $query .= " GROUP BY DAYNAME(date), DATE_FORMAT(date, '%Y-%m-%d'), DAYOFWEEK(date)
                     ORDER BY DAYOFWEEK(date)";
-    
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-    
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getReportRatingData($year = null) {
-        $startDate = $year ? "{$year}-01-01" : "{$year}-01-01";
-    
+        $startDate = $year ? "{$year}-01-01" : date('Y-01-01');
         $query = "
             SELECT 
-                -- Count unique dates from calf_drop table
-                unique_dates,
-            
-                workdays,
-            
-                ROUND((unique_dates / workdays) * 100, 2) AS percentage
-            FROM (
-                SELECT 
-                    -- Count unique dates from the calf_drop table
-                    (SELECT COUNT(DISTINCT date) 
-                     FROM pcc_auth_system.calf_drop 
-                     WHERE center = :center AND date >= :startDate AND date <= CURDATE()) AS unique_dates,
+                (SELECT COUNT(DISTINCT date) 
+                 FROM pcc_auth_system.calf_drop 
+                 WHERE center = :center AND date >= :startDate AND date <= CURDATE()) AS unique_dates,
     
-                    (SELECT COUNT(*) 
-                     FROM (
-                        SELECT ADDDATE(:startDate, INTERVAL n DAY) AS workday
-                        FROM (SELECT @rownum := @rownum + 1 AS n 
-                              FROM information_schema.columns, (SELECT @rownum := 0) r 
-                              LIMIT 365) days
-                        WHERE DAYOFWEEK(ADDDATE(:startDate, INTERVAL n DAY)) NOT IN (1, 7)  -- Exclude Sundays and Saturdays
-                        AND ADDDATE(:startDate, INTERVAL n DAY) <= CURDATE()  -- Ensure date is within current date
-                     ) workdays) AS workdays
-            ) AS result
+                (SELECT COUNT(*) 
+                 FROM (
+                    SELECT ADDDATE(:startDate, INTERVAL n DAY) AS workday
+                    FROM (SELECT @rownum := @rownum + 1 AS n 
+                          FROM information_schema.columns, (SELECT @rownum := 0) r 
+                          LIMIT 365) days
+                    WHERE DAYOFWEEK(ADDDATE(:startDate, INTERVAL n DAY)) NOT IN (1, 7)
+                    AND ADDDATE(:startDate, INTERVAL n DAY) <= CURDATE()
+                 ) workdays) AS workdays,
+    
+                ROUND(((SELECT COUNT(DISTINCT date) 
+                 FROM pcc_auth_system.calf_drop 
+                 WHERE center = :center AND date >= :startDate AND date <= CURDATE()) / 
+                (SELECT COUNT(*) 
+                 FROM (
+                    SELECT ADDDATE(:startDate, INTERVAL n DAY) AS workday
+                    FROM (SELECT @rownum := @rownum + 1 AS n 
+                          FROM information_schema.columns, (SELECT @rownum := 0) r 
+                          LIMIT 365) days
+                    WHERE DAYOFWEEK(ADDDATE(:startDate, INTERVAL n DAY)) NOT IN (1, 7)
+                    AND ADDDATE(:startDate, INTERVAL n DAY) <= CURDATE()
+                 ) workdays)) * 100, 2) AS percentage
         ";
-    
         $stmt = $this->db->prepare($query);
         $stmt->execute([
             ':center' => $this->centerCode,
             ':startDate' => $startDate
         ]);
-        
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function calculateGrading($targetValue, $actualAchieved, $reportPercentage) {
-        // Calculate Accomplished Rating
-        $accomplishedRating = ($actualAchieved / $targetValue) * 100;
-        
-        
-        // Calculate Final Score
-        $finalScore = ($reportPercentage) + ($accomplishedRating) / 2;
-        
-        // Determine Grade
+        $accomplishedRating = $targetValue > 0 ? ($actualAchieved / $targetValue) * 100 : 0;
+        $finalScore = ($reportPercentage + $accomplishedRating) / 2;
         $grade = '';
         if ($finalScore >= 90) {
             $grade = 'A (Excellent)';
@@ -314,26 +289,24 @@ class DashboardManager {
         } else {
             $grade = 'F (Poor)';
         }
-        
         return [
             'accomplished_rating' => round($accomplishedRating, 2),
             'final_score' => round($finalScore, 2),
             'grade' => $grade,
         ];
     }
-
 }
 
 // Handle AJAX request for weeks
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
-    
+
     $year = $_GET['year'] ?? null;
     $months = isset($_GET['months']) ? explode(',', $_GET['months']) : null;
     $centerCode = $_SESSION['center_code'];
-    
+
     if ($year && $months) {
-        $dashboardManager = new DashboardManager($conn, $centerCode);
+        $dashboardManager = new DashboardManager($conn, $centerCode, $year);
         $weeks = $dashboardManager->getWeeksInMonth($year, $months);
         echo json_encode($weeks);
     } else {
@@ -343,30 +316,24 @@ if (isset($_GET['ajax'])) {
 }
 
 $centerCode = $_SESSION['center_code'];
-$dashboardManager = new DashboardManager($conn, $centerCode);
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
 
-// Get current year and month for default filter
+$dashboardManager = new DashboardManager($conn, $centerCode, $selectedYear);
+
 $currentYear = date('Y');
 $currentMonth = date('n');
 $availableYears = $dashboardManager->getAvailableYears();
 
-// Get filter parameters from request
-$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $currentYear;
 $selectedMonths = isset($_GET['months']) ? array_map('intval', explode(',', $_GET['months'])) : null;
 $selectedWeek = isset($_GET['week']) ? (int)$_GET['week'] : null;
 
-// Get available weeks only if months are selected
 $availableWeeks = $selectedMonths ? $dashboardManager->getWeeksInMonth($selectedYear, $selectedMonths) : [];
 
-// Get summary data based on selected year
 $summaryData = $dashboardManager->getYearlySummaryData($selectedYear);
-
-// Get filtered data for charts
 $filteredData = $dashboardManager->getFilteredData($selectedYear, $selectedMonths, $selectedWeek);
 $monthlyData = $dashboardManager->getMonthlyData($selectedYear, $selectedMonths);
 $yearlyData = $dashboardManager->getYearlyData();
 
-// Prepare data for charts
 function prepareChartData($data) {
     $labels = [];
     $aiData = [];
@@ -385,7 +352,6 @@ function prepareChartData($data) {
         $ihData[] = $item['ih'];
         $privateData[] = $item['private'];
     }
-
     return [
         'labels' => $labels,
         'aiData' => $aiData,
@@ -400,7 +366,6 @@ if ($selectedWeek && $selectedMonths) {
     $dailyData = $dashboardManager->getDailyData($selectedYear, $selectedMonths, $selectedWeek);
 }
 
-// Prepare daily chart data
 $dailyChartData = [
     'labels' => [],
     'dates' => [],
@@ -419,25 +384,22 @@ foreach ($dailyData as $day) {
     $dailyChartData['privateData'][] = $day['private'];
 }
 
-// Get report rating data for the selected year
 $reportRatingData = $dashboardManager->getReportRatingData($selectedYear);
 
-// Extract the unique_date, workdays, and report percentage
 $uniqueDates = $reportRatingData['unique_dates'] ?? 0;
 $workdays = $reportRatingData['workdays'] ?? 0;
 $reportPercentage = $reportRatingData['percentage'] ?? 0;
 
-
-
 $monthlyChartData = prepareChartData($monthlyData);
 $yearlyChartData = prepareChartData($yearlyData);
 
-// Calculate percentages against targets
-$grandTotal = $filteredData['grand_total'] ?? $summaryData['grand_total'] ?? 0;
-$grandTotalPercentage = round(($grandTotal / $targetValues['grand_total']) * 100);
+$targetValue = $dashboardManager->getTargetValue();
 
-// Calculate percentages of each category against grand total
-$filteredTotals = $filteredData ? $filteredData : $summaryData;
+$grandTotal = $filteredData['grand_total'] ?? $summaryData['grand_total'] ?? 0;
+$grandTotalPercentage = $targetValue > 0 ? round(($grandTotal / $targetValue) * 100) : 0;
+
+$filteredTotals = $filteredData ?: $summaryData;
+
 $aiPercentage = $grandTotal > 0 ? round(($filteredTotals['total_ai'] / $grandTotal) * 100) : 0;
 $bepPercentage = $grandTotal > 0 ? round(($filteredTotals['total_bep'] / $grandTotal) * 100) : 0;
 $ihPercentage = $grandTotal > 0 ? round(($filteredTotals['total_ih'] / $grandTotal) * 100) : 0;
@@ -450,9 +412,19 @@ $totalPrivate = $filteredData['total_private'] ?? 0;
 
 $totalSum = $totalAI + $totalBEP + $totalIH + $totalPrivate;
 
-// Determine status for grand total
 $grandTotalStatus = '';
 $grandTotalStatusClass = '';
+
+if ($selectedMonths && is_array($selectedMonths) && count($selectedMonths) > 0) {
+    $monthsText = implode(', ', $selectedMonths);
+} else {
+    $monthsText = '1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12';
+}
+
+$yearText = $selectedYear ?? date('Y');
+
+$filterSummaryText = "Based on selected filters Year: {$yearText} | Month(s): {$monthsText}";
+
 if ($grandTotalPercentage >= 100) {
     $grandTotalStatus = 'Excellent! Target exceeded';
     $grandTotalStatusClass = 'text-green-600';
@@ -470,14 +442,19 @@ if ($grandTotalPercentage >= 100) {
     $grandTotalStatusClass = 'text-red-500';
 }
 
-// Calculate grading
-$gradingData = $dashboardManager->calculateGrading(
-    $targetValues['grand_total'],
+$gradingData = $targetValue > 0 ? $dashboardManager->calculateGrading(
+    $targetValue,
     $grandTotal,
-    $reportPercentage,
-    1, 
-    1   
-);
+    $reportPercentage
+) : [
+    'accomplished_rating' => 0,
+    'final_score' => 0,
+    'grade' => 'N/A (No target set)'
+];
+
+
+// Calculate percentages against targets
+$grandTotalPercentage = $targetValue > 0 ? round(($grandTotal / $targetValue) * 100) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -529,7 +506,7 @@ $gradingData = $dashboardManager->calculateGrading(
         }
         .progress-text {
             margin-top: 5px;
-            font-size: 0.8rem;
+            font-size: 1rem;
             color: #6b7280;
         }
         .status-indicator {
@@ -604,19 +581,6 @@ $gradingData = $dashboardManager->calculateGrading(
         .filter-btn.active {
             background: #3b82f6;
             color: white;
-        }
-        .export-btn {
-            padding: 6px 12px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .export-btn:hover {
-            background: #059669;
         }
 
         .chart-container {
@@ -773,55 +737,65 @@ $gradingData = $dashboardManager->calculateGrading(
                 </div>
             </div>
 
-            <div class="export-btn-container">
-                <button id="exportToExcel" class="export-btn">Export</button>
-            </div>
         </div>
         
         <!-- Dashboard Content -->
         <div class="container mx-auto px-4 py-8">
             <!-- Top Row - 3 Columns -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
                 <!-- Grand Total Card -->
                 <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-gray-500 font-medium">Grand Total</p>
                             <h3 class="text-2xl font-bold" style="color: <?= 
-                                $grandTotalPercentage >= 100 ? '#10b981' : 
+                                $targetValue > 0 ? ($grandTotalPercentage >= 100 ? '#10b981' : 
                                 ($grandTotalPercentage >= 80 ? '#3b82f6' : 
-                                ($grandTotalPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                                ($grandTotalPercentage >= 50 ? '#f59e0b' : '#ef4444'))) : '#6b7280' ?>;">
                                 <?= number_format($summaryData['grand_total'] ?? 0) ?>
                             </h3>
-                            <p class="text-sm mt-1">
-                                <span class="status-indicator <?= 
-                                    $grandTotalPercentage >= 100 ? 'status-excellent' : 
-                                    ($grandTotalPercentage >= 95 ? 'status-achieved' : 
-                                    ($grandTotalPercentage >= 60 ? 'status-progress' : 'status-low')) ?>">
-                                    <?= $grandTotalStatus ?>
-                                    <i class="fas <?= 
-                                        $grandTotalPercentage >= 100 ? 'fa-check-circle' : 
-                                        ($grandTotalPercentage >= 60 ? 'fa-arrow-up' : 'fa-arrow-down') ?> ml-1"></i>
-                                </span>
-                            </p>
+                            <?php if ($targetValue == 0): ?>
+                                <p class="text-sm mt-1 text-red-600">
+                                    ⚠️ No target set for the selected year (<?= htmlspecialchars($selectedYear) ?>)
+                                </p>
+                            <?php else: ?>
+                                <p class="text-sm mt-1">
+                                    <span class="status-indicator <?= 
+                                        $grandTotalPercentage >= 100 ? 'status-excellent' : 
+                                        ($grandTotalPercentage >= 95 ? 'status-achieved' : 
+                                        ($grandTotalPercentage >= 60 ? 'status-progress' : 'status-low')) ?>">
+                                        <?= $grandTotalStatus ?>
+                                        <i class="fas <?= 
+                                            $grandTotalPercentage >= 100 ? 'fa-check-circle' : 
+                                            ($grandTotalPercentage >= 60 ? 'fa-arrow-up' : 'fa-arrow-down') ?> ml-1"></i>
+                                    </span>
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <div class="bg-red-100 p-3 rounded-full">
                             <i class="fas fa-chart-pie text-red-600 text-xl"></i>
                         </div>
                     </div>
                     <div class="mt-4">
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width: <?= min($grandTotalPercentage, 100) ?>%; 
-                                background-color: <?= 
-                                    $grandTotalPercentage >= 100 ? '#10b981' : 
-                                    ($grandTotalPercentage >= 80 ? '#3b82f6' : 
-                                    ($grandTotalPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                        <?php if ($targetValue > 0): ?>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: <?= min($grandTotalPercentage, 100) ?>%; 
+                                    background-color: <?= 
+                                        $grandTotalPercentage >= 100 ? '#10b981' : 
+                                        ($grandTotalPercentage >= 80 ? '#3b82f6' : 
+                                        ($grandTotalPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
+                                </div>
+                                <div class="target-marker" style="left: 100%"></div>
                             </div>
-                            <div class="target-marker" style="left: 100%"></div>
-                        </div>
-                        <div class="progress-text">
-                            <?= $grandTotalPercentage ?>% of target (<?= number_format($summaryData['grand_total'] ?? 0) ?>/<?= number_format($targetValues['grand_total']) ?>)
-                        </div>
+                            <div class="progress-text text-large mt-2">
+                                <?= $grandTotalPercentage ?>% of target (<?= number_format($summaryData['grand_total'] ?? 0) ?>/<?= number_format($targetValue) ?>)
+                            </div>
+                        <?php else: ?>
+                            <div class="progress-text text-gray-500">
+                                No target set for <?= $selectedYear ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -830,41 +804,47 @@ $gradingData = $dashboardManager->calculateGrading(
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-gray-500 font-medium">Performance Grade</p>
-                            <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
-                            <p class="text-sm mt-1">
-                                <span class="status-indicator <?= 
-                                    $gradingData['final_score'] >= 90 ? 'status-excellent' : 
-                                    ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
-                                    ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
-                                    Score: <?= $gradingData['final_score'] ?>%
-                                </span>
-                            </p>
+                            <?php if ($targetValue == 0): ?>
+                                <h3 class="text-lg font-semibold text-red-600">⚠️ No target set for <?= htmlspecialchars($selectedYear) ?></h3>
+                                <p class="text-sm mt-1 text-gray-500">Grading is skipped due to missing target.</p>
+                            <?php else: ?>
+                                <h3 class="text-2xl font-bold text-purple-600"><?= $gradingData['grade'] ?></h3>
+                                <p class="text-sm mt-1">
+                                    <span class="status-indicator <?= 
+                                        $gradingData['final_score'] >= 90 ? 'status-excellent' : 
+                                        ($gradingData['final_score'] >= 80 ? 'status-achieved' : 
+                                        ($gradingData['final_score'] >= 70 ? 'status-progress' : 'status-low')) ?>">
+                                        Score: <?= $gradingData['final_score'] ?>%
+                                    </span>
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <div class="bg-purple-100 p-3 rounded-full">
                             <i class="fas fa-star text-purple-600 text-xl"></i>
                         </div>
                     </div>
-                    <div class="mt-2">
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width: <?= min($gradingData['final_score'], 100) ?>%; 
-                                background-color: <?= 
-                                    $gradingData['final_score'] >= 90 ? '#10b981' : 
-                                    ($gradingData['final_score'] >= 80 ? '#3b82f6' : 
-                                    ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
-                            </div>
-                        </div>
-                        <div class="progress-text text-xs mt-2">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
-                                    <h2><?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays </h2>
-                                </div>
-                                <div>
-                                    <span class="font-medium">Achievement:</span> <?= $gradingData['accomplished_rating'] ?>% 
+                    <?php if ($targetValue > 0): ?>
+                        <div class="mt-4">
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: <?= $gradingData['final_score'] ?>%; 
+                                    background-color: <?= 
+                                        $gradingData['final_score'] >= 90 ? '#10b981' : 
+                                        ($gradingData['final_score'] >= 80 ? '#3b82f6' : 
+                                        ($gradingData['final_score'] >= 70 ? '#f59e0b' : '#ef4444')) ?>;">
                                 </div>
                             </div>
+                            <div class="progress-text text-large mt-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <span class="font-medium">Report Rating:</span> <?= $reportPercentage ?>%
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Achievement:</span> <?= $gradingData['accomplished_rating'] ?>% 
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Report Rating Card -->
@@ -898,7 +878,7 @@ $gradingData = $dashboardManager->calculateGrading(
                                     ($reportPercentage >= 50 ? '#f59e0b' : '#ef4444')) ?>;">
                             </div>
                         </div>
-                        <div class="progress-text">
+                        <div class="progress-text text-large mt-2">
                             <?= number_format($uniqueDates) ?> reports submitted out of <?= number_format($workdays) ?> workdays
                         </div>
                     </div>
@@ -908,81 +888,50 @@ $gradingData = $dashboardManager->calculateGrading(
             <!-- Bottom Row - 4 Columns -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 <!-- AI Services Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total AI</p>
-                            <h3 class="text-2xl font-bold text-indigo-600"><?= number_format($summaryData['total_ai'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-indigo-100 p-3 rounded-full">
-                            <i class="fas fa-cow text-indigo-600 text-xl"></i>
-                        </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover fade-in flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 font-medium mb-2">Total AI</p>
+                        <h3 class="text-4xl font-extrabold text-indigo-600"><?= number_format($summaryData['total_ai'] ?? 0) ?></h3>
                     </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-indigo-600 rounded-full" style="width: <?= $aiPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $aiPercentage ?>% of total</p>
+                    <div class="bg-indigo-100 p-5 rounded-full">
+                        <i class="fas fa-cow text-indigo-600 text-3xl"></i>
                     </div>
                 </div>
 
                 <!-- BEP Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total BEP</p>
-                            <h3 class="text-2xl font-bold text-blue-600"><?= number_format($summaryData['total_bep'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
-                        </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover fade-in flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 font-medium mb-2">Total BEP</p>
+                        <h3 class="text-4xl font-extrabold text-blue-600"><?= number_format($summaryData['total_bep'] ?? 0) ?></h3>
                     </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-blue-600 rounded-full" style="width: <?= $bepPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $bepPercentage ?>% of total</p>
+                    <div class="bg-blue-100 p-5 rounded-full">
+                        <i class="fas fa-chart-line text-blue-600 text-3xl"></i>
                     </div>
                 </div>
 
                 <!-- Total IH Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total IH</p>
-                            <h3 class="text-2xl font-bold text-green-600"><?= number_format($summaryData['total_ih'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-full">
-                            <i class="fas fa-home text-green-600 text-xl"></i>
-                        </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover fade-in flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 font-medium mb-2">Total IH</p>
+                        <h3 class="text-4xl font-extrabold text-green-600"><?= number_format($summaryData['total_ih'] ?? 0) ?></h3>
                     </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-green-600 rounded-full" style="width: <?= $ihPercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $ihPercentage ?>% of total</p>
+                    <div class="bg-green-100 p-5 rounded-full">
+                        <i class="fas fa-home text-green-600 text-3xl"></i>
                     </div>
                 </div>
 
                 <!-- Total Private Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-gray-500 font-medium">Total Private</p>
-                            <h3 class="text-2xl font-bold text-purple-600"><?= number_format($summaryData['total_private'] ?? 0) ?></h3>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-full">
-                            <i class="fas fa-lock text-purple-600 text-xl"></i>
-                        </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover fade-in flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 font-medium mb-2">Total Private</p>
+                        <h3 class="text-4xl font-extrabold text-purple-600"><?= number_format($summaryData['total_private'] ?? 0) ?></h3>
                     </div>
-                    <div class="mt-4">
-                        <div class="h-2 bg-gray-200 rounded-full">
-                            <div class="h-2 bg-purple-600 rounded-full" style="width: <?= $privatePercentage ?>%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2"><?= $privatePercentage ?>% of total</p>
+                    <div class="bg-purple-100 p-5 rounded-full">
+                        <i class="fas fa-lock text-purple-600 text-3xl"></i>
                     </div>
                 </div>
             </div>
+
         </div>
 
             <!-- Charts Section -->
@@ -1007,67 +956,71 @@ $gradingData = $dashboardManager->calculateGrading(
                     </div>
                 </div>
 
-                <!-- Line Chart (showing filtered data) -->
+               
+                 <!-- Pie Chart (showing filtered data) -->
                 <div class="bg-white p-6 rounded-xl shadow-md fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">Category Breakdown</h2>
+                        <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars($filterSummaryText) ?></p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 h-96">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <?php foreach (['ai', 'bep', 'ih', 'private'] as $category): 
+                                $current = $filteredData['total_'.$category] ?? 0;
+                                $percentage = $grandTotal > 0 ? round(($current / $grandTotal) * 100) : 0;
+                                $color = [
+                                    'ai' => ['bg' => 'indigo-600', 'text' => 'indigo'],
+                                    'bep' => ['bg' => 'blue-600', 'text' => 'blue'],
+                                    'ih' => ['bg' => 'green-600', 'text' => 'green'],
+                                    'private' => ['bg' => 'purple-600', 'text' => 'purple']
+                                ][$category];
+                            ?>
+                            <div class="mb-6">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-4 h-4 bg-<?= $color['bg'] ?> rounded-full mr-2"></div>
+                                    <span class="text-sm font-medium uppercase"><?= $category ?></span>
+                                    <span class="ml-auto text-sm font-semibold">
+                                        <?= number_format($current) ?>
+                                    </span>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar bg-<?= $color['bg'] ?>" style="width: <?= $percentage ?>%"></div>
+                                </div>
+                                <div class="flex justify-between items-center mt-1">
+                                    <span class="text-xs text-gray-500">
+                                        <i class="fas <?= $statusIcon ?> mr-1"></i>
+                                        <span class="status-indicator <?= $statusClass ?>">
+                                            <?= $percentage ?>%
+                                        </span>
+                                    </span>
+                                </div>                          
+                            </div>
+                            <?php endforeach; ?>
+                            <!-- Display Total Sum -->
+                            <div class="mb-6">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-4 h-4 bg-gray-600 rounded-full mr-2"></div>
+                                    <span class="text-sm font-medium uppercase">Total</span>
+                                    <span class="ml-auto text-sm font-semibold"><?= number_format($totalSum) ?></span>
+                                </div>
+                            </div>  
+                        </div>
+                    </div>                                            
+                </div>
+
+            </div>
+
+             <!-- Line Chart (showing filtered data) -->
+            <div class="bg-white p-6 rounded-xl shadow-md fade-in mb-10">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-800">Trend Over Time</h2>    
                     </div>
                     <div class="h-80">
                         <canvas id="lineChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <!-- Pie Chart (showing filtered data) -->
-            <div class="bg-white p-6 rounded-xl shadow-md fade-in mb-10">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Category Breakdown</h2>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 h-96">
-                        <canvas id="pieChart"></canvas>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <?php foreach (['ai', 'bep', 'ih', 'private'] as $category): 
-                            $current = $filteredData['total_'.$category] ?? 0;
-                            $percentage = $grandTotal > 0 ? round(($current / $grandTotal) * 100) : 0;
-                            $color = [
-                                'ai' => ['bg' => 'indigo-600', 'text' => 'indigo'],
-                                'bep' => ['bg' => 'blue-600', 'text' => 'blue'],
-                                'ih' => ['bg' => 'green-600', 'text' => 'green'],
-                                'private' => ['bg' => 'purple-600', 'text' => 'purple']
-                            ][$category];
-                        ?>
-                        <div class="mb-6">
-                            <div class="flex items-center mb-2">
-                                <div class="w-4 h-4 bg-<?= $color['bg'] ?> rounded-full mr-2"></div>
-                                <span class="text-sm font-medium uppercase"><?= $category ?></span>
-                                <span class="ml-auto text-sm font-semibold">
-                                    <?= number_format($current) ?>
-                                </span>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-bar bg-<?= $color['bg'] ?>" style="width: <?= $percentage ?>%"></div>
-                            </div>
-                            <div class="flex justify-between items-center mt-1">
-                                <span class="text-xs text-gray-500">
-                                    <i class="fas <?= $statusIcon ?> mr-1"></i>
-                                    <span class="status-indicator <?= $statusClass ?>">
-                                        <?= $percentage ?>%
-                                    </span>
-                                </span>
-                            </div>                          
-                        </div>
-                        <?php endforeach; ?>
-                        <!-- Display Total Sum -->
-                        <div class="mb-6">
-                            <div class="flex items-center mb-2">
-                                <div class="w-4 h-4 bg-gray-600 rounded-full mr-2"></div>
-                                <span class="text-sm font-medium uppercase">Total</span>
-                                <span class="ml-auto text-sm font-semibold"><?= number_format($totalSum) ?></span>
-                            </div>
-                        </div>  
-                    </div>
-                </div>
+                    </div>                
             </div>
         </div>
 
@@ -1648,40 +1601,6 @@ $gradingData = $dashboardManager->calculateGrading(
                     window.location.search = currentParams.toString();
                 }
                 
-                // Export to Excel functionality
-                $('#exportToExcel').click(function() {
-                    // Prepare data for export
-                    const data = [
-                        ['Category', 'Count', 'Percentage of Total'],
-                        ['AI', <?= $filteredData['total_ai'] ?? 0 ?>, <?= $aiPercentage ?> + '%'],
-                        ['BEP', <?= $filteredData['total_bep'] ?? 0 ?>, <?= $bepPercentage ?> + '%'],
-                        ['IH', <?= $filteredData['total_ih'] ?? 0 ?>, <?= $ihPercentage ?> + '%'],
-                        ['Private', <?= $filteredData['total_private'] ?? 0 ?>, <?= $privatePercentage ?> + '%'],
-                        ['Grand Total', <?= $grandTotal ?>, <?= $grandTotalPercentage ?> + '%']
-                    ];
-                    
-                    // Create worksheet
-                    const ws = XLSX.utils.aoa_to_sheet(data);
-                    
-                    // Create workbook
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "CalfDropData");
-                    
-                    // Generate file name
-                    let fileName = 'CalfDrop_';
-                    let centerCode = '<?= $centerCode ?>';
-
-                    if (<?= $selectedYear ?>) fileName += <?= $selectedYear ?> + '_';
-                    if (<?= $selectedMonth ?? 'null' ?>) fileName += <?= $selectedMonth ?? 'null' ?> + '_';
-                    if (<?= $selectedWeek ?? 'null' ?>) fileName += <?= $selectedWeek ?? 'null' ?>;
-
-                    fileName += '_' + centerCode ;  
-
-                    fileName += '.xlsx';
-                    
-                    // Export to Excel
-                    XLSX.writeFile(wb, fileName);
-                });
             });
 
             // Add fade-in animation to elements when scrolling

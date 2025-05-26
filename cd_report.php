@@ -20,9 +20,11 @@ class ReportManager {
     
     public function getReports($year = null, $month = null, $week = null, $date = null) {
         $query = "SELECT *, 
-                  (ai + bep + ih + private) as total 
-                  FROM calf_drop 
-                  WHERE center = :center";
+                remarks, 
+                (ai + bep + ih + private) as total 
+                FROM calf_drop 
+                WHERE center = :center";
+
         $params = [':center' => $this->centerCode];
         
         if ($date) {
@@ -308,6 +310,12 @@ $reports = $reportManager->getReports($year, $month, $week);
             let currentYear = null;
             let currentMonth = null;
             let currentWeek = null;
+
+            function formatDate(dateString) {
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                const dateObj = new Date(dateString);
+                return dateObj.toLocaleDateString('en-US', options);
+            }
             
             // Load available years
             function loadYears() {
@@ -365,17 +373,19 @@ $reports = $reportManager->getReports($year, $month, $week);
                                         <th>BEP</th>
                                         <th>IH</th>
                                         <th>Private</th>
+                                        <th>Remarks</th>
                                         <th>Total</th>
                                     </tr>
-                                            <tr class="total-row" style="background-color:rgb(125, 139, 139);">
-                                                <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong></strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.ai}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.bep}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.ih}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.private}</strong></td>
-                                                <td style="color: black; font-weight: bold;"><strong>${data.totals.total}</strong></td>
-                                            </tr>
+                                        <tr class="total-row" style="background-color:rgb(125, 139, 139);">
+                                            <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
+                                            <td style="color: black; font-weight: bold;"></td>
+                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.ai}</strong></td>
+                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.bep}</strong></td>
+                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.ih}</strong></td>
+                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.private}</strong></td>
+                                            <td style="color: black; font-weight: bold;"></td>
+                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.total}</strong></td>
+                                        </tr>
                                     </thead>
                                     <tbody>`;
                             
@@ -399,12 +409,13 @@ $reports = $reportManager->getReports($year, $month, $week);
 
                                         html += `
                                         <tr class="${rowClass}">
-                                            <td>${row.date}</td>
+                                            <td>${formatDate(row.date)}</td>
                                             <td>${dayOfWeek}</td>
                                             <td>${row.ai}</td>
                                             <td>${row.bep}</td>
                                             <td>${row.ih}</td>
                                             <td>${row.private}</td>
+                                            <td>${row.remarks ? row.remarks : ''}</td>
                                             <td>${row.total}</td>
                                         </tr>`;
                                     });
@@ -484,74 +495,80 @@ $reports = $reportManager->getReports($year, $month, $week);
             });
 
             $('#exportToExcel').click(function() {
-                const today = new Date();
-                const dateStr = today.toISOString().split('T')[0];
-
-                let weekNumber;
-                if (!currentWeek) {
-                    if (!currentMonth) {
-                        alert("Please select a month to export the report.");
-                        return;
-                    }
-                    const firstDayOfMonth = new Date(today.getFullYear(), currentMonth - 1, 1);
-                    const firstWeekOfMonth = Math.ceil((firstDayOfMonth.getDate() - firstDayOfMonth.getDay() + 1) / 7);
-                    weekNumber = firstWeekOfMonth;
-                } else {
-                    weekNumber = currentWeek;
+                if (!currentYear) {
+                    alert("Please select a year to export the report.");
+                    return;
+                }
+                if (!currentMonth) {
+                    alert("Please select a month to export the report.");
+                    return;
                 }
 
-                // Updated CSV header to include "Day"
-                let csvContent = "Date,Day,AI,BEP,IH,Private,Total\n";
+                // Use current selected week or empty string if none
+                const weekNumber = currentWeek || '';
 
-                const centerName = centerCode;
+                // Header for CSV
+                let csvContent = "Date,Day,AI,BEP,IH,Private,Remarks,Total\n";
+
+                // Get totals row cells, note: your total row's TD structure:
+                // 0: Total label, 1: empty, 2: AI total, 3: BEP total, 4: IH total, 5: Private total, 6: empty, 7: Total total
                 const totalsRow = $('.report-table .total-row');
                 if (totalsRow.length) {
                     const totalsCells = totalsRow.find('td');
                     const totals = [
-                        `Total ${centerName}`,      // Date column becomes center + Total
-                        "",                         // No day for total row
-                        totalsCells.eq(1).text().trim(), // AI
-                        totalsCells.eq(2).text().trim(), // BEP
-                        totalsCells.eq(3).text().trim(), // IH
-                        totalsCells.eq(4).text().trim(), // Private
-                        totalsCells.eq(5).text().trim()  // Total
+                        `Total ${centerCode}`,          // Date column with center + Total label
+                        "",                            // Day empty
+                        totalsCells.eq(2).text().trim(), // AI total (index 2)
+                        totalsCells.eq(3).text().trim(), // BEP total (index 3)
+                        totalsCells.eq(4).text().trim(), // IH total (index 4)
+                        totalsCells.eq(5).text().trim(), // Private total (index 5)
+                        "",                            // Remarks empty for totals row
+                        totalsCells.eq(7).text().trim()  // Total total (index 7)
                     ];
                     csvContent += totals.join(',') + '\n';
                 }
 
-                $('.report-table tbody tr').each(function() {
+                // Iterate over each report row (skip total row)
+                $('.report-table tbody tr').not('.total-row').each(function() {
                     const cells = $(this).find('td');
-                    let date = cells.eq(0).text().trim();
+                    const rawDate = cells.eq(0).text().trim();
 
-                    // Fallback if date is malformed
-                    if (date === '#####') {
-                        date = today.toISOString().split('T')[0];
-                    }
+                    // Parse date string from table, assuming format like "May 10, 2025"
+                    const dateObj = new Date(rawDate);
+                    // Format date as yyyy-mm-dd for CSV
+                    const formattedDate = dateObj.toISOString().split('T')[0];
 
                     // Get day of week from date
-                    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
+                    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
 
                     const row = [
-                        date,                        // Date
-                        dayOfWeek,                  // Day
-                        cells.eq(2).text().trim(),  // AI
-                        cells.eq(3).text().trim(),  // BEP
-                        cells.eq(4).text().trim(),  // IH
-                        cells.eq(5).text().trim(),  // Private
-                        cells.eq(6).text().trim()   // Total
+                        formattedDate,                 // Date in yyyy-mm-dd
+                        dayOfWeek,                    // Day
+                        cells.eq(2).text().trim(),    // AI
+                        cells.eq(3).text().trim(),    // BEP
+                        cells.eq(4).text().trim(),    // IH
+                        cells.eq(5).text().trim(),    // Private
+                        '"' + cells.eq(6).text().trim().replace(/"/g, '""') + '"',  // Remarks (quoted to handle commas)
+                        cells.eq(7).text().trim()     // Total
                     ];
                     csvContent += row.join(',') + '\n';
                 });
 
+                // Prepare file name
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
+                const fileName = `CalfDrop_${centerCode}${weekNumber ? '_Week' + weekNumber : ''}_${dateStr}.csv`;
+
+                // Create and trigger download
                 const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
                 const link = document.createElement('a');
                 link.setAttribute('href', encodedUri);
-                link.setAttribute('download', `CalfDrop_${centerCode}_Week${weekNumber}_${dateStr}.csv`);
+                link.setAttribute('download', fileName);
                 document.body.appendChild(link);
-
                 link.click();
                 document.body.removeChild(link);
             });
+
 
 });
 
