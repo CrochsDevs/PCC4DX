@@ -425,7 +425,6 @@ $allCenters = $reportManager->getAllCenters();
                 });
             }
             
-            // Load reports based on current filters
             function loadReports() {
                 if (!currentCenter) {
                     $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
