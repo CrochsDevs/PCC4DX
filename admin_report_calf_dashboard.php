@@ -70,7 +70,6 @@ class CalfDropReportManager {
                   FROM pcc_auth_system.calf_drop
                   WHERE center = :center
                   ORDER BY year DESC";
-
         $stmt = $this->db->prepare($query);
         $stmt->execute([':center' => $centerCode]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
@@ -83,12 +82,11 @@ class CalfDropReportManager {
                   AND YEAR(date) = :year
                   AND MONTH(date) = :month
                   ORDER BY week";
-
         $stmt = $this->db->prepare($query);
         $stmt->execute([
             ':center' => $centerCode,
-            ':year'   => $year,
-            ':month'  => $month
+            ':year' => $year,
+            ':month' => $month
         ]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
@@ -141,15 +139,12 @@ if (isset($_GET['ajax'])) {
 
         default:
             echo json_encode(['error' => 'Invalid AJAX request']);
-            break;
     }
-
     exit;
 }
 
 $allCenters = $reportManager->getAllCenters();
 ?>
-
 
 
 <!DOCTYPE html>
@@ -478,19 +473,20 @@ $allCenters = $reportManager->getAllCenters();
                         let previousWeek = null;
                         let toggleColor = false;
 
-                            data.reports.forEach(row => {
-                                const dateObj = new Date(row.date);
-                                const firstJan = new Date(dateObj.getFullYear(), 0, 1);
-                                const pastDaysOfYear = (dateObj - firstJan) / 86400000;
-                                const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
+                        data.reports.forEach(row => {
+                            const dateObj = new Date(row.date);
+                            const firstJan = new Date(dateObj.getFullYear(), 0, 1);
+                            const pastDaysOfYear = (dateObj - firstJan) / 86400000;
+                            const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
 
                             if (week !== previousWeek) {
                                 toggleColor = !toggleColor;
                                 previousWeek = week;
                             }
 
-                                const rowClass = toggleColor ? 'week-grey' : 'week-white';
-                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
+                            const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                            const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                            const total = Number(row.ai) + Number(row.bep) + Number(row.ih) + Number(row.private);
 
                             html += `
                             <tr class="${rowClass}">
@@ -519,128 +515,137 @@ $allCenters = $reportManager->getAllCenters();
                 });
             }
 
-        // Load weeks for selected month/year
-        function loadWeeks(year, month) {
-            if (!currentCenter || !year || !month) {
-                $('#weekFilter').empty();
-                return;
-            }
-
-            $.ajax({
-                url: window.location.href.split('?')[0] + '?ajax=get_weeks',
-                type: 'GET',
-                data: { center: currentCenter, year: year, month: month },
-                success: function (weeks) {
-                    const weekFilter = $('#weekFilter').empty();
-
-                    weeks.forEach(week => {
-                        weekFilter.append(`<button class="filter-btn week-btn" data-week="${week}">Week ${week}</button>`);
-                    });
+            // Load available weeks for a month
+            function loadWeeks(year, month) {
+                if (!currentCenter || !year || !month) {
+                    $('#weekFilter').empty();
+                    return;
                 }
-            });
-        }
-
-        // EXPORT to CSV
-        $('#exportToExcel').click(function () {
-            if (!currentCenter) return;
-
-            const today = new Date().toISOString().split('T')[0];
-            const centerName = $('#centerSelect option:selected').text().replace(/\s+/g, '_');
-            let fileName = `AI_Services_${centerName}`;
-            if (currentYear) fileName += `_${currentYear}`;
-            if (currentMonth) fileName += `_Month${currentMonth}`;
-            if (currentWeek) fileName += `_Week${currentWeek}`;
-            fileName += `_${today}.csv`;
-
-            let csvContent = "Date,Day,AI Services,Remarks\n";
-
-            // Add total row
-            const totalRow = $('.report-table .total-row');
-            if (totalRow.length) {
-                const totalCells = totalRow.find('td');
-                csvContent += `Total,,${totalCells.eq(2).text().trim()},\n`;
+                
+                $.ajax({
+                    url: window.location.href.split('?')[0] + '?ajax=get_weeks',
+                    type: 'GET',
+                    data: { 
+                        center: currentCenter,
+                        year: year,
+                        month: month
+                    },
+                    success: function(weeks) {
+                        const weekFilter = $('#weekFilter');
+                        weekFilter.empty();
+                        
+                        if (weeks.length > 0) {
+                            weeks.forEach(week => {
+                                weekFilter.append(
+                                    `<button class="filter-btn week-btn" data-week="${week}">Week ${week}</button>`
+                                );
+                            });
+                        }
+                    }
+                });
             }
-
-            $('.report-table tbody tr').each(function () {
-                if (!$(this).hasClass('total-row')) {
-                    const cells = $(this).find('td');
-                    const row = [
-                        cells.eq(0).text().trim(),
-                        cells.eq(1).text().trim(),
-                        cells.eq(2).text().trim(),
-                        cells.eq(6).text().trim() // Remarks column
-                    ];
-                    csvContent += row.join(',') + '\n';
-                }
-            });
-
-            const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
-            const link = document.createElement('a');
-            link.setAttribute('href', encodedUri);
-            link.setAttribute('download', fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-
-        // Event: Center select changed
-        $('#centerSelect').change(function () {
-            currentCenter = $(this).val();
-            currentYear = null;
-            currentMonth = null;
-            currentWeek = null;
-
-            $('[data-year], [data-month], [data-week]').removeClass('active');
-            $('#weekFilter').empty();
-
+            
+            // Initialize the report
             updateExportButtonState();
-            loadYears();
+            
+            // Center selection change
+            $('#centerSelect').change(function() {
+                currentCenter = $(this).val();
+                currentYear = null;
+                currentMonth = null;
+                currentWeek = null;
+                
+                $('[data-year]').removeClass('active');
+                $('[data-month]').removeClass('active');
+                $('[data-week]').removeClass('active');
+                $('#weekFilter').empty();
+                
+                updateExportButtonState();
+                loadYears();
+            });
+            
+            // Event handlers for filter buttons
+            $(document).on('click', '[data-year]', function() {
+                currentYear = $(this).data('year');
+                currentMonth = null;
+                currentWeek = null;
+                
+                $('[data-year]').removeClass('active');
+                $(this).addClass('active');
+                $('[data-month]').removeClass('active');
+                $('#weekFilter').empty();
+                
+                loadReports();
+            });
+            
+            $(document).on('click', '[data-month]', function() {
+                currentMonth = $(this).data('month');
+                currentWeek = null;
+                
+                $('[data-month]').removeClass('active');
+                $(this).addClass('active');
+                
+                if (currentYear) {
+                    loadWeeks(currentYear, currentMonth);
+                }
+                
+                loadReports();
+            });
+            
+            $(document).on('click', '[data-week]', function() {
+                currentWeek = $(this).data('week');
+                
+                $('[data-week]').removeClass('active');
+                $(this).addClass('active');
+                
+                loadReports();
+            });
+
+            $('#exportToExcel').click(function() {
+                if (!currentCenter) return;
+                
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
+                const centerName = $('#centerSelect option:selected').text();
+                
+                let fileName = `AI_Services_${centerName.replace(/\s+/g, '_')}`;
+                if (currentYear) fileName += `_${currentYear}`;
+                if (currentMonth) fileName += `_Month${currentMonth}`;
+                if (currentWeek) fileName += `_Week${currentWeek}`;
+                fileName += `_${dateStr}.csv`;
+
+                let csvContent = "Date,Day,AI Services,Remarks\n";
+
+                // Add total row
+                const totalRow = $('.report-table .total-row');
+                if (totalRow.length) {
+                    const totalCells = totalRow.find('td');
+                    csvContent += `Total,,${totalCells.eq(2).text().trim()},\n`;
+                }
+
+                $('.report-table tbody tr').each(function() {
+                    if (!$(this).hasClass('total-row')) {
+                        const cells = $(this).find('td');
+                        const row = [
+                            cells.eq(0).text().trim(),  // Date
+                            cells.eq(1).text().trim(),  // Day
+                            cells.eq(2).text().trim(),  // AI Services
+                            cells.eq(3).text().trim()   // Remarks
+                        ];
+                        csvContent += row.join(',') + '\n';
+                    }
+                });
+
+                const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+
+                link.click();
+                document.body.removeChild(link);
+            });
         });
-
-        // Event: Year clicked
-        $(document).on('click', '[data-year]', function () {
-            currentYear = $(this).data('year');
-            currentMonth = null;
-            currentWeek = null;
-
-            $('[data-year]').removeClass('active');
-            $(this).addClass('active');
-            $('[data-month]').removeClass('active');
-            $('#weekFilter').empty();
-
-            loadReports();
-        });
-
-        // Event: Month clicked
-        $(document).on('click', '[data-month]', function () {
-            currentMonth = $(this).data('month');
-            currentWeek = null;
-
-            $('[data-month]').removeClass('active');
-            $(this).addClass('active');
-
-            if (currentYear) {
-                loadWeeks(currentYear, currentMonth);
-            }
-
-            loadReports();
-        });
-
-        // Event: Week clicked
-        $(document).on('click', '[data-week]', function () {
-            currentWeek = $(this).data('week');
-
-            $('[data-week]').removeClass('active');
-            $(this).addClass('active');
-
-            loadReports();
-        });
-
-        // Initial state
-        updateExportButtonState();
-    });
     </script>
-
-
 </body>
 </html>

@@ -53,12 +53,12 @@ class AIReportManager {
             $total += $row['aiServices'];
         }
 
-        $count = count($reports); // Add this
+        $count = count($reports); 
 
         return [
             'reports' => $reports,
             'total' => $total,
-            'count' => $count    // Include count in returned data
+            'count' => $count    
         ];
     }
 
@@ -438,7 +438,7 @@ $allCenters = $reportManager->getAllCenters();
                         year: currentYear,
                         month: currentMonth,
                         week: currentWeek
-                        
+
                     },
                     success: function(data) {
                         $('#loadingIndicator').hide();
