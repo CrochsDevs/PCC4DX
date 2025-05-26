@@ -9,71 +9,77 @@ if ($_SESSION['user']['center_code'] !== 'HQ') {
     exit;
 }
 
-class AIReportManager {
+class CalfDropReportManager {
     private $db;
-    
+
     public function __construct($db) {
         $this->db = $db;
     }
 
     public function getReports($centerCode, $year = null, $month = null, $week = null, $date = null) {
-        $query = "SELECT cdID, ai, bep, ih, private, date, remarks, center 
-                  FROM pcc_auth_system.calf_drop 
+        $query = "SELECT ai, bep, ih, private, remarks, date, center
+                  FROM pcc_auth_system.calf_drop
                   WHERE center = :center";
-    
         $params = [':center' => $centerCode];
-    
-        if ($year) {
-            $query .= " AND YEAR(date) = :year";
-            $params[':year'] = $year;
-        }
-        if ($month) {
-            $query .= " AND MONTH(date) = :month";
-            $params[':month'] = $month;
-        }
-        if ($week) {
-            $query .= " AND WEEK(date, 1) = :week";
-            $params[':week'] = $week;
-        }
+
         if ($date) {
             $query .= " AND date = :date";
             $params[':date'] = $date;
+        } else {
+            if ($year) {
+                $query .= " AND YEAR(date) = :year";
+                $params[':year'] = $year;
+            }
+            if ($month) {
+                $query .= " AND MONTH(date) = :month";
+                $params[':month'] = $month;
+            }
+            if ($week) {
+                $query .= " AND WEEK(date, 3) = :week";
+                $params[':week'] = $week;
+            }
         }
 
         $query .= " ORDER BY date DESC";
-
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
+
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $total = 0;
+        // Calculate totals
+        $totals = ['ai' => 0, 'bep' => 0, 'ih' => 0, 'private' => 0, 'total' => 0];
         foreach ($reports as $row) {
-            $total += $row['ai'];
+            $totals['ai'] += (int)$row['ai'];
+            $totals['bep'] += (int)$row['bep'];
+            $totals['ih'] += (int)$row['ih'];
+            $totals['private'] += (int)$row['private'];
+            $totals['total'] += (int)$row['ai'] + (int)$row['bep'] + (int)$row['ih'] + (int)$row['private'];
         }
+
+        $count = count($reports);
 
         return [
             'reports' => $reports,
-            'total' => $total,
-            'count' => count($reports)
+            'totals' => $totals,
+            'count' => $count
         ];
     }
 
     public function getAvailableYears($centerCode) {
-        $query = "SELECT DISTINCT YEAR(date) as year 
-                  FROM pcc_auth_system.calf_drop 
-                  WHERE center = :center 
+        $query = "SELECT DISTINCT YEAR(date) as year
+                  FROM pcc_auth_system.calf_drop
+                  WHERE center = :center
                   ORDER BY year DESC";
         $stmt = $this->db->prepare($query);
         $stmt->execute([':center' => $centerCode]);
-
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     public function getAvailableWeeks($year, $month, $centerCode) {
-        $query = "SELECT DISTINCT WEEK(date, 3) as week 
-                  FROM pcc_auth_system.calf_drop 
-                  WHERE center = :center 
-                  AND YEAR(date) = :year 
+        $query = "SELECT DISTINCT WEEK(date, 3) as week
+                  FROM pcc_auth_system.calf_drop
+                  WHERE center = :center
+                  AND YEAR(date) = :year
                   AND MONTH(date) = :month
                   ORDER BY week";
         $stmt = $this->db->prepare($query);
@@ -82,49 +88,46 @@ class AIReportManager {
             ':year' => $year,
             ':month' => $month
         ]);
-
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     public function getAllCenters() {
-        $query = "SELECT center_code, center_name 
-                  FROM centers 
-                  WHERE center_code != 'HQ' 
-                  ORDER BY center_name";
+        $query = "SELECT center_code, center_name FROM centers WHERE center_code != 'HQ' ORDER BY center_name";
         $stmt = $this->db->prepare($query);
         $stmt->execute();
-
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
-// Create the report manager
-$reportManager = new AIReportManager($conn);
+$reportManager = new CalfDropReportManager($conn);
 
 // Handle AJAX requests
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
-    
+
     switch ($_GET['ajax']) {
         case 'get_years':
-            echo isset($_GET['center'])
-                ? json_encode($reportManager->getAvailableYears($_GET['center']))
-                : json_encode([]);
+            if (isset($_GET['center'])) {
+                echo json_encode($reportManager->getAvailableYears($_GET['center']));
+            } else {
+                echo json_encode([]);
+            }
             break;
 
         case 'get_weeks':
-            echo (isset($_GET['year'], $_GET['month'], $_GET['center']))
-                ? json_encode($reportManager->getAvailableWeeks($_GET['year'], $_GET['month'], $_GET['center']))
-                : json_encode([]);
+            if (isset($_GET['year']) && isset($_GET['month']) && isset($_GET['center'])) {
+                echo json_encode($reportManager->getAvailableWeeks($_GET['year'], $_GET['month'], $_GET['center']));
+            } else {
+                echo json_encode([]);
+            }
             break;
 
         case 'get_reports':
             if (isset($_GET['center'])) {
-                $year = $_GET['year'] ?? null;
-                $month = $_GET['month'] ?? null;
-                $week = $_GET['week'] ?? null;
-                $date = $_GET['date'] ?? null;
-                echo json_encode($reportManager->getReports($_GET['center'], $year, $month, $week, $date));
+                $year = isset($_GET['year']) ? $_GET['year'] : null;
+                $month = isset($_GET['month']) ? $_GET['month'] : null;
+                $week = isset($_GET['week']) ? $_GET['week'] : null;
+                echo json_encode($reportManager->getReports($_GET['center'], $year, $month, $week));
             } else {
                 echo json_encode(['error' => 'Center not specified']);
             }
@@ -140,7 +143,6 @@ if (isset($_GET['ajax'])) {
     exit;
 }
 
-// Load all centers for default page
 $allCenters = $reportManager->getAllCenters();
 ?>
 
@@ -292,8 +294,8 @@ $allCenters = $reportManager->getAllCenters();
         <header class="mb-10">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="title">Artificial Insemination Reports</h1>
-                    <p class="subtitle">HQ Dashboard - View Center AI Reports</p>
+                    <h1 class="title">Calf Drop Reports</h1>
+                    <p class="subtitle">HQ Dashboard - View Center CD Reports</p>
                 </div>
             </div>
         </header>
@@ -441,56 +443,70 @@ $allCenters = $reportManager->getAllCenters();
                     success: function(data) {
                         $('#loadingIndicator').hide();
                         
-                        if (data.reports && data.reports.length > 0) {
-                            let html = `
-                                <table class="report-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Day</th>
-                                            <th>AI Services</th>
-                                            <th>Remarks</th>
-                                        </tr>
-                                        <tr class="total-row">
-                                            <td>Total</td>
-                                            <td>Count: ${data.count}</td>
-                                            <td>${data.total}</td>
-                                            <td></td>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                  
-                            let previousWeek = null;
-                            let toggleColor = false;
+                    if (data.reports && data.reports.length > 0) {
+                        let html = `
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Day</th>
+                                        <th>AI</th>
+                                        <th>BEP</th>
+                                        <th>IH</th>
+                                        <th>Private</th>
+                                        <th>Remarks</th>
+                                        <th>Total</th>
+                                    </tr>
+                                    <tr class="total-row">
+                                        <td>Total</td>
+                                        <td>Count: ${data.count}</td>
+                                        <td>${data.totals.ai}</td>
+                                        <td>${data.totals.bep}</td>
+                                        <td>${data.totals.ih}</td>
+                                        <td>${data.totals.private}</td>
+                                        <td></td>
+                                        <td>${data.totals.total}</td>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
 
-                            data.reports.forEach(row => {
-                                const dateObj = new Date(row.date);
-                                const firstJan = new Date(dateObj.getFullYear(), 0, 1);
-                                const pastDaysOfYear = (dateObj - firstJan) / 86400000;
-                                const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
+                        let previousWeek = null;
+                        let toggleColor = false;
 
-                                if (week !== previousWeek) {
-                                    toggleColor = !toggleColor;
-                                    previousWeek = week;
-                                }
+                        data.reports.forEach(row => {
+                            const dateObj = new Date(row.date);
+                            const firstJan = new Date(dateObj.getFullYear(), 0, 1);
+                            const pastDaysOfYear = (dateObj - firstJan) / 86400000;
+                            const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
 
-                                const rowClass = toggleColor ? 'week-grey' : 'week-white';
-                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
+                            if (week !== previousWeek) {
+                                toggleColor = !toggleColor;
+                                previousWeek = week;
+                            }
 
-                                html += `
-                                <tr class="${rowClass}">
-                                    <td>${row.date}</td>
-                                    <td>${dayOfWeek}</td>
-                                    <td>${row.aiServices}</td>
-                                    <td>${row.remarks ? row.remarks : ''}</td>
-                                </tr>`;
-                            });
+                            const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                            const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                            const total = Number(row.ai) + Number(row.bep) + Number(row.ih) + Number(row.private);
 
-                            html += `</tbody></table>`;
-                            $('#reportResults').html(html);
-                        } else {
-                            $('#reportResults').html('<div class="no-data">No data found for the selected filters</div>');
-                        }
+                            html += `
+                            <tr class="${rowClass}">
+                                <td>${row.date}</td>
+                                <td>${dayOfWeek}</td>
+                                <td>${row.ai}</td>
+                                <td>${row.bep}</td>
+                                <td>${row.ih}</td>
+                                <td>${row.private}</td>
+                                <td>${row.remarks ? row.remarks : ''}</td>
+                                <td>${total}</td>
+                            </tr>`;
+                        });
+
+                        html += `</tbody></table>`;
+                        $('#reportResults').html(html);
+                    } else {
+                        $('#reportResults').html('<div class="no-data">No data found for the selected filters</div>');
+                    }
+
                     },
                     error: function() {
                         $('#loadingIndicator').hide();
