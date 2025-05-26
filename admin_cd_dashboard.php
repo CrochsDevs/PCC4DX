@@ -74,7 +74,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             <li><a class="nav-link active" data-section="dashboard-section">
                 <i class="fas fa-chart-line"></i> Dashboard</a></li>
 
-            <li><a class="nav-link" data-section="announcement-section">
+            <li><a href="admin_centertarget_calf_dashboard.php" class="nav-link" data-section="announcement-section">
                 <i class="fas fa-file-alt"></i> Center</a></li>
             
             <li><a href="admin_report_calf_dashboard.php" class="nav-link" data-section="quickfacts-section">
