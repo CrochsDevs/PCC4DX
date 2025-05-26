@@ -167,7 +167,7 @@ $allCenters = $reportManager->getAllCenters();
         .title {
             font-size: 1.875rem;
             font-weight: bold;
-            color: #3730a3;
+            color:rgb(0, 0, 0);
             padding-left: 1rem;
             padding-top: 2rem;
         }
@@ -183,6 +183,9 @@ $allCenters = $reportManager->getAllCenters();
             font-size: 16px;
             width: 300px;
         }
+        .center-filter{
+            padding-left: 20px;
+        }
         .disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -192,9 +195,12 @@ $allCenters = $reportManager->getAllCenters();
             text-align: center;
             color: #666;
             font-style: italic;
+         
         }
         .filter-container {
             margin-top: 20px;
+            margin-left: 20px;
+            margin-right: 20px;
         }
         .filter-options {
             display: flex;
@@ -234,14 +240,18 @@ $allCenters = $reportManager->getAllCenters();
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            margin-left: 20px;
+            margin-right: 40px;
+            
         }
         .report-table th, .report-table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
+             
         }
         .report-table th {
-            background-color: #f2f2f2;
+            background-color:#3a7fc5;
         }
         .total-row {
             font-weight: bold;
