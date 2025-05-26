@@ -1,7 +1,7 @@
 <?php
 session_start();
 require 'auth_check.php';
-require 'db_config.php'; // Ensure DB connection is established
+require 'db_config.php';
 
 // Prevent headquarters users from accessing center dashboard
 if ($_SESSION['user']['center_type'] === 'Headquarters') {
@@ -11,7 +11,7 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
 
 $centerCode = $_SESSION['center_code']; 
 
-class SummaryFetcher {
+class CenterDashboard {
     private $db;
     private $centerCode;
 
@@ -20,11 +20,26 @@ class SummaryFetcher {
         $this->centerCode = $centerCode;
     }
 
-    public function getAIData($year, $target) {
+    // Fetch AI Target for this center and year
+    public function getAITarget($year) {
+        $stmt = $this->db->prepare("SELECT target FROM pcc_auth_system.ai_target WHERE center_code = :centerCode AND year = :year");
+        $stmt->execute([':centerCode' => $this->centerCode, ':year' => $year]);
+        return $stmt->fetchColumn() ?: 0;
+    }
+
+    // Fetch Calf Drop Target for this center and year
+    public function getCalfDropTarget($year) {
+        $stmt = $this->db->prepare("SELECT target FROM pcc_auth_system.cd_target WHERE center_code = :centerCode AND year = :year");
+        $stmt->execute([':centerCode' => $this->centerCode, ':year' => $year]);
+        return $stmt->fetchColumn() ?: 0;
+    }
+
+    // Fetch AI Performance Data
+    public function getAIData($year) {
+        $target = $this->getAITarget($year);
         $stmt = $this->db->prepare("SELECT SUM(aiServices) as total_ai FROM ai_services WHERE center = :center AND YEAR(date) = :year");
         $stmt->execute([':center' => $this->centerCode, ':year' => $year]);
         $totalAI = $stmt->fetch(PDO::FETCH_ASSOC)['total_ai'] ?? 0;
-
         $accomplished = ($target > 0) ? ($totalAI / $target) * 100 : 0;
         return [
             'total' => $totalAI,
@@ -33,11 +48,12 @@ class SummaryFetcher {
         ];
     }
 
-    public function getCalfDropData($year, $target) {
+    // Fetch Calf Drop Performance Data
+    public function getCalfDropData($year) {
+        $target = $this->getCalfDropTarget($year);
         $stmt = $this->db->prepare("SELECT SUM(ai + bep + ih + private) as total FROM calf_drop WHERE center = :center AND YEAR(date) = :year");
         $stmt->execute([':center' => $this->centerCode, ':year' => $year]);
         $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
-
         $accomplished = ($target > 0) ? ($total / $target) * 100 : 0;
         return [
             'total' => $total,
@@ -45,17 +61,8 @@ class SummaryFetcher {
             'percent' => round($accomplished, 2)
         ];
     }
-}
 
-class CenterDashboard {
-    private $conn;
-    private $centerCode;
-
-    public function __construct($conn, $centerCode) {
-        $this->conn = $conn;
-        $this->centerCode = $centerCode;
-    }
-
+    // Annual Milk Production Trends
     public function getAnnualTrends() {
         $query = "SELECT 
                     DATE_FORMAT(entry_date, '%Y-%m') as month,
@@ -67,13 +74,13 @@ class CenterDashboard {
                   AND entry_date >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
                   GROUP BY DATE_FORMAT(entry_date, '%Y-%m')
                   ORDER BY month DESC";
-        
-        $stmt = $this->conn->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->bindParam(':centerCode', $this->centerCode);
         $stmt->execute();
         return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    // Monthly Milk Production by Partner
     public function getMonthlyPerformance() {
         $query = "SELECT 
                     p.partner_name,
@@ -86,25 +93,21 @@ class CenterDashboard {
                   GROUP BY p.partner_name
                   ORDER BY total_value DESC
                   LIMIT 5";
-        
-        $stmt = $this->conn->prepare($query);
+        $stmt = $this->db->prepare($query);
         $stmt->bindParam(':centerCode', $this->centerCode);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
-$fetcher = new SummaryFetcher($conn, $centerCode);
+$dashboard = new CenterDashboard($conn, $centerCode);
 $year = date('Y');
 
-// Define target values
-$aiTarget = 13400;
-$calfDropTarget = 5000;
+// Fetch AI & Calf Drop Data
+$aiPerf = $dashboard->getAIData($year);
+$cdPerf = $dashboard->getCalfDropData($year);
 
-$aiPerf = $fetcher->getAIData($year, $aiTarget);
-$cdPerf = $fetcher->getCalfDropData($year, $calfDropTarget);
-
-$dashboard = new CenterDashboard($conn, $centerCode);
+// Fetch Trends and Performance
 $annualTrends = $dashboard->getAnnualTrends();
 $monthlyPerformance = $dashboard->getMonthlyPerformance();
 
@@ -112,11 +115,11 @@ $monthlyPerformance = $dashboard->getMonthlyPerformance();
 $annualLabels = array_column($annualTrends, 'month_display');
 $annualVolumes = array_column($annualTrends, 'total_volume');
 $annualValues = array_column($annualTrends, 'total_value');
-
 $partnerLabels = array_column($monthlyPerformance, 'partner_name');
 $partnerVolumes = array_column($monthlyPerformance, 'total_volume');
 $partnerValues = array_column($monthlyPerformance, 'total_value');
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
