@@ -45,11 +45,11 @@ if ($_SESSION['user']['center_code'] !== 'HQ') {
     <ul>
         <li><a href="admin.php" class="nav-link">
         <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
-        <li><a href="admin_cd_dashboard.php" class="nav-link" data-section="dashboard-section">
+        <li><a href="admin_ai_dashboard.php" class="nav-link" data-section="dashboard-section">
         <i class="fas fa-chart-line"></i> Dashboard</a></li>
-        <li><a href = "admin_centertarget_calf_dashboard.php" class="nav-link active" data-section="announcement-section">
+        <li><a href = "admin_centertarget_ai_dashboard.php" class="nav-link active" data-section="announcement-section">
         <i class="fas fa-file-alt"></i> Center</a></li>
-        <li><a href="admin_report_calf_dashboard.php" class="nav-link " data-section="quickfacts-section">
+        <li><a href="admin_report_ai_dashboard.php" class="nav-link " data-section="quickfacts-section">
         <i class="fas fa-sitemap"></i> Reports</a></li>
     </ul>
 </div>
