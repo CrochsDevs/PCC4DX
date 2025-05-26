@@ -217,9 +217,9 @@ $allCenters = $reportManager->getAllCenters();
             cursor: pointer;
         }
         .filter-btn.active {
-            background: #3730a3;
+            background: #3b82f6;
             color: white;
-            border-color: #3730a3;
+            border-color: #3b82f6;
         }
         .export-btn {
             padding: 8px 16px;

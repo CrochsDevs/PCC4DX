@@ -1,121 +1,137 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-require 'db_config.php';
+session_start();
 require 'auth_check.php';
+include('db_config.php');
 
-if ($_SESSION['user']['center_type'] !== 'Headquarters') {
+// Check if user is from HQ
+if ($_SESSION['user']['center_code'] !== 'HQ') {
     header('Location: access_denied.php');
     exit;
 }
 
-class ReportManager {
+class AIReportManager {
     private $db;
-
-    public function __construct($db, $centerCode = null) {
+    
+    public function __construct($db) {
         $this->db = $db;
-        // centerCode no longer needed but kept for compatibility
     }
 
-    public function getReports($year = null, $month = null, $week = null, $date = null) {
-        $query = "SELECT *, 
-                remarks, 
-                (ai + bep + ih + private) as total 
-                FROM calf_drop
-                WHERE 1"; // All centers; dynamic filters only
-
-        $params = [];
-
+    public function getReports($centerCode, $year = null, $month = null, $week = null, $date = null) {
+        $query = "SELECT cdID, ai, bep, ih, private, date, remarks, center 
+                  FROM pcc_auth_system.calf_drop 
+                  WHERE center = :center";
+    
+        $params = [':center' => $centerCode];
+    
+        if ($year) {
+            $query .= " AND YEAR(date) = :year";
+            $params[':year'] = $year;
+        }
+        if ($month) {
+            $query .= " AND MONTH(date) = :month";
+            $params[':month'] = $month;
+        }
+        if ($week) {
+            $query .= " AND WEEK(date, 1) = :week";
+            $params[':week'] = $week;
+        }
         if ($date) {
             $query .= " AND date = :date";
             $params[':date'] = $date;
-        } else {
-            if ($year) {
-                $query .= " AND YEAR(date) = :year";
-                $params[':year'] = $year;
-            }
-            if ($month) {
-                $query .= " AND MONTH(date) = :month";
-                $params[':month'] = $month;
-            }
-            if ($week) {
-                $query .= " AND WEEK(date, 3) = :week";
-                $params[':week'] = $week;
-            }
         }
 
         $query .= " ORDER BY date DESC";
 
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
-
         $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Calculate totals
-        $totals = ['ai' => 0, 'bep' => 0, 'ih' => 0, 'private' => 0, 'total' => 0];
+        $total = 0;
         foreach ($reports as $row) {
-            $totals['ai'] += $row['ai'];
-            $totals['bep'] += $row['bep'];
-            $totals['ih'] += $row['ih'];
-            $totals['private'] += $row['private'];
-            $totals['total'] += $row['total'];
+            $total += $row['ai'];
         }
 
-        return ['reports' => $reports, 'totals' => $totals];
+        return [
+            'reports' => $reports,
+            'total' => $total,
+            'count' => count($reports)
+        ];
     }
 
-    public function getAvailableYears() {
+    public function getAvailableYears($centerCode) {
         $query = "SELECT DISTINCT YEAR(date) as year 
-                  FROM calf_drop 
+                  FROM pcc_auth_system.calf_drop 
+                  WHERE center = :center 
                   ORDER BY year DESC";
         $stmt = $this->db->prepare($query);
-        $stmt->execute();
+        $stmt->execute([':center' => $centerCode]);
+
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    public function getAvailableWeeks($year, $month) {
+    public function getAvailableWeeks($year, $month, $centerCode) {
         $query = "SELECT DISTINCT WEEK(date, 3) as week 
-                  FROM calf_drop 
-                  WHERE YEAR(date) = :year 
+                  FROM pcc_auth_system.calf_drop 
+                  WHERE center = :center 
+                  AND YEAR(date) = :year 
                   AND MONTH(date) = :month
                   ORDER BY week";
         $stmt = $this->db->prepare($query);
         $stmt->execute([
+            ':center' => $centerCode,
             ':year' => $year,
             ':month' => $month
         ]);
+
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
+    public function getAllCenters() {
+        $query = "SELECT center_code, center_name 
+                  FROM centers 
+                  WHERE center_code != 'HQ' 
+                  ORDER BY center_name";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
-$centerCode = $_SESSION['center_code']; // Kept for compatibility
-$reportManager = new ReportManager($conn, $centerCode);
+// Create the report manager
+$reportManager = new AIReportManager($conn);
 
 // Handle AJAX requests
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
-
+    
     switch ($_GET['ajax']) {
         case 'get_years':
-            echo json_encode($reportManager->getAvailableYears());
+            echo isset($_GET['center'])
+                ? json_encode($reportManager->getAvailableYears($_GET['center']))
+                : json_encode([]);
             break;
 
         case 'get_weeks':
-            if (isset($_GET['year']) && isset($_GET['month'])) {
-                echo json_encode($reportManager->getAvailableWeeks($_GET['year'], $_GET['month']));
-            } else {
-                echo json_encode([]);
-            }
+            echo (isset($_GET['year'], $_GET['month'], $_GET['center']))
+                ? json_encode($reportManager->getAvailableWeeks($_GET['year'], $_GET['month'], $_GET['center']))
+                : json_encode([]);
             break;
 
         case 'get_reports':
-            $year = isset($_GET['year']) ? $_GET['year'] : null;
-            $month = isset($_GET['month']) ? $_GET['month'] : null;
-            $week = isset($_GET['week']) ? $_GET['week'] : null;
-            $date = isset($_GET['date']) ? $_GET['date'] : null;
-            echo json_encode($reportManager->getReports($year, $month, $week, $date));
+            if (isset($_GET['center'])) {
+                $year = $_GET['year'] ?? null;
+                $month = $_GET['month'] ?? null;
+                $week = $_GET['week'] ?? null;
+                $date = $_GET['date'] ?? null;
+                echo json_encode($reportManager->getReports($_GET['center'], $year, $month, $week, $date));
+            } else {
+                echo json_encode(['error' => 'Center not specified']);
+            }
+            break;
+
+        case 'get_centers':
+            echo json_encode($reportManager->getAllCenters());
             break;
 
         default:
@@ -124,23 +140,17 @@ if (isset($_GET['ajax'])) {
     exit;
 }
 
-// For regular (non-AJAX) access
-$year = isset($_GET['year']) ? $_GET['year'] : null;
-$month = isset($_GET['month']) ? $_GET['month'] : null;
-$week = isset($_GET['week']) ? $_GET['week'] : null;
-$date = isset($_GET['date']) ? $_GET['date'] : null;
-
-$reports = $reportManager->getReports($year, $month, $week, $date);
-
-
+// Load all centers for default page
+$allCenters = $reportManager->getAllCenters();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($_SESSION['user']['center_name']) ?> Reports</title>
+    <title>HQ AI Score Card Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -148,124 +158,171 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
     <link rel="stylesheet" href="css/calf.css">
     <link rel="stylesheet" href="css/cd_report.css">
     <style>
-    /* Week-based alternating colors */
         .week-white {
             background-color: #ffffff;
         }
-
         .week-grey {
             background-color: #f0f0f0;
         }
- 
+        .title {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color:rgb(0, 0, 0);
+            padding-left: 1rem;
+            padding-top: 2rem;
+        }
+        .subtitle {
+            color: #4B5563;
+            padding-left: 1rem;
+        }
+        .center-selector {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            width: 300px;
+        }
+        .center-filter{
+            padding-left: 20px;
+        }
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .no-data {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+         
+        }
+        .filter-container {
+            margin-top: 20px;
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .filter-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .export-btn {
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .export-btn.disabled {
+            background: #9ca3af;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #3b82f6;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-left: 20px;
+            margin-right: 40px;
+            
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+             
+        }
+        .report-table th {
+            background-color:#3a7fc5;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #e6f7ff;
+        }
     </style>
 </head>
-<body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <!-- User Profile Section -->
-        <div class="user-profile">
-            <div class="profile-picture">
-                <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture">
-                <?php else: ?>
-                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture">
-                <?php endif; ?>
-            </div>
-            <div class="profile-info">
-                <h3 class="user-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
-                <p class="user-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
-            </div>
+
+<div class="sidebar">
+    <div class="user-profile" id="sidebar-profile">
+        <div class="profile-picture">
+            <?php if (!empty($_SESSION['user']['profile_image'])): ?>
+                <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture" id="sidebar-profile-img">
+            <?php else: ?>
+                <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture" id="sidebar-profile-img">
+            <?php endif; ?>
         </div>
-
-        <nav>
-            <ul>
-                <li><a href="admin.php#quickfacts-section" class="nav-link">
-                <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
-
-            <li><a href="admin_cd_dashboard.php" class="nav-link" >
-                <i class="fas fa-chart-line"></i> Dashboard</a></li>
-
-            <li><a class="nav-link" data-section="announcement-section">
-                <i class="fas fa-file-alt"></i> Center</a></li>
-            
-            <li><a href="admin_report_calf_dashboard.php" class="nav-link active" data-section="quickfacts-section">
-                <i class="fas fa-sitemap"></i> Reports</a></li>
-        </ul>
-
+        <div class="profile-info">
+            <h3 class="user-name" id="sidebar-profile-name"><?= htmlspecialchars($_SESSION['user']['full_name']) ?></h3>
+            <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
+        </div>                          
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-left">
-                <h1>Calf Drop Reports</h1>
-            </div>
-            <div class="header-right">
-                <div class="notification-container">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <div class="notification-dropdown">
-                        <div class="notification-header">
-                            <h4>Notifications</h4>
-                            <span class="mark-all-read">Mark all as read</span>
-                        </div>
-                        <div class="notification-list">
-                            <a href="#" class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-users text-primary"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>5 new farmers registered today</p>
-                                    <small>2 hours ago</small>
-                                </div>
-                            </a>
-                            <a href="#" class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-paw text-success"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>New carabao health report available</p>
-                                    <small>5 hours ago</small>
-                                </div>
-                            </a>
-                            <a href="#" class="notification-item">
-                                <div class="notification-icon">
-                                    <i class="fas fa-exclamation-triangle text-danger"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>3 pending requests need approval</p>
-                                    <small>Yesterday</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="notification-footer">
-                            <a href="#">View all notifications</a>
-                        </div>
-                    </div>
+    <ul>
+        <li><a href="admin.php" class="nav-link">
+        <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
+        <li><a href="admin_ai_dashboard.php" class="nav-link" data-section="dashboard-section">
+        <i class="fas fa-chart-line"></i> Dashboard</a></li>
+        <li><a href = "admin_centertarget_ai_dashboard.php" class="nav-link" data-section="announcement-section">
+        <i class="fas fa-file-alt"></i> Center</a></li>
+        <li><a href="admin_report_dashboard.php" class="nav-link active" data-section="quickfacts-section">
+        <i class="fas fa-sitemap"></i> Reports</a></li>
+    </ul>
+</div>
+
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-10">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="title">Artificial Insemination Reports</h1>
+                    <p class="subtitle">HQ Dashboard - View Center AI Reports</p>
                 </div>
-                <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
-        </div>
-        
-        <!-- Reports Section -->
+        </header>
+
         <div class="container">
-            <div class="filter-container">
-
-            <div class="year-filter">
-                <div class="filter-header">
-                    <div class="filter-title">Year</div>
-                    <div class="export-btn-container">
-                        <button id="exportToExcel" class="export-btn">Export</button>
-                    </div>
-                </div>
-                <div class="filter-options" id="yearFilter">
-                    <!-- Years will be populated by JavaScript -->
-                </div>
+            <!-- Center Selection Dropdown -->
+            <div class="center-filter">
+                <select id="centerSelect" class="center-selector">
+                    <option value="">Select Center</option>
+                    <?php foreach ($allCenters as $center): ?>
+                        <option value="<?= $center['center_code'] ?>">
+                            <?= htmlspecialchars($center['center_name']) ?> (<?= htmlspecialchars($center['center_code']) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
+            <div class="filter-container">
+                <div class="year-filter">
+                    <div class="filter-header">
+                        <div class="filter-title">Year</div>
+                        <div class="export-btn-container">
+                            <button id="exportToExcel" class="export-btn disabled" disabled>Export</button>
+                        </div>
+                    </div>
+                    <div class="filter-options" id="yearFilter">
+                        <!-- Years will be populated by JavaScript -->
+                    </div>
+                </div>
 
                 <div class="month-filter">
                     <div class="filter-title">Month</div>
@@ -298,7 +355,7 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
                     <i class="fas fa-spinner fa-spin"></i> Loading data...
                 </div>
                 <div id="reportResults">
-                    <!-- Report data will be loaded here via AJAX -->
+                    <div class="no-data">Please select a center to view reports</div>
                 </div>
             </div>
         </div>
@@ -306,23 +363,33 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
 
     <script>
         $(document).ready(function() {
-            const centerCode = "<?= $_SESSION['center_code'] ?>";
+            let currentCenter = $('#centerSelect').val();
             let currentYear = null;
             let currentMonth = null;
             let currentWeek = null;
-
-            function formatDate(dateString) {
-                const options = { year: 'numeric', month: 'short', day: 'numeric' };
-                const dateObj = new Date(dateString);
-                return dateObj.toLocaleDateString('en-US', options);
+            
+            function updateExportButtonState() {
+                if (!currentCenter) {
+                    $('#exportToExcel').prop('disabled', true).addClass('disabled');
+                } else {
+                    $('#exportToExcel').prop('disabled', false).removeClass('disabled');
+                }
             }
             
-            // Load available years
+            // Load available years for the selected center
             function loadYears() {
+                if (!currentCenter) {
+                    $('#yearFilter').empty();
+                    $('#weekFilter').empty();
+                    $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
+                    return;
+                }
+                
+                $('#loadingIndicator').show();
                 $.ajax({
-                    url: 'cd_report.php?ajax=get_years',
+                    url: window.location.href.split('?')[0] + '?ajax=get_years',
                     type: 'GET',
-                    data: { center: centerCode },
+                    data: { center: currentCenter },
                     success: function(years) {
                         const yearFilter = $('#yearFilter');
                         yearFilter.empty();
@@ -334,27 +401,39 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
                                 );
                             });
                             
-                            // Set current year to the most recent one
-                            currentYear = years[0];
-                            $('[data-year="' + currentYear + '"]').addClass('active');
+                            // Set current year to the most recent one if not set
+                            if (!currentYear && years.length > 0) {
+                                currentYear = years[0];
+                                $('[data-year="' + currentYear + '"]').addClass('active');
+                            }
                             loadReports();
                         } else {
-                            $('#reportResults').html('<div class="no-data">No report data available</div>');
+                            $('#reportResults').html('<div class="no-data">No report data available for selected center</div>');
                         }
+                        $('#loadingIndicator').hide();
+                    },
+                    error: function() {
+                        $('#loadingIndicator').hide();
+                        $('#reportResults').html('<div class="no-data">Error loading data</div>');
                     }
                 });
             }
             
             // Load reports based on current filters
             function loadReports() {
+                if (!currentCenter) {
+                    $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
+                    return;
+                }
+                
                 $('#loadingIndicator').show();
                 $('#reportResults').empty();
                 
                 $.ajax({
-                    url: 'cd_report.php?ajax=get_reports',
+                    url: window.location.href.split('?')[0] + '?ajax=get_reports',
                     type: 'GET',
                     data: { 
-                        center: centerCode,
+                        center: currentCenter,
                         year: currentYear,
                         month: currentMonth,
                         week: currentWeek
@@ -362,80 +441,76 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
                     success: function(data) {
                         $('#loadingIndicator').hide();
                         
-                        if (data.reports.length > 0) {
+                        if (data.reports && data.reports.length > 0) {
                             let html = `
                                 <table class="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Day</th>
-                                        <th>AI</th>
-                                        <th>BEP</th>
-                                        <th>IH</th>
-                                        <th>Private</th>
-                                        <th>Remarks</th>
-                                        <th>Total</th>
-                                    </tr>
-                                        <tr class="total-row" style="background-color:rgb(125, 139, 139);">
-                                            <td style="color: black; font-weight: bold;"><strong>Total</strong></td>
-                                            <td style="color: black; font-weight: bold;"></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.ai}</strong></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.bep}</strong></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.ih}</strong></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.private}</strong></td>
-                                            <td style="color: black; font-weight: bold;"></td>
-                                            <td style="color: black; font-weight: bold;"><strong>${data.totals.total}</strong></td>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Day</th>
+                                            <th>AI Services</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                        <tr class="total-row">
+                                            <td>Total</td>
+                                            <td>Count: ${data.count}</td>
+                                            <td>${data.total}</td>
+                                            <td></td>
                                         </tr>
                                     </thead>
                                     <tbody>`;
-                            
-                                    let previousWeek = null;
-                                    let toggleColor = false;
+                  
+                            let previousWeek = null;
+                            let toggleColor = false;
 
-                                    data.reports.forEach(row => {
-                                        const dateObj = new Date(row.date);
-                                        const firstJan = new Date(dateObj.getFullYear(), 0, 1);
-                                        const pastDaysOfYear = (dateObj - firstJan) / 86400000;
-                                        const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
+                            data.reports.forEach(row => {
+                                const dateObj = new Date(row.date);
+                                const firstJan = new Date(dateObj.getFullYear(), 0, 1);
+                                const pastDaysOfYear = (dateObj - firstJan) / 86400000;
+                                const week = Math.ceil((pastDaysOfYear + firstJan.getDay() + 1) / 7);
 
-                                        if (week !== previousWeek) {
-                                            toggleColor = !toggleColor;
-                                            previousWeek = week;
-                                        }
+                                if (week !== previousWeek) {
+                                    toggleColor = !toggleColor;
+                                    previousWeek = week;
+                                }
 
-                                        const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                                const rowClass = toggleColor ? 'week-grey' : 'week-white';
+                                const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
 
-                                        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
-
-                                        html += `
-                                        <tr class="${rowClass}">
-                                            <td>${formatDate(row.date)}</td>
-                                            <td>${dayOfWeek}</td>
-                                            <td>${row.ai}</td>
-                                            <td>${row.bep}</td>
-                                            <td>${row.ih}</td>
-                                            <td>${row.private}</td>
-                                            <td>${row.remarks ? row.remarks : ''}</td>
-                                            <td>${row.total}</td>
-                                        </tr>`;
-                                    });
+                                html += `
+                                <tr class="${rowClass}">
+                                    <td>${row.date}</td>
+                                    <td>${dayOfWeek}</td>
+                                    <td>${row.aiServices}</td>
+                                    <td>${row.remarks ? row.remarks : ''}</td>
+                                </tr>`;
+                            });
 
                             html += `</tbody></table>`;
                             $('#reportResults').html(html);
                         } else {
                             $('#reportResults').html('<div class="no-data">No data found for the selected filters</div>');
                         }
+                    },
+                    error: function() {
+                        $('#loadingIndicator').hide();
+                        $('#reportResults').html('<div class="no-data">Error loading reports</div>');
                     }
                 });
             }
 
             // Load available weeks for a month
             function loadWeeks(year, month) {
+                if (!currentCenter || !year || !month) {
+                    $('#weekFilter').empty();
+                    return;
+                }
+                
                 $.ajax({
-                    url: 'cd_report.php?ajax=get_weeks',
+                    url: window.location.href.split('?')[0] + '?ajax=get_weeks',
                     type: 'GET',
                     data: { 
-                        center: centerCode,
+                        center: currentCenter,
                         year: year,
                         month: month
                     },
@@ -455,7 +530,23 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
             }
             
             // Initialize the report
-            loadYears();
+            updateExportButtonState();
+            
+            // Center selection change
+            $('#centerSelect').change(function() {
+                currentCenter = $(this).val();
+                currentYear = null;
+                currentMonth = null;
+                currentWeek = null;
+                
+                $('[data-year]').removeClass('active');
+                $('[data-month]').removeClass('active');
+                $('[data-week]').removeClass('active');
+                $('#weekFilter').empty();
+                
+                updateExportButtonState();
+                loadYears();
+            });
             
             // Event handlers for filter buttons
             $(document).on('click', '[data-year]', function() {
@@ -495,83 +586,50 @@ $reports = $reportManager->getReports($year, $month, $week, $date);
             });
 
             $('#exportToExcel').click(function() {
-                if (!currentYear) {
-                    alert("Please select a year to export the report.");
-                    return;
-                }
-                if (!currentMonth) {
-                    alert("Please select a month to export the report.");
-                    return;
-                }
-
-                // Use current selected week or empty string if none
-                const weekNumber = currentWeek || '';
-
-                // Header for CSV
-                let csvContent = "Date,Day,AI,BEP,IH,Private,Remarks,Total\n";
-
-                // Get totals row cells, note: your total row's TD structure:
-                // 0: Total label, 1: empty, 2: AI total, 3: BEP total, 4: IH total, 5: Private total, 6: empty, 7: Total total
-                const totalsRow = $('.report-table .total-row');
-                if (totalsRow.length) {
-                    const totalsCells = totalsRow.find('td');
-                    const totals = [
-                        `Total ${centerCode}`,          // Date column with center + Total label
-                        "",                            // Day empty
-                        totalsCells.eq(2).text().trim(), // AI total (index 2)
-                        totalsCells.eq(3).text().trim(), // BEP total (index 3)
-                        totalsCells.eq(4).text().trim(), // IH total (index 4)
-                        totalsCells.eq(5).text().trim(), // Private total (index 5)
-                        "",                            // Remarks empty for totals row
-                        totalsCells.eq(7).text().trim()  // Total total (index 7)
-                    ];
-                    csvContent += totals.join(',') + '\n';
-                }
-
-                // Iterate over each report row (skip total row)
-                $('.report-table tbody tr').not('.total-row').each(function() {
-                    const cells = $(this).find('td');
-                    const rawDate = cells.eq(0).text().trim();
-
-                    // Parse date string from table, assuming format like "May 10, 2025"
-                    const dateObj = new Date(rawDate);
-                    // Format date as yyyy-mm-dd for CSV
-                    const formattedDate = dateObj.toISOString().split('T')[0];
-
-                    // Get day of week from date
-                    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-
-                    const row = [
-                        formattedDate,                 // Date in yyyy-mm-dd
-                        dayOfWeek,                    // Day
-                        cells.eq(2).text().trim(),    // AI
-                        cells.eq(3).text().trim(),    // BEP
-                        cells.eq(4).text().trim(),    // IH
-                        cells.eq(5).text().trim(),    // Private
-                        '"' + cells.eq(6).text().trim().replace(/"/g, '""') + '"',  // Remarks (quoted to handle commas)
-                        cells.eq(7).text().trim()     // Total
-                    ];
-                    csvContent += row.join(',') + '\n';
-                });
-
-                // Prepare file name
+                if (!currentCenter) return;
+                
                 const today = new Date();
                 const dateStr = today.toISOString().split('T')[0];
-                const fileName = `CalfDrop_${centerCode}${weekNumber ? '_Week' + weekNumber : ''}_${dateStr}.csv`;
+                const centerName = $('#centerSelect option:selected').text();
+                
+                let fileName = `AI_Services_${centerName.replace(/\s+/g, '_')}`;
+                if (currentYear) fileName += `_${currentYear}`;
+                if (currentMonth) fileName += `_Month${currentMonth}`;
+                if (currentWeek) fileName += `_Week${currentWeek}`;
+                fileName += `_${dateStr}.csv`;
 
-                // Create and trigger download
+                let csvContent = "Date,Day,AI Services,Remarks\n";
+
+                // Add total row
+                const totalRow = $('.report-table .total-row');
+                if (totalRow.length) {
+                    const totalCells = totalRow.find('td');
+                    csvContent += `Total,,${totalCells.eq(2).text().trim()},\n`;
+                }
+
+                $('.report-table tbody tr').each(function() {
+                    if (!$(this).hasClass('total-row')) {
+                        const cells = $(this).find('td');
+                        const row = [
+                            cells.eq(0).text().trim(),  // Date
+                            cells.eq(1).text().trim(),  // Day
+                            cells.eq(2).text().trim(),  // AI Services
+                            cells.eq(3).text().trim()   // Remarks
+                        ];
+                        csvContent += row.join(',') + '\n';
+                    }
+                });
+
                 const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
                 const link = document.createElement('a');
                 link.setAttribute('href', encodedUri);
                 link.setAttribute('download', fileName);
                 document.body.appendChild(link);
+
                 link.click();
                 document.body.removeChild(link);
             });
-
-
-});
-
+        });
     </script>
 </body>
 </html>
