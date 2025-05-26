@@ -438,6 +438,7 @@ $allCenters = $reportManager->getAllCenters();
                         year: currentYear,
                         month: currentMonth,
                         week: currentWeek
+                        
                     },
                     success: function(data) {
                         $('#loadingIndicator').hide();
