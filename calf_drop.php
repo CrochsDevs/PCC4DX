@@ -47,20 +47,28 @@ class CalfDropManager {
         }
     }
     
-public function validateInput($data) {
-    $errors = [];
-    
-    $aiValid = isset($data['ai']) && is_numeric($data['ai']) && $data['ai'] > 0;
-    $bepValid = isset($data['bep']) && is_numeric($data['bep']) && $data['bep'] > 0;
-    $ihValid = isset($data['ih']) && is_numeric($data['ih']) && $data['ih'] > 0;
-    $privateValid = isset($data['private']) && is_numeric($data['private']) && $data['private'] > 0;
-    
-    if (!($aiValid || $bepValid || $ihValid || $privateValid)) {
-        $errors[] = "At least one of AI, BEP, IH, or Private must be a positive number greater than zero.";
+    public function validateInput($data) {
+        $errors = [];
+        
+        $aiValid = isset($data['ai']) && is_numeric($data['ai']) && $data['ai'] > 0;
+        $bepValid = isset($data['bep']) && is_numeric($data['bep']) && $data['bep'] > 0;
+        $ihValid = isset($data['ih']) && is_numeric($data['ih']) && $data['ih'] > 0;
+        $privateValid = isset($data['private']) && is_numeric($data['private']) && $data['private'] > 0;
+        
+        if (!($aiValid || $bepValid || $ihValid || $privateValid)) {
+            $errors[] = "At least one of AI, BEP, IH, or Private must be a positive number greater than zero.";
+        }
+        
+        // Validate remarks if date is past date
+        $date = $data['date'] ?? date('Y-m-d');
+        $today = date('Y-m-d');
+
+        if ($date < $today && empty(trim($data['remarks']))) {
+            $errors[] = "Remarks are required when the selected date is a past date.";
+        }
+        
+        return $errors;
     }
-    
-    return $errors;
-}
 
 }
 
@@ -353,15 +361,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
     <script>
         $(document).ready(function() {
             // Show confirmation modal when submit button is clicked
+
             $('#submitBtn').click(function(e) {
                 e.preventDefault();
                 
-                // Get form values
                 const ai = parseInt($('#ai').val()) || 0;
                 const bep = parseInt($('#bep').val()) || 0;
                 const ih = parseInt($('#ih').val()) || 0;
                 const privateVal = parseInt($('#private').val()) || 0;
                 const date = $('#date').val();
+                const remarks = $('#remarks').val().trim();
+                const today = new Date().toISOString().split('T')[0];
+                
+                if (ai < 0 || bep < 0 || ih < 0 || privateVal < 0) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Entry',
+                        text: 'All values must be positive numbers.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
+                // If date is in the past, remarks must not be empty
+                if (date < today && remarks === '') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Remarks Required',
+                        text: 'Please provide remarks for a past date.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                    return;
+                }
+                
                 const total = ai + bep + ih + privateVal;
                 
                 // Build summary HTML
@@ -371,13 +403,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
                     <div class="summary-item"><span>IH:</span><span>${ih}</span></div>
                     <div class="summary-item"><span>Private:</span><span>${privateVal}</span></div>
                     <div class="summary-item"><span>Date:</span><span>${date}</span></div>
-                    <div class="summary-total"><span>Total Calves:</span><span>${total}</span></div>
                 `;
                 
-                // Insert summary into modal
-                $('#summaryContent').html(summaryHtml);
+                if (date < today) {
+                    summaryHtml += `<div class="summary-item"><span>Remarks:</span><span>${remarks}</span></div>`;
+                }
                 
-                // Show modal
+                summaryHtml += `<div class="summary-total"><span>Total Calves:</span><span>${total}</span></div>`;
+                
+                $('#summaryContent').html(summaryHtml);
                 $('#confirmationModal').show();
             });
             
@@ -414,9 +448,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
             }
         });
 
+        // Update the date change event listener:
         document.addEventListener("DOMContentLoaded", function () {
             const dateInput = document.getElementById("date");
             const remarksGroup = document.getElementById("remarksGroup");
+            const remarksTextarea = document.getElementById("remarks");
             const today = new Date().toISOString().split("T")[0];
 
             dateInput.setAttribute("max", today); // Restrict future dates
@@ -425,48 +461,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_entry'])) {
             dateInput.addEventListener("change", function () {
                 if (this.value < today) {
                     remarksGroup.style.display = "block";
+                    remarksTextarea.setAttribute("required", "required");
                 } else {
                     remarksGroup.style.display = "none";
-                    document.getElementById("remarks").value = '';
+                    remarksTextarea.removeAttribute("required");
+                    remarksTextarea.value = '';
                 }
             });
         });
 
-        $('#submitBtn').click(function(e) {
-            e.preventDefault();
-            
-            const ai = parseInt($('#ai').val()) || 0;
-            const bep = parseInt($('#bep').val()) || 0;
-            const ih = parseInt($('#ih').val()) || 0;
-            const privateVal = parseInt($('#private').val()) || 0;
-            
-            if (ai < 0 || bep < 0 || ih < 0 || privateVal < 0) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Invalid Entry',
-                    text: 'All values must be positive numbers.',
-                    confirmButtonColor: '#dc3545'
-                });
-                return; // Prevent modal and submission
-            }
-            
-            const date = $('#date').val();
-            const total = ai + bep + ih + privateVal;
-            
-            // Build summary HTML
-            let summaryHtml = `
-                <div class="summary-item"><span>AI:</span><span>${ai}</span></div>
-                <div class="summary-item"><span>BEP:</span><span>${bep}</span></div>
-                <div class="summary-item"><span>IH:</span><span>${ih}</span></div>
-                <div class="summary-item"><span>Private:</span><span>${privateVal}</span></div>
-                <div class="summary-item"><span>Date:</span><span>${date}</span></div>
 
-                <div class="summary-total"><span>Total Calves:</span><span>${total}</span></div>
-            `;
-            
-            $('#summaryContent').html(summaryHtml);
-            $('#confirmationModal').show();
-        });
+
     </script>
 </body>
 </html>

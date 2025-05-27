@@ -237,39 +237,35 @@ class DashboardManager {
 
     public function getReportRatingData($year = null) {
         $startDate = $year ? "{$year}-01-01" : date('Y-01-01');
+        $endDate = date('Y-m-d');
+
         $query = "
+            WITH RECURSIVE calendar AS (
+                SELECT :startDate AS cal_date
+                UNION ALL
+                SELECT DATE_ADD(cal_date, INTERVAL 1 DAY) FROM calendar WHERE cal_date < :endDate
+            ),
+            workdays AS (
+                SELECT cal_date FROM calendar
+                WHERE DAYOFWEEK(cal_date) NOT IN (1,7) -- Exclude Sunday(1) and Saturday(7)
+            ),
+            submitted_dates AS (
+                SELECT DISTINCT date FROM calf_drop
+                WHERE center = :center AND date BETWEEN :startDate AND :endDate
+            )
             SELECT 
-                (SELECT COUNT(DISTINCT date) 
-                 FROM pcc_auth_system.calf_drop 
-                 WHERE center = :center AND date >= :startDate AND date <= CURDATE()) AS unique_dates,
-    
-                (SELECT COUNT(*) 
-                 FROM (
-                    SELECT ADDDATE(:startDate, INTERVAL n DAY) AS workday
-                    FROM (SELECT @rownum := @rownum + 1 AS n 
-                          FROM information_schema.columns, (SELECT @rownum := 0) r 
-                          LIMIT 365) days
-                    WHERE DAYOFWEEK(ADDDATE(:startDate, INTERVAL n DAY)) NOT IN (1, 7)
-                    AND ADDDATE(:startDate, INTERVAL n DAY) <= CURDATE()
-                 ) workdays) AS workdays,
-    
-                ROUND(((SELECT COUNT(DISTINCT date) 
-                 FROM pcc_auth_system.calf_drop 
-                 WHERE center = :center AND date >= :startDate AND date <= CURDATE()) / 
-                (SELECT COUNT(*) 
-                 FROM (
-                    SELECT ADDDATE(:startDate, INTERVAL n DAY) AS workday
-                    FROM (SELECT @rownum := @rownum + 1 AS n 
-                          FROM information_schema.columns, (SELECT @rownum := 0) r 
-                          LIMIT 365) days
-                    WHERE DAYOFWEEK(ADDDATE(:startDate, INTERVAL n DAY)) NOT IN (1, 7)
-                    AND ADDDATE(:startDate, INTERVAL n DAY) <= CURDATE()
-                 ) workdays)) * 100, 2) AS percentage
+                (SELECT COUNT(*) FROM submitted_dates) AS unique_dates,
+                (SELECT COUNT(*) FROM workdays) AS workdays,
+                ROUND(
+                    (SELECT COUNT(*) FROM submitted_dates) / 
+                    NULLIF((SELECT COUNT(*) FROM workdays), 0) * 100, 2
+                ) AS percentage
         ";
         $stmt = $this->db->prepare($query);
         $stmt->execute([
             ':center' => $this->centerCode,
-            ':startDate' => $startDate
+            ':startDate' => $startDate,
+            ':endDate' => $endDate
         ]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
@@ -295,6 +291,7 @@ class DashboardManager {
             'grade' => $grade,
         ];
     }
+
 }
 
 // Handle AJAX request for weeks
@@ -389,6 +386,21 @@ $reportRatingData = $dashboardManager->getReportRatingData($selectedYear);
 $uniqueDates = $reportRatingData['unique_dates'] ?? 0;
 $workdays = $reportRatingData['workdays'] ?? 0;
 $reportPercentage = $reportRatingData['percentage'] ?? 0;
+
+$targetValue = $dashboardManager->getTargetValue();
+
+$grandTotal = $filteredData['grand_total'] ?? $summaryData['grand_total'] ?? 0;
+$grandTotalPercentage = $targetValue > 0 ? round(($grandTotal / $targetValue) * 100) : 0;
+
+$gradingData = $targetValue > 0 ? $dashboardManager->calculateGrading(
+    $targetValue,
+    $grandTotal,
+    $reportPercentage
+) : [
+    'accomplished_rating' => 0,
+    'final_score' => 0,
+    'grade' => 'N/A (No target set)'
+];
 
 $monthlyChartData = prepareChartData($monthlyData);
 $yearlyChartData = prepareChartData($yearlyData);
