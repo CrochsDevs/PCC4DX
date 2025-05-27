@@ -179,7 +179,8 @@ $availableYears = $targetManager->getAvailableYears();
             font-size: 1.875rem;
             font-weight: bold;
             color: #000;
-            margin-bottom: 10px;
+      
+
         }
         .subtitle {
             color: #4B5563;
@@ -391,83 +392,83 @@ $availableYears = $targetManager->getAvailableYears();
         </ul>
     </div>
 
-    <div class="container">
-        <h1 class="title">AI Center Targets</h1>
-        <p class="subtitle">Set and manage AI targets for each center</p>
+  <div class="container" style="max-width: 100%; width: 95%; margin: 0 auto; font-family: Arial, sans-serif;">
+    <h1 class="title" style="font-size: 28px; margin-bottom: 5px;">AI Center Targets</h1>
+    <p class="subtitle" style="font-size: 16px; color: #666; margin-bottom: 20px;">Set and manage AI targets for each center</p>
 
-        <?php if (isset($successMessage)): ?>
-            <div class="alert alert-success"><?= $successMessage ?></div>
-        <?php elseif (isset($errorMessage)): ?>
-            <div class="alert alert-error"><?= $errorMessage ?></div>
-        <?php endif; ?>
+    <?php if (isset($successMessage)): ?>
+        <div class="alert alert-success" style="background-color: #d4edda; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><?= $successMessage ?></div>
+    <?php elseif (isset($errorMessage)): ?>
+        <div class="alert alert-error" style="background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><?= $errorMessage ?></div>
+    <?php endif; ?>
 
-        <div class="card">
-            <div class="year-filter">
-                <strong>Filter by Year:</strong>
-                <?php foreach ($availableYears as $year): ?>
-                    <button class="year-btn <?= $year == $selectedYear ? 'active' : '' ?>" 
-                            onclick="window.location.href='?year=<?= $year ?>'">
-                        <?= $year ?>
-                    </button>
-                <?php endforeach; ?>
-                <button class="year-btn <?= !isset($_GET['year']) ? 'active' : '' ?>" 
-                        onclick="window.location.href='?'">
-                    All Years
+    <div class="card" style="background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <div class="year-filter" style="margin-bottom: 15px;">
+            <strong>Filter by Year:</strong>
+            <?php foreach ($availableYears as $year): ?>
+                <button class="year-btn <?= $year == $selectedYear ? 'active' : '' ?>" 
+                        onclick="window.location.href='?year=<?= $year ?>'"
+                        style="margin: 5px 5px 5px 0; padding: 6px 12px; <?= $year == $selectedYear ? 'background-color:#3a7fc5;color:white;' : '' ?>">
+                    <?= $year ?>
                 </button>
-            </div>
+            <?php endforeach; ?>
+        </div>
 
-            <button id="addTargetBtn" class="btn btn-success add-target-btn">
-                <i class="fas fa-plus"></i> Set New Target
-            </button>
+        <button id="addTargetBtn" class="btn btn-success add-target-btn" style="background-color: #3a7fc5; color: white; padding: 10px 15px; border: none; border-radius: 5px; margin-bottom: 20px;">
+            <i class="fas fa-plus"></i> Set New Target
+        </button>
 
-            <h2>Current Targets</h2>
-            
-            <?php if (count($currentTargets) > 0): ?>
-                <table class="target-table">
-                    <thead>
+        <h2 style="margin-bottom: 15px;">Current Targets</h2>
+        
+        <?php if (count($currentTargets) > 0): ?>
+            <table class="target-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f4f4f4;">
+                        <th style="border: 1px solid #ccc; padding: 10px;">Center</th>
+                        <th style="border: 1px solid #ccc; padding: 10px;">Center Code</th>
+                        <th style="border: 1px solid #ccc; padding: 10px;">Target</th>
+                        <th style="border: 1px solid #ccc; padding: 10px;">Year</th>
+                        <th style="border: 1px solid #ccc; padding: 10px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($currentTargets as $target): ?>
                         <tr>
-                            <th>Center</th>
-                            <th>Center Code</th>
-                            <th>Target</th>
-                            <th>Year</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($currentTargets as $target): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($target['center_name']) ?></td>
-                                <td><?= $target['center_code'] ?></td>
-                                <td><?= number_format($target['target']) ?></td>
-                                <td><?= $target['year'] ?></td>
-                                <td class="action-btns">
-                                    <button class="edit-btn" 
+                            <td style="border: 1px solid #ddd; padding: 10px;"><?= htmlspecialchars($target['center_name']) ?></td>
+                            <td style="border: 1px solid #ddd; padding: 10px;"><?= $target['center_code'] ?></td>
+                            <td style="border: 1px solid #ddd; padding: 10px;"><?= number_format($target['target']) ?></td>
+                            <td style="border: 1px solid #ddd; padding: 10px;"><?= $target['year'] ?></td>
+                            <td style="border: 1px solid #ddd; padding: 10px;">
+                                <button class="edit-btn" 
                                         onclick="openEditModal(
                                             '<?= $target['ai_target_id'] ?>',
                                             '<?= $target['center_code'] ?>',
                                             `<?= htmlspecialchars($target['center_name'], ENT_QUOTES) ?>`,
                                              <?= $target['target'] ?>,
                                              <?= $target['year'] ?>
-                                          )">
-                                        <i class="fas fa-edit"></i> Edit
+                                          )"
+                                        style="background-color: #ffc107; color: #000; border: none; padding: 6px 10px; border-radius: 4px; margin-right: 5px;">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="ai_target_id" value="<?= $target['ai_target_id'] ?>">
+                                    <button type="submit" name="delete_target" class="delete-btn" 
+                                            onclick="return confirm('Are you sure you want to delete this target?')"
+                                            style="background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px;">
+                                        <i class="fas fa-trash-alt"></i> Delete
                                     </button>
-                                    <form method="POST" style="display:inline;">
-                                        <input type="hidden" name="ai_target_id" value="<?= $target['ai_target_id'] ?>">
-                                        <button type="submit" name="delete_target" class="delete-btn" 
-                                                onclick="return confirm('Are you sure you want to delete this target?')">
-                                            <i class="fas fa-trash-alt"></i> Delete
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php else: ?>
-                <p>No targets set for <?= isset($_GET['year']) ? "year $selectedYear" : "any year" ?>.</p>
-            <?php endif; ?>
-        </div>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>No targets set for <?= isset($_GET['year']) ? "year $selectedYear" : "any year" ?>.</p>
+        <?php endif; ?>
     </div>
+</div>
+
 
     <!-- Add/Edit Target Modal -->
     <div id="targetModal" class="modal">

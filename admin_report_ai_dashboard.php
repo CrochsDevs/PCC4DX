@@ -97,6 +97,22 @@ class AIReportManager {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function updateReport($aiID, $aiServices, $remarks) {
+        $query = "UPDATE ai_services SET aiServices = :aiServices, remarks = :remarks WHERE aiID = :aiID";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([
+            ':aiID' => $aiID,
+            ':aiServices' => $aiServices,
+            ':remarks' => $remarks
+        ]);
+    }
+
+    public function deleteReport($aiID) {
+        $query = "DELETE FROM ai_services WHERE aiID = :aiID";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([':aiID' => $aiID]);
+    }
 }
 
 $reportManager = new AIReportManager($conn);
@@ -135,6 +151,24 @@ if (isset($_GET['ajax'])) {
             
         case 'get_centers':
             echo json_encode($reportManager->getAllCenters());
+            break;
+
+        case 'update_report':
+            if (isset($_POST['aiID']) && isset($_POST['aiServices']) && isset($_POST['remarks'])) {
+                $success = $reportManager->updateReport($_POST['aiID'], $_POST['aiServices'], $_POST['remarks']);
+                echo json_encode(['success' => $success]);
+            } else {
+                echo json_encode(['error' => 'Missing parameters']);
+            }
+            break;
+
+        case 'delete_report':
+            if (isset($_POST['aiID'])) {
+                $success = $reportManager->deleteReport($_POST['aiID']);
+                echo json_encode(['success' => $success]);
+            } else {
+                echo json_encode(['error' => 'Missing report ID']);
+            }
             break;
             
         default:
@@ -253,10 +287,109 @@ $allCenters = $reportManager->getAllCenters();
         }
         .report-table th {
             background-color:#3a7fc5;
+            color: white;
         }
         .total-row {
             font-weight: bold;
             background-color: #e6f7ff;
+        }
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+        .edit-btn {
+            background-color: #ffc107;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-secondary {
+            background: #6b7280;
         }
     </style>
 </head>
@@ -289,6 +422,59 @@ $allCenters = $reportManager->getAllCenters();
 </div>
 
 <body class="bg-gray-50">
+    <!-- Edit Report Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit AI Report</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="editReportForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editAiID" name="aiID">
+                    <div class="form-group">
+                        <label for="editDate">Date</label>
+                        <input type="text" id="editDate" class="form-control" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAiServices">AI Services</label>
+                        <input type="number" id="editAiServices" name="aiServices" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRemarks">Remarks</label>
+                        <textarea id="editRemarks" name="remarks" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close">Cancel</button>
+                    <button type="submit" class="btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Delete</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="deleteReportForm">
+                <div class="modal-body">
+                    <input type="hidden" id="deleteAiID" name="aiID">
+                    <p>Are you sure you want to delete this AI report?</p>
+                    <p><strong>Date:</strong> <span id="deleteDate"></span></p>
+                    <p><strong>AI Services:</strong> <span id="deleteAiServices"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-8">
         <header class="mb-10">
             <div class="flex justify-between items-center">
@@ -369,6 +555,29 @@ $allCenters = $reportManager->getAllCenters();
             let currentMonth = null;
             let currentWeek = null;
             
+            // Initialize modals
+            const editModal = document.getElementById("editModal");
+            const deleteModal = document.getElementById("deleteModal");
+            const closeButtons = document.getElementsByClassName("close");
+            
+            // Close modals when clicking the X button
+            for (let i = 0; i < closeButtons.length; i++) {
+                closeButtons[i].onclick = function() {
+                    editModal.style.display = "none";
+                    deleteModal.style.display = "none";
+                }
+            }
+            
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                if (event.target == editModal) {
+                    editModal.style.display = "none";
+                }
+                if (event.target == deleteModal) {
+                    deleteModal.style.display = "none";
+                }
+            }
+            
             function updateExportButtonState() {
                 if (!currentCenter) {
                     $('#exportToExcel').prop('disabled', true).addClass('disabled');
@@ -438,7 +647,6 @@ $allCenters = $reportManager->getAllCenters();
                         year: currentYear,
                         month: currentMonth,
                         week: currentWeek
-
                     },
                     success: function(data) {
                         $('#loadingIndicator').hide();
@@ -452,18 +660,18 @@ $allCenters = $reportManager->getAllCenters();
                                             <th>Day</th>
                                             <th>AI Services</th>
                                             <th>Remarks</th>
+                                            <th>Actions</th>
                                         </tr>
                                         <tr class="total-row">
                                             <td>Total</td>
                                             <td>Count: ${data.count}</td>
                                             <td>${data.total}</td>
                                             <td></td>
+                                            <td></td>
                                         </tr>
                                     </thead>
                                     <tbody>`;
   
-
-                            
                             let previousWeek = null;
                             let toggleColor = false;
 
@@ -487,6 +695,14 @@ $allCenters = $reportManager->getAllCenters();
                                     <td>${dayOfWeek}</td>
                                     <td>${row.aiServices}</td>
                                     <td>${row.remarks ? row.remarks : ''}</td>
+                                    <td class="action-btns">
+                                        <button class="edit-btn" data-id="${row.aiID}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="delete-btn" data-id="${row.aiID}">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </td>
                                 </tr>`;
                             });
 
@@ -587,6 +803,79 @@ $allCenters = $reportManager->getAllCenters();
                 $(this).addClass('active');
                 
                 loadReports();
+            });
+
+            // Handle edit button click
+            $(document).on('click', '.edit-btn', function() {
+                const aiID = $(this).data('id');
+                const row = $(this).closest('tr');
+                
+                $('#editAiID').val(aiID);
+                $('#editDate').val(row.find('td:eq(0)').text());
+                $('#editAiServices').val(row.find('td:eq(2)').text());
+                $('#editRemarks').val(row.find('td:eq(3)').text().trim());
+                
+                editModal.style.display = "block";
+            });
+
+            // Handle delete button click
+            $(document).on('click', '.delete-btn', function() {
+                const aiID = $(this).data('id');
+                const row = $(this).closest('tr');
+                
+                $('#deleteAiID').val(aiID);
+                $('#deleteDate').text(row.find('td:eq(0)').text());
+                $('#deleteAiServices').text(row.find('td:eq(2)').text());
+                
+                deleteModal.style.display = "block";
+            });
+
+            // Handle edit form submission
+            $('#editReportForm').submit(function(e) {
+                e.preventDefault();
+                
+                const formData = $(this).serialize();
+                
+                $.ajax({
+                    url: window.location.href.split('?')[0] + '?ajax=update_report',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            editModal.style.display = "none";
+                            loadReports(); // Refresh the table
+                        } else {
+                            alert('Failed to update report. Please try again.');
+                        }
+                    },
+                    error: function() {
+                        alert('Error updating report. Please try again.');
+                    }
+                });
+            });
+
+            // Handle delete form submission
+            $('#deleteReportForm').submit(function(e) {
+                e.preventDefault();
+                
+                const formData = $(this).serialize();
+                
+                $.ajax({
+                    url: window.location.href.split('?')[0] + '?ajax=delete_report',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            deleteModal.style.display = "none";
+                            loadReports(); // Refresh the table
+                        } else {
+                            alert('Failed to delete report. Please try again.');
+                        }
+                    },
+                    error: function() {
+                        alert('Error deleting report. Please try again.');
+                    }
+                });
             });
 
             $('#exportToExcel').click(function() {
