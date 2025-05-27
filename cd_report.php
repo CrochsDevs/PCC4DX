@@ -388,6 +388,7 @@ $reports = $reportManager->getReports($year, $month, $week);
                             </thead>
                             <tbody>`;
 
+
                                     let previousWeek = null;
                                     let toggleColor = false;
 
