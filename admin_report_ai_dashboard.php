@@ -272,14 +272,20 @@ $allCenters = $reportManager->getAllCenters();
             padding: 20px;
             color: #3b82f6;
         }
+
+        .table-container {
+            margin: 20px;       
+            overflow-x: auto;   
+            max-width: 100%;   
+        }
+
         .report-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            margin-left: 20px;
-            margin-right: 40px;
-            
+            min-width: 700px;   
+            table-layout: fixed; 
         }
+
         .report-table th, .report-table td {
             border: 1px solid #ddd;
             padding: 8px;
@@ -392,6 +398,30 @@ $allCenters = $reportManager->getAllCenters();
         .btn-secondary {
             background: #6b7280;
         }
+        /* Add/edit CSS for inline editing */
+        .edit-mode {
+            width: 100%;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+        .view-mode {
+            display: block;
+            padding: 4px;
+        }
+
+        .btn-success {
+            background-color: #28a745 !important;
+        }
+
+        .btn-danger {
+            background-color: #dc3545 !important;
+        }
+
+        .action-btns button {
+            margin: 0 2px;
+            padding: 3px 8px;
+        }
     </style>
 </head>
 
@@ -417,42 +447,12 @@ $allCenters = $reportManager->getAllCenters();
         <i class="fas fa-chart-line"></i> Dashboard</a></li>
         <li><a href="admin_centertarget_ai_dashboard.php"class="nav-link" data-section="announcement-section">
         <i class="fas fa-file-alt"></i> Center Target</a></li>
-        <li><a href="admin_report_ai_dashboard.php" class="nav-link active" data-section="quickfacts-section">
+        <li><a href="admin_report_dashboard.php" class="nav-link active" data-section="quickfacts-section">
         <i class="fas fa-sitemap"></i> Reports</a></li>
     </ul>
 </div>
 
 <body class="bg-gray-50">
-    <!-- Edit Report Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit AI Report</h3>
-                <span class="close">&times;</span>
-            </div>
-            <form id="editReportForm">
-                <div class="modal-body">
-                    <input type="hidden" id="editAiID" name="aiID">
-                    <div class="form-group">
-                        <label for="editDate">Date</label>
-                        <input type="text" id="editDate" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="editAiServices">AI Services</label>
-                        <input type="number" id="editAiServices" name="aiServices" class="form-control" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editRemarks">Remarks</label>
-                        <textarea id="editRemarks" name="remarks" class="form-control" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary close">Cancel</button>
-                    <button type="submit" class="btn">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
@@ -556,29 +556,23 @@ $allCenters = $reportManager->getAllCenters();
             let currentMonth = null;
             let currentWeek = null;
             
-            // Initialize modals
-            const editModal = document.getElementById("editModal");
             const deleteModal = document.getElementById("deleteModal");
             const closeButtons = document.getElementsByClassName("close");
-            
-            // Close modals when clicking the X button
+
+            // Close modals when clicking the X button or Cancel button
             for (let i = 0; i < closeButtons.length; i++) {
                 closeButtons[i].onclick = function() {
-                    editModal.style.display = "none";
                     deleteModal.style.display = "none";
                 }
             }
-            
-            // Close modals when clicking outside
+
+            // Close modals when clicking outside the modal
             window.onclick = function(event) {
-                if (event.target == editModal) {
-                    editModal.style.display = "none";
-                }
                 if (event.target == deleteModal) {
                     deleteModal.style.display = "none";
                 }
             }
-            
+
             function updateExportButtonState() {
                 if (!currentCenter) {
                     $('#exportToExcel').prop('disabled', true).addClass('disabled');
@@ -589,7 +583,7 @@ $allCenters = $reportManager->getAllCenters();
             
             // Load available years for the selected center
             function loadYears() {
-                if (!currentCenter) {
+                    if (!currentCenter) {
                     $('#yearFilter').empty();
                     $('#weekFilter').empty();
                     $('#reportResults').html('<div class="no-data">Please select a center to view reports</div>');
@@ -689,14 +683,20 @@ $allCenters = $reportManager->getAllCenters();
 
                                 const rowClass = toggleColor ? 'week-grey' : 'week-white';
                                 const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                                const formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).replace(',', '');
+                                const formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).replace(',', '');
 
                                 html += `
                                 <tr class="${rowClass}">
                                     <td>${formattedDate}</td>
                                     <td>${dayOfWeek}</td>
-                                    <td>${row.aiServices}</td>
-                                    <td>${row.remarks ? row.remarks : ''}</td>
+                                    <td>
+                                        <span class="view-mode">${row.aiServices}</span>
+                                        <input type="number" class="edit-mode form-control" value="${row.aiServices}" style="display: none;">
+                                    </td>
+                                    <td>
+                                        <span class="view-mode">${row.remarks ? row.remarks : ''}</span>
+                                        <textarea class="edit-mode form-control" style="display: none; rows="2">${row.remarks ? row.remarks : ''}</textarea>
+                                    </td>
                                     <td class="action-btns">
                                         <button class="edit-btn" data-id="${row.aiID}">
                                             <i class="fas fa-edit"></i> Edit
@@ -772,16 +772,16 @@ $allCenters = $reportManager->getAllCenters();
             
             // Event handlers for filter buttons
             $(document).on('click', '[data-year]', function() {
-                currentYear = $(this).data('year');
-                currentMonth = null;
-                currentWeek = null;
-                
-                $('[data-year]').removeClass('active');
-                $(this).addClass('active');
-                $('[data-month]').removeClass('active');
-                $('#weekFilter').empty();
-                
-                loadReports();
+                    currentYear = $(this).data('year');
+                    currentMonth = null;
+                    currentWeek = null;
+                    
+                    $('[data-year]').removeClass('active');
+                    $(this).addClass('active');
+                    $('[data-month]').removeClass('active');
+                    $('#weekFilter').empty();
+                    
+                    loadReports();
             });
             
             $(document).on('click', '[data-month]', function() {
@@ -807,19 +807,6 @@ $allCenters = $reportManager->getAllCenters();
                 loadReports();
             });
 
-            // Handle edit button click
-            $(document).on('click', '.edit-btn', function() {
-                const aiID = $(this).data('id');
-                const row = $(this).closest('tr');
-                
-                $('#editAiID').val(aiID);
-                $('#editDate').val(row.find('td:eq(0)').text());
-                $('#editAiServices').val(row.find('td:eq(2)').text());
-                $('#editRemarks').val(row.find('td:eq(3)').text().trim());
-                
-                editModal.style.display = "block";
-            });
-
             // Handle delete button click
             $(document).on('click', '.delete-btn', function() {
                 const aiID = $(this).data('id');
@@ -830,30 +817,6 @@ $allCenters = $reportManager->getAllCenters();
                 $('#deleteAiServices').text(row.find('td:eq(2)').text());
                 
                 deleteModal.style.display = "block";
-            });
-
-            // Handle edit form submission
-            $('#editReportForm').submit(function(e) {
-                e.preventDefault();
-                
-                const formData = $(this).serialize();
-                
-                $.ajax({
-                    url: window.location.href.split('?')[0] + '?ajax=update_report',
-                    type: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            editModal.style.display = "none";
-                            loadReports(); // Refresh the table
-                        } else {
-                            alert('Failed to update report. Please try again.');
-                        }
-                    },
-                    error: function() {
-                        alert('Error updating report. Please try again.');
-                    }
-                });
             });
 
             // Handle delete form submission
@@ -879,6 +842,82 @@ $allCenters = $reportManager->getAllCenters();
                     }
                 });
             });
+
+            $(document).on('click', '.edit-btn', function() {
+                const $btn = $(this);
+                const $row = $btn.closest('tr');
+                const aiID = $btn.data('id');
+                
+                // Store original values
+                $row.data('original', {
+                    services: $row.find('.view-mode:eq(0)').text(),
+                    remarks: $row.find('.view-mode:eq(1)').text()
+                });
+                
+                // Switch to edit mode
+                $row.find('.view-mode').hide();
+                $row.find('.edit-mode').show();
+                
+                // Change buttons
+                $row.find('.action-btns').html(`
+                    <button class="btn btn-success save-btn" data-id="${aiID}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-danger cancel-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `);
+            });
+
+            $(document).on('click', '.save-btn', function() { 
+                const $btn = $(this);
+                const $row = $btn.closest('tr');
+                const aiID = $btn.data('id');
+                
+                const newServices = $row.find('input.edit-mode').val();
+                const newRemarks = $row.find('textarea.edit-mode').val();
+                
+                $.ajax({
+                    url: '?ajax=update_report',
+                    method: 'POST',
+                    data: {
+                        aiID: aiID,
+                        aiServices: newServices,
+                        remarks: newRemarks
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $row.find('.view-mode:eq(0)').text(newServices);
+                            $row.find('.view-mode:eq(1)').text(newRemarks);
+                            exitEditMode($row);
+                        } else {
+                            alert('Error saving changes');
+                        }
+                    }
+                });                
+            });
+
+            $(document).on('click', '.cancel-btn', function() {
+                const $row = $(this).closest('tr');
+                const original = $row.data('original');
+                
+                $row.find('input.edit-mode').val(original.services);
+                $row.find('textarea.edit-mode').val(original.remarks);
+                exitEditMode($row);
+            });
+
+            function exitEditMode($row) {
+                $row.find('.view-mode').show();
+                $row.find('.edit-mode').hide();
+                $row.find('.action-btns').html(`
+                    <button class="edit-btn" data-id="${$row.find('.save-btn').data('id')}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="delete-btn" data-id="${$row.find('.save-btn').data('id')}">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                `);
+            }            
 
             $('#exportToExcel').click(function() {
                 if (!currentCenter) return;
