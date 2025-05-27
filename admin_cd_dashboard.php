@@ -66,21 +66,21 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
             </div>                          
         </div>
-
+        <nav>
             <ul>
                 <li><a href="admin.php#quickfacts-section" class="nav-link">
-                <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
+                    <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
 
-            <li><a class="nav-link active" data-section="dashboard-section">
-                <i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="admin_cd_dashboard.php" class="nav-link active" data-section="dashboard-section">
+                    <i class="fas fa-chart-line"></i> Dashboard</a></li>
 
-            <li><a href="admin_centertarget_calf_dashboard.php" class="nav-link" data-section="announcement-section">
-                <i class="fas fa-file-alt"></i> Center Target</a></li>
-            
-            <li><a href="admin_report_calf_dashboard.php" class="nav-link" data-section="quickfacts-section">
-                <i class="fas fa-sitemap"></i> Reports</a></li>
-        </ul>
-
+                <li><a href="admin_centertarget_calf_dashboard.php" class="nav-link" data-section="announcement-section">
+                    <i class="fas fa-file-alt"></i> Center Target</a></li>
+                
+                <li><a href="admin_report_calf_dashboard.php" class="nav-link" data-section="quickfacts-section">
+                    <i class="fas fa-sitemap"></i> Reports</a></li>
+            </ul>
+        </nav>
     </div>
 
 </head>
