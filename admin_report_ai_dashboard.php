@@ -689,11 +689,7 @@ $allCenters = $reportManager->getAllCenters();
 
                                 const rowClass = toggleColor ? 'week-grey' : 'week-white';
                                 const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                                const formattedDate = dateObj.toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                });
+                                const formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).replace(',', '');
 
                                 html += `
                                 <tr class="${rowClass}">
