@@ -117,13 +117,6 @@ if ($_SESSION['user']['center_type'] === 'Headquarters') {
                 <p>Update your account information and password.</p>
             </a>
         </div>
-
-        <div class="dashboard-card">
-            <a href="center_update_password.php" class="card-link">
-                <h3 class="card-title"><i class="fas fa-user-cog"></i> Password and Security</h3>
-                <p>Update your account password.</p>
-            </a>
-        </div>
         
         <div class="dashboard-card">
             <h3 class="card-title"><i class="fas fa-bell"></i> Notification Preferences</h3>
