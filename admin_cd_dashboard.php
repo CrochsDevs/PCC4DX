@@ -3,14 +3,95 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// I-require ang mga necessary files
 require 'db_config.php';
 require 'auth_check.php';
 
-// I-check ang user privileges
 if ($_SESSION['user']['center_type'] !== 'Headquarters') {
     header('Location: access_denied.php');
     exit;
+}
+
+// Fetch data from database
+try {
+    // Use the existing connection from db_config.php ($conn)
+    $pdo = $conn;
+    
+    // Get current week and year (using week 50 as in your original example)
+    $currentWeek = 50;
+    $currentYear = date('Y');
+    
+    // 1. Fetch calf drop data for the specified week
+    $calfDropQuery = "
+        SELECT center, SUM(ai + bep + ih + private) as total 
+        FROM calf_drop 
+        WHERE YEARWEEK(date, 1) = :yearweek 
+        GROUP BY center
+    ";
+    $calfDropStmt = $pdo->prepare($calfDropQuery);
+    $calfDropStmt->execute([':yearweek' => $currentYear . $currentWeek]);
+    $calfDropData = $calfDropStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // 2. Fetch center targets for 2025 (as in your example)
+    $targetQuery = "SELECT center_code, target FROM cd_target WHERE year = '2025'";
+    $targetStmt = $pdo->query($targetQuery);
+    $targetData = $targetStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    
+    // 3. Fetch all active centers
+    $centerQuery = "SELECT center_code, center_name FROM centers WHERE is_active = 1";
+    $centerStmt = $pdo->query($centerQuery);
+    $centers = $centerStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Initialize variables
+    $totalProduction = 0;
+    $totalTarget = 0;
+    $centerPerformance = [];
+    
+    // Calculate performance for each center
+    foreach ($centers as $center) {
+        $centerCode = $center['center_code'];
+        $actual = 0;
+        
+        // Find actual production for this center
+        foreach ($calfDropData as $drop) {
+            if ($drop['center'] === $centerCode) {
+                $actual = (int)$drop['total'];
+                break;
+            }
+        }
+        
+        $target = $targetData[$centerCode] ?? 0;
+        $percentage = $target > 0 ? round(($actual / $target) * 100, 2) : 0;
+        
+        $centerPerformance[] = [
+            'name' => $centerCode,
+            'wigTarget' => 0, // Placeholder
+            'mon' => 0,       // Placeholder
+            'tue' => 0,
+            'wed' => 0,
+            'thu' => 0,
+            'fri' => 0,
+            'rating' => $percentage . '%',
+            'cta' => $percentage . '%',
+            'target' => $target,
+            'actual' => $actual,
+            'percent' => $percentage . '%'
+        ];
+        
+        $totalProduction += $actual;
+        $totalTarget += $target;
+    }
+    
+    // Calculate overall metrics
+    $overallPercentage = $totalTarget > 0 ? round(($totalProduction / $totalTarget) * 100, 2) : 0;
+    $weeklyTarget = $totalTarget / 52; // Weekly target (yearly divided by 52 weeks)
+    $weeklyCompletion = $weeklyTarget > 0 ? round(($totalProduction / $weeklyTarget) * 100, 2) : 0;
+    $balance = max($totalTarget - $totalProduction, 0);
+    $balancePercentage = $totalTarget > 0 ? round(($balance / $totalTarget) * 100, 2) : 0;
+    
+} catch (PDOException $e) {
+    // Log error and show message
+    error_log("Database error in admin_cd_dashboard.php: " . $e->getMessage());
+    die("An error occurred while loading the dashboard. Please try again later.");
 }
 ?>
 
@@ -48,16 +129,17 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             to { opacity: 1; }
         }
     </style>
+</head>
 
-<div class="sidebar">
+<body class="bg-gray-50 font-sans">
+    <!-- Sidebar -->
+    <div class="sidebar">
         <!-- User Profile Section -->
         <div class="user-profile" id="sidebar-profile">
             <div class="profile-picture">
                 <?php if (!empty($_SESSION['user']['profile_image'])): ?>
-                    <!-- Display the uploaded profile image -->
                     <img src="uploads/profile_images/<?= htmlspecialchars($_SESSION['user']['profile_image']) ?>" alt="Profile Picture" id="sidebar-profile-img">
                 <?php else: ?>
-                    <!-- Fallback to the generated avatar -->
                     <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user']['full_name']) ?>&background=0056b3&color=fff&size=128" alt="Profile Picture" id="sidebar-profile-img">
                 <?php endif; ?>
             </div>
@@ -66,38 +148,31 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <p class="user-email" id="sidebar-profile-email"><?= htmlspecialchars($_SESSION['user']['email']) ?></p>
             </div>                          
         </div>
-        <nav>
-            <ul>
-                <li><a href="admin.php#quickfacts-section" class="nav-link">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
 
-            <li><a href="admin_cd_dashboard.php" class="nav-link active" data-section="dashboard-section">
+        <ul>
+            <li><a href="admin.php#quickfacts-section" class="nav-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to Admin</a></li>
+            <li><a class="nav-link active" data-section="dashboard-section">
                 <i class="fas fa-chart-line"></i> Dashboard</a></li>
-
             <li><a href="admin_centertarget_calf_dashboard.php" class="nav-link" data-section="announcement-section">
                 <i class="fas fa-file-alt"></i> Center Target</a></li>
-            
             <li><a href="admin_report_calf_dashboard.php" class="nav-link" data-section="quickfacts-section">
                 <i class="fas fa-sitemap"></i> Reports</a></li>
-            </ul>
-        </nav>
+        </ul>
     </div>
 
-</head>
-
-<body class="bg-gray-50 font-sans">
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <header class="mb-8">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">Calf Production Dashboard</h1>
-                    <p class="text-gray-600">50th Week Performance (04-May-2025)</p>
+                    <p class="text-gray-600"><?= $currentWeek ?>th Week Performance (<?= date('d-M-Y', strtotime($currentYear . 'W' . $currentWeek . '1')) ?>)</p>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="bg-white p-3 rounded-lg shadow-sm flex items-center">
                         <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>
-                        <span>Week 50, 2025</span>
+                        <span>Week <?= $currentWeek ?>, <?= $currentYear ?></span>
                     </div>
                     <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                         <i class="fas fa-download mr-2"></i>Export Report
@@ -112,7 +187,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500 font-medium">Total Calf Production</p>
-                        <h2 class="text-3xl font-bold mt-2">30,804</h2>
+                        <h2 class="text-3xl font-bold mt-2"><?= number_format($totalProduction) ?></h2>
                     </div>
                     <div class="bg-blue-100 p-3 rounded-full">
                         <i class="fas fa-cow text-blue-600 text-xl"></i>
@@ -120,11 +195,11 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 </div>
                 <div class="mt-4">
                     <div class="flex justify-between text-sm">
-                        <span>Target: 33,660</span>
-                        <span class="font-semibold">91.52%</span>
+                        <span>Target: <?= number_format($totalTarget) ?></span>
+                        <span class="font-semibold"><?= $overallPercentage ?>%</span>
                     </div>
                     <div class="progress-bar bg-gray-200 mt-2">
-                        <div class="progress-fill bg-green-500" style="width: 91.52%"></div>
+                        <div class="progress-fill bg-green-500" style="width: <?= $overallPercentage ?>%"></div>
                     </div>
                 </div>
             </div>
@@ -133,7 +208,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500 font-medium">Weekly Target</p>
-                        <h2 class="text-3xl font-bold mt-2">31,977</h2>
+                        <h2 class="text-3xl font-bold mt-2"><?= number_format($weeklyTarget) ?></h2>
                     </div>
                     <div class="bg-purple-100 p-3 rounded-full">
                         <i class="fas fa-bullseye text-purple-600 text-xl"></i>
@@ -142,10 +217,10 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="mt-4">
                     <div class="flex justify-between text-sm">
                         <span>Completion</span>
-                        <span class="font-semibold">95.00%</span>
+                        <span class="font-semibold"><?= $weeklyCompletion ?>%</span>
                     </div>
                     <div class="progress-bar bg-gray-200 mt-2">
-                        <div class="progress-fill bg-purple-500" style="width: 95%"></div>
+                        <div class="progress-fill bg-purple-500" style="width: <?= $weeklyCompletion ?>%"></div>
                     </div>
                 </div>
             </div>
@@ -154,7 +229,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500 font-medium">Balance</p>
-                        <h2 class="text-3xl font-bold mt-2">1,173</h2>
+                        <h2 class="text-3xl font-bold mt-2"><?= number_format($balance) ?></h2>
                     </div>
                     <div class="bg-yellow-100 p-3 rounded-full">
                         <i class="fas fa-scale-balanced text-yellow-600 text-xl"></i>
@@ -163,10 +238,10 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="mt-4">
                     <div class="flex justify-between text-sm">
                         <span>Remaining Target</span>
-                        <span class="font-semibold">3.48%</span>
+                        <span class="font-semibold"><?= $balancePercentage ?>%</span>
                     </div>
                     <div class="progress-bar bg-gray-200 mt-2">
-                        <div class="progress-fill bg-yellow-500" style="width: 3.48%"></div>
+                        <div class="progress-fill bg-yellow-500" style="width: <?= $balancePercentage ?>%"></div>
                     </div>
                 </div>
             </div>
@@ -175,7 +250,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500 font-medium">Average Completion</p>
-                        <h2 class="text-3xl font-bold mt-2">55.92%</h2>
+                        <h2 class="text-3xl font-bold mt-2"><?= $overallPercentage ?>%</h2>
                     </div>
                     <div class="bg-red-100 p-3 rounded-full">
                         <i class="fas fa-chart-line text-red-600 text-xl"></i>
@@ -184,11 +259,68 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 <div class="mt-4">
                     <div class="flex justify-between text-sm">
                         <span>Performance</span>
-                        <span class="font-semibold">6.86% Weekly</span>
+                        <span class="font-semibold"><?= round($weeklyCompletion / 52, 2) ?>% Weekly</span>
                     </div>
                     <div class="progress-bar bg-gray-200 mt-2">
-                        <div class="progress-fill bg-blue-500" style="width: 55.92%"></div>
+                        <div class="progress-fill bg-blue-500" style="width: <?= $overallPercentage ?>%"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Indicators -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
+                <h3 class="text-lg font-semibold mb-4">Top Performing Centers</h3>
+                <div class="space-y-4">
+                    <?php 
+                    // Sort centers by performance (descending)
+                    usort($centerPerformance, function($a, $b) {
+                        return floatval($b['percent']) <=> floatval($a['percent']);
+                    });
+                    
+                    // Show top 3
+                    for ($i = 0; $i < min(3, count($centerPerformance)); $i++) {
+                        $center = $centerPerformance[$i];
+                        $percent = floatval($center['percent']);
+                    ?>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium"><?= $center['name'] ?></span>
+                            <span class="text-sm font-medium"><?= $percent ?>%</span>
+                        </div>
+                        <div class="progress-bar bg-gray-200">
+                            <div class="progress-fill bg-green-500" style="width: <?= $percent ?>%"></div>
+                        </div>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
+                <h3 class="text-lg font-semibold mb-4">Centers Needing Improvement</h3>
+                <div class="space-y-4">
+                    <?php 
+                    // Sort centers by performance (ascending)
+                    usort($centerPerformance, function($a, $b) {
+                        return floatval($a['percent']) <=> floatval($b['percent']);
+                    });
+                    
+                    // Show bottom 3
+                    for ($i = 0; $i < min(3, count($centerPerformance)); $i++) {
+                        $center = $centerPerformance[$i];
+                        $percent = floatval($center['percent']);
+                    ?>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium"><?= $center['name'] ?></span>
+                            <span class="text-sm font-medium"><?= $percent ?>%</span>
+                        </div>
+                        <div class="progress-bar bg-gray-200">
+                            <div class="progress-fill bg-red-500" style="width: <?= $percent ?>%"></div>
+                        </div>
+                    </div>
+                    <?php } ?>
                 </div>
             </div>
         </div>
@@ -235,13 +367,30 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <!-- Data rows will be inserted here by JavaScript -->
+                        <?php foreach ($centerPerformance as $center): ?>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium"><?= $center['name'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?= $center['wigTarget'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap <?= $center['mon'] === 0 ? 'text-gray-400' : '' ?>"><?= $center['mon'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap <?= $center['tue'] === 0 || $center['tue'] === "X" ? 'text-gray-400' : '' ?>"><?= $center['tue'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap <?= $center['wed'] === 0 ? 'text-gray-400' : '' ?>"><?= $center['wed'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap <?= $center['thu'] === 0 ? 'text-gray-400' : '' ?>"><?= $center['thu'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap <?= $center['fri'] === 0 ? 'text-gray-400' : '' ?>"><?= $center['fri'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?= $center['rating'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?= $center['cta'] ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?= number_format($center['target']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?= number_format($center['actual']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold <?= floatval($center['percent']) > 90 ? 'text-green-600' : (floatval($center['percent']) < 70 ? 'text-red-600' : 'text-yellow-600') ?>">
+                                <?= $center['percent'] ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
             <div class="px-6 py-4 bg-gray-50 flex items-center justify-between border-t border-gray-200">
                 <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-600">Showing 1 to 14 of 14 entries</span>
+                    <span class="text-sm text-gray-600">Showing 1 to <?= count($centerPerformance) ?> of <?= count($centerPerformance) ?> entries</span>
                 </div>
                 <div class="flex space-x-2">
                     <button class="px-3 py-1 border rounded-md text-sm disabled:opacity-50" disabled>Previous</button>
@@ -250,122 +399,12 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
                 </div>
             </div>
         </div>
-
-        <!-- Performance Indicators -->
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
-                <h3 class="text-lg font-semibold mb-4">Top Performing Centers</h3>
-                <div class="space-y-4">
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">WVSU</span>
-                            <span class="text-sm font-medium">99.51%</span>
-                        </div>
-                        <div class="progress-bar bg-gray-200">
-                            <div class="progress-fill bg-green-500" style="width: 99.51%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">CLSU</span>
-                            <span class="text-sm font-medium">98.61%</span>
-                        </div>
-                        <div class="progress-bar bg-gray-200">
-                            <div class="progress-fill bg-green-500" style="width: 98.61%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">UPLB</span>
-                            <span class="text-sm font-medium">91.34%</span>
-                        </div>
-                        <div class="progress-bar bg-gray-200">
-                            <div class="progress-fill bg-blue-500" style="width: 91.34%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
-                <h3 class="text-lg font-semibold mb-4">Centers Needing Improvement</h3>
-                <div class="space-y-4">
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">NIZ</span>
-                            <span class="text-sm font-medium">2.44%</span>
-                        </div>
-                        <div class="progress-bar bg-gray-200">
-                            <div class="progress-fill bg-red-500" style="width: 2.44%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">GP</span>
-                            <span class="text-sm font-medium">5.28%</span>
-                        </div>
-                        <div class="progress-bar bg-gray-200">
-                            <div class="progress-fill bg-red-500" style="width: 5.28%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">CMU</span>
-                            <span class="text-sm font-medium">59.76%</span>
-                        </div>
-                        <div class="progress-bar bg-gray-200">
-                            <div class="progress-fill bg-yellow-500" style="width: 59.76%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
         // Data for the dashboard
-        const centers = [
-            { name: "CLSU", wigTarget: 53, mon: 25, tue: 25, wed: 0, thu: 0, fri: 0, rating: "47.62%", cta: "90.65%", target: 7550, actual: 7445, percent: "98.61%" },
-            { name: "CSU", wigTarget: 512, mon: 15, tue: 15, wed: 0, thu: 0, fri: 0, rating: "2.93%", cta: "78.05%", target: 3000, actual: 1977, percent: "65.90%" },
-            { name: "UPLB", wigTarget: 152, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "34.55%", target: 3500, actual: 3197, percent: "91.34%" },
-            { name: "WVSU", wigTarget: 11, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "46.75%", target: 4500, actual: 4478, percent: "99.51%" },
-            { name: "USF", wigTarget: 67, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "48.78%", target: 2600, actual: 2467, percent: "94.88%" },
-            { name: "LCSF", wigTarget: 114, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "66.26%", target: 2650, actual: 2422, percent: "91.40%" },
-            { name: "DMMMSU", wigTarget: 114, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "38.21%", target: 1700, actual: 1472, percent: "86.59%" },
-            { name: "MMSU", wigTarget: -123, mon: 2, tue: 2, wed: 0, thu: 0, fri: 0, rating: "-1.63%", cta: "99.59%", target: 1850, actual: 2095, percent: "113.24%" },
-            { name: "VSU", wigTarget: 110, mon: 40, tue: 40, wed: 0, thu: 0, fri: 0, rating: "36.36%", cta: "94.72%", target: 1750, actual: 1530, percent: "87.43%" },
-            { name: "CMU", wigTarget: 173, mon: 2, tue: 2, wed: 0, thu: 0, fri: 0, rating: "1.16%", cta: "59.76%", target: 1200, actual: 855, percent: "71.25%" },
-            { name: "USM", wigTarget: 74, mon: 8, tue: 8, wed: 0, thu: 0, fri: 0, rating: "10.81%", cta: "63.41%", target: 1200, actual: 1052, percent: "87.67%" },
-            { name: "MLPC", wigTarget: 24, mon: 6, tue: 6, wed: 0, thu: 0, fri: 0, rating: "25.00%", cta: "54.47%", target: 1200, actual: 1152, percent: "96.00%" },
-            { name: "NIZ", wigTarget: 156, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "2.44%", target: 840, actual: 528, percent: "62.86%" },
-            { name: "GP", wigTarget: -7, mon: 0, tue: "X", wed: 0, thu: 0, fri: 0, rating: "0.00%", cta: "5.28%", target: 120, actual: 134, percent: "111.67%" }
-        ];
-
-        // Populate table
-        const tableBody = document.querySelector('tbody');
-        centers.forEach(center => {
-            const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50';
-            
-            row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap font-medium">${center.name}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${center.wigTarget}</td>
-                <td class="px-6 py-4 whitespace-nowrap ${center.mon === 0 ? 'text-gray-400' : ''}">${center.mon}</td>
-                <td class="px-6 py-4 whitespace-nowrap ${center.tue === 0 || center.tue === "X" ? 'text-gray-400' : ''}">${center.tue}</td>
-                <td class="px-6 py-4 whitespace-nowrap ${center.wed === 0 ? 'text-gray-400' : ''}">${center.wed}</td>
-                <td class="px-6 py-4 whitespace-nowrap ${center.thu === 0 ? 'text-gray-400' : ''}">${center.thu}</td>
-                <td class="px-6 py-4 whitespace-nowrap ${center.fri === 0 ? 'text-gray-400' : ''}">${center.fri}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${center.rating}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${center.cta}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${center.target.toLocaleString()}</td>
-                <td class="px-6 py-4 whitespace-nowrap">${center.actual.toLocaleString()}</td>
-                <td class="px-6 py-4 whitespace-nowrap font-semibold ${parseFloat(center.percent) > 90 ? 'text-green-600' : parseFloat(center.percent) < 70 ? 'text-red-600' : 'text-yellow-600'}">
-                    ${center.percent}
-                </td>
-            `;
-            
-            tableBody.appendChild(row);
-        });
-
+        const centers = <?= json_encode($centerPerformance) ?>;
+        
         // Charts
         // Center Performance Chart
         const centerCtx = document.getElementById('centerChart').getContext('2d');
@@ -495,7 +534,5 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             });
         });
     </script>
-    
 </body>
-
 </html>
