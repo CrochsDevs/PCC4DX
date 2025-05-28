@@ -405,11 +405,11 @@ foreach ($centerData as $center => $data) {
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          <!-- Yearly Total AI Services from All PCC Centers -->
+            <!-- Total AI Services -->
             <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-gray-500 font-medium">Anual AI Services (All PCC Centers)</p>
+                        <p class="text-gray-500 font-medium">Total AI Services</p>
                         <h3 class="text-2xl font-bold text-blue-600"><?= number_format($totalAIServices) ?></h3>
                     </div>
                     <div class="bg-blue-100 p-3 rounded-full">
@@ -505,11 +505,6 @@ foreach ($centerData as $center => $data) {
         <div class="bg-white p-6 rounded-xl shadow-md fade-in mb-10">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-semibold text-gray-800">Center Performance Details</h2>
-                <div class="flex space-x-2">
-                    <button class="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-md">All</button>
-                    <button class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md">Active</button>
-                    <button class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md">Inactive</button>
-                </div>
             </div>
             <div class="data-table">
                 <table class="min-w-full divide-y divide-gray-200">
