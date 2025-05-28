@@ -416,6 +416,15 @@ foreach ($centerData as $center => $data) {
                         <i class="fas fa-syringe text-blue-600 text-xl"></i>
                     </div>
                 </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-500">
+                        <span>Target</span>
+                        <span><?= number_format($totalAchieved) ?>/<?= number_format($totalTarget) ?></span>
+                    </div>
+                    <div class="progress-bar mt-1">
+                        <div class="progress-fill bg-blue-600" style="width: <?= $totalTarget > 0 ? min(($totalAchieved / $totalTarget) * 100, 100) : 0 ?>%"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Accomplishment Balance -->
