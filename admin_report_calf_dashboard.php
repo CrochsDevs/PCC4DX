@@ -999,7 +999,7 @@ $allCenters = $reportManager->getAllCenters();
                 const dateStr = today.toISOString().split('T')[0];
                 const centerName = $('#centerSelect option:selected').text();
 
-                let fileName = `AI_Services_${centerName.replace(/\s+/g, '_')}`;
+                let fileName = `Calf_Drop_${centerName.replace(/\s+/g, '_')}`;
                 if (currentYear) fileName += `_${currentYear}`;
                 if (currentMonth) fileName += `_Month${currentMonth}`;
                 if (currentWeek) fileName += `_Week${currentWeek}`;
