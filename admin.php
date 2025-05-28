@@ -231,7 +231,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
             <div class="dashboard-grid">
                 <!-- Farmers Card -->
                 <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-users"></i> Farmers</h3>
+                    <h3 class="card-title"><i class="fas fa-users"></i> Artificial Insemination</h3>
                     <div class="chart-container">
                         <canvas id="usersChart"></canvas>
                     </div>
@@ -248,7 +248,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 
                 <!-- Carabaos Card -->
                 <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-paw"></i> Carabaos</h3>
+                    <h3 class="card-title"><i class="fas fa-paw"></i> Calf Drop</h3>
                     <div class="chart-container">
                         <canvas id="carabaosChart"></canvas>
                     </div>
@@ -265,7 +265,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 
                 <!-- Services Card -->
                 <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-check-circle"></i> Completed Services</h3>
+                    <h3 class="card-title"><i class="fas fa-check-circle"></i>Milk Production</h3>
                     <div class="chart-container">
                         <canvas id="servicesChart"></canvas>
                     </div>
@@ -282,7 +282,7 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 
                 <!-- Requests Card -->
                 <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-clock"></i> Pending Requests</h3>
+                    <h3 class="card-title"><i class="fas fa-clock"></i> </h3>
                     <div class="chart-container">
                         <canvas id="requestsChart"></canvas>
                     </div>
