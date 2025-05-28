@@ -176,8 +176,10 @@ uasort($centerData, function($a, $b) {
 });
 
 // Global metrics
-$accomplishmentBalance = $totalTarget > 0 ? ($totalAchieved / $totalTarget) * 100 : 0;
+$accomplishmentBalance = $totalTarget > 0 ? ($totalAIServices / $totalTarget) * 100 : 0;
+
 $averageAccomplishment = count($centerData) > 0 ? array_sum(array_column($centerData, 'accomplishment')) / count($centerData) : 0;
+$remainingBalance = $totalAIServices - $totalTarget;
 
 // Find top performer
 $topPerformer = '';
@@ -405,6 +407,7 @@ foreach ($centerData as $center => $data) {
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+ 
             <!-- Total AI Services -->
             <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                 <div class="flex justify-between items-center">
@@ -419,10 +422,10 @@ foreach ($centerData as $center => $data) {
                 <div class="mt-4">
                     <div class="flex justify-between text-sm text-gray-500">
                         <span>Target</span>
-                        <span><?= number_format($totalAchieved) ?>/<?= number_format($totalTarget) ?></span>
+                        <span><?= number_format($totalAIServices) ?>/<?= number_format($totalTarget) ?></span>
                     </div>
                     <div class="progress-bar mt-1">
-                        <div class="progress-fill bg-blue-600" style="width: <?= $totalTarget > 0 ? min(($totalAchieved / $totalTarget) * 100, 100) : 0 ?>%"></div>
+                        <div class="progress-fill bg-blue-600" style="width: <?= $totalTarget > 0 ? min(($totalAIServices / $totalTarget) * 100, 100) : 0 ?>%"></div>
                     </div>
                 </div>
             </div>
@@ -433,6 +436,10 @@ foreach ($centerData as $center => $data) {
                     <div>
                         <p class="text-gray-500 font-medium">Accomplishment Balance</p>
                         <h3 class="text-2xl font-bold text-green-600"><?= number_format($accomplishmentBalance, 2) ?>%</h3>
+                        <p class="text-sm mt-1 <?= $remainingBalance < 0 ? 'text-red-500' : 'text-green-500' ?>">
+                            Remaining Balance: <?= number_format($remainingBalance) ?>
+                            <?= $remainingBalance < 0 ? '(below target)' : '(above target)' ?>
+                        </p>
                     </div>
                     <div class="bg-green-100 p-3 rounded-full">
                         <i class="fas fa-chart-pie text-green-600 text-xl"></i>
@@ -441,10 +448,10 @@ foreach ($centerData as $center => $data) {
                 <div class="mt-4">
                     <div class="flex justify-between text-sm text-gray-500">
                         <span>Team Target</span>
-                        <span>90.0%</span>
+                        <span>100.0%</span>
                     </div>
                     <div class="progress-bar mt-1">
-                        <div class="progress-fill bg-green-600" style="width: <?= $accomplishmentBalance ?>%"></div>
+                        <div class="progress-fill bg-green-600" style="width: <?= min($accomplishmentBalance, 100) ?>%"></div>
                     </div>
                 </div>
             </div>
