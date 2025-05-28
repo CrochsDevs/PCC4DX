@@ -413,16 +413,7 @@ foreach ($centerData as $center => $data) {
                         <h3 class="text-2xl font-bold text-blue-600"><?= number_format($totalAIServices) ?></h3>
                     </div>
                     <div class="bg-blue-100 p-3 rounded-full">
-                        <i class="fas fa-robot text-blue-600 text-xl"></i>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex justify-between text-sm text-gray-500">
-                        <span>Weekly Target</span>
-                        <span><?= number_format($totalAchieved) ?>/<?= number_format($totalTarget) ?></span>
-                    </div>
-                    <div class="progress-bar mt-1">
-                        <div class="progress-fill bg-blue-600" style="width: <?= $totalTarget > 0 ? min(($totalAchieved / $totalTarget) * 100, 100) : 0 ?>%"></div>
+                        <i class="fas fa-syringe text-blue-600 text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -615,7 +606,6 @@ foreach ($centerData as $center => $data) {
             }
         });
 
-        // Line Chart - Target vs Actual
         const lineCtx = document.getElementById('lineChart').getContext('2d');
         const lineChart = new Chart(lineCtx, {
             type: 'bar',
@@ -625,16 +615,22 @@ foreach ($centerData as $center => $data) {
                     {
                         label: 'Target AI Reports',
                         data: weeklyTargets,
-                        backgroundColor: 'rgba(79, 70, 229, 0.5)',
-                        borderColor: 'rgba(79, 70, 229, 1)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(239,68,68,0.4)',  
+                        borderColor: 'rgba(239,68,68,1)',
+                        borderWidth: 1,
+                        barPercentage: 1.0,         
+                        categoryPercentage: 1.0,
+                        order: 1                      
                     },
                     {
                         label: 'Actual AI Reports',
                         data: aiCounts,
-                        backgroundColor: 'rgba(16, 185, 129, 0.5)',
-                        borderColor: 'rgba(16, 185, 129, 1)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(16,185,129,0.8)', 
+                        borderColor: 'rgba(16,185,129,1)',
+                        borderWidth: 1,
+                        barPercentage: 0.5,           
+                        categoryPercentage: 1.0,
+                        order: 1                      
                     }
                 ]
             },
@@ -642,9 +638,7 @@ foreach ($centerData as $center => $data) {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                    },
+                    legend: { position: 'top' },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -654,6 +648,9 @@ foreach ($centerData as $center => $data) {
                     }
                 },
                 scales: {
+                    x: {
+                        stacked: false // Make sure stacking is off
+                    },
                     y: {
                         beginAtZero: true,
                         ticks: {
