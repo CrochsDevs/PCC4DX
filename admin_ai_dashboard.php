@@ -235,31 +235,24 @@ foreach ($centerData as $center => $data) {
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold text-indigo-800">AI Score Card Dashboard</h1>
-                    <p class="text-gray-600"><?= $currentWeek ?>th Week Performance Analysis (<?= $year ?>)</p>
+                    <p class="text-gray-600">Performance Analysis (<?= date('Y') ?>)</p>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <input type="text" placeholder="Search centers..." class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    </div>
                     <div class="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-sm">
-                        <span class="text-gray-600">Week:</span>
-                        <span class="font-semibold"><?= $currentWeek ?></span>
+                        <span class="text-gray-600">Year:</span>
+                        <span class="font-semibold"><?= date('Y') ?></span>
                     </div>
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                        <i class="fas fa-download mr-2"></i>Export
-                    </button>
                 </div>
             </div>
         </header>
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <!-- Total AI Services -->
+          <!-- Yearly Total AI Services from All PCC Centers -->
             <div class="bg-white p-6 rounded-xl shadow-md card-hover fade-in">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-gray-500 font-medium">Total AI Services</p>
+                        <p class="text-gray-500 font-medium">Anual AI Services (All PCC Centers)</p>
                         <h3 class="text-2xl font-bold text-blue-600"><?= number_format($totalAIServices) ?></h3>
                     </div>
                     <div class="bg-blue-100 p-3 rounded-full">
@@ -268,7 +261,7 @@ foreach ($centerData as $center => $data) {
                 </div>
                 <div class="mt-4">
                     <div class="flex justify-between text-sm text-gray-500">
-                        <span>Weekly Target</span>
+                        <span>Annual Target</span>
                         <span><?= number_format($totalAchieved) ?>/<?= number_format($totalTarget) ?></span>
                     </div>
                     <div class="progress-bar mt-1">
@@ -358,9 +351,8 @@ foreach ($centerData as $center => $data) {
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-semibold text-gray-800">Center Performance Details</h2>
                 <div class="flex space-x-2">
-                    <button class="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-md">All</button>
-                    <button class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md">Active</button>
-                    <button class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md">Inactive</button>
+                    <button class="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-md">All Center</button>
+           
                 </div>
             </div>
             <div class="data-table">
