@@ -343,10 +343,11 @@
                             <span class="font-semibold"><?= $balancePercentage ?>%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2 overflow-hidden">
-                            <div class="bg-yellow-500 h-2.5 rounded-full" style="width: <?= min($balancePercentage, 100) ?>%"></div>
+                            <div class="bg-yellow-500 h-2.5 rounded-full" style="width: <?= 100 - min($balancePercentage, 100) ?>%"></div>
                         </div>
                     </div>
                 </div>
+
 
                 <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
                     <div class="flex justify-between items-start">
@@ -437,7 +438,7 @@
             <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
-                    <h3 class="text-lg font-semibold mb-4">Weekly Performance by Center</h3>
+                    <h3 class="text-lg font-semibold mb-4">Performance Chart by Center</h3>
                     <canvas id="centerChart" height="300"></canvas>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
@@ -551,13 +552,13 @@
                         label: 'Actual Production',
                         data: centers.map(c => c.actual),
                         backgroundColor: centers.map(c => 
-                            parseFloat(c.percent) >= 90 ? 'rgba(16, 185, 129, 0.7)' : 
+                            parseFloat(c.percent) >= 90 ? 'rgba(0, 255, 89, 0.7)' : 
                             parseFloat(c.percent) >= 80 ? 'rgba(59, 130, 246, 0.7)' : 
                             parseFloat(c.percent) >= 70 ? 'rgba(245, 158, 11, 0.7)' : 
                             'rgba(239, 68, 68, 0.7)'
                         ),
                         borderColor: centers.map(c => 
-                            parseFloat(c.percent) >= 90 ? 'rgba(16, 185, 129, 1)' : 
+                            parseFloat(c.percent) >= 90 ? 'rgb(0, 255, 110)' : 
                             parseFloat(c.percent) >= 80 ? 'rgba(59, 130, 246, 1)' : 
                             parseFloat(c.percent) >= 70 ? 'rgba(245, 158, 11, 1)' : 
                             'rgba(239, 68, 68, 1)'

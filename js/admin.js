@@ -74,31 +74,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
-
-    
-    
-    /*** Chart.js Initialization ***/
-    const chartColors = { primary: "#0056b3", success: "#38a169", danger: "#e53e3e", gray: "#e2e8f0" };
-    const createChart = (ctx, labels, data, backgroundColor) => {
-        return new Chart(ctx, {
-            type: "doughnut",
-            data: { labels, datasets: [{ data, backgroundColor, borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: "75%" }
-        });
-    };
-    
-    if (document.getElementById("usersChart")) {
-        createChart(document.getElementById("usersChart"), ["Registered", "Remaining"], [1254, 1500-1254], [chartColors.primary, chartColors.gray]);
-    }
-    if (document.getElementById("carabaosChart")) {
-        createChart(document.getElementById("carabaosChart"), ["Carabaos", "Remaining"], [3421, 3800-3421], [chartColors.success, chartColors.gray]);
-    }
-    if (document.getElementById("servicesChart")) {
-        createChart(document.getElementById("servicesChart"), ["Completed", "Remaining"], [892, 1000-892], [chartColors.primary, chartColors.gray]);
-    }
-    if (document.getElementById("requestsChart")) {
-        createChart(document.getElementById("requestsChart"), ["Pending", "Target"], [59, 30], [chartColors.danger, chartColors.gray]);
-    }
     
     /*** Profile Image Preview ***/
     const profileImageInput = document.getElementById("profile_image");
@@ -109,9 +84,4 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-    
 });
-
-
-
-
