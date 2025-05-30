@@ -327,26 +327,30 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-gray-500 font-medium">Balance</p>
-                            <h2 class="text-3xl font-bold mt-2"><?= number_format($balance) ?></h2>
-                        </div>
-                        <div class="bg-yellow-100 p-3 rounded-full">
-                            <i class="fas fa-scale-balanced text-yellow-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="flex justify-between text-sm">
-                            <span>Remaining Target</span>
-                            <span class="font-semibold"><?= $balancePercentage ?>%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2 overflow-hidden">
-                            <div class="bg-yellow-500 h-2.5 rounded-full" style="width: <?= 100 - min($balancePercentage, 100) ?>%"></div>
-                        </div>
-                    </div>
-                </div>
+               <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
+    <div class="flex justify-between items-start">
+        <div>
+            <p class="text-gray-500 font-medium">Balance</p>
+            <h2 class="text-3xl font-bold mt-2"><?= number_format($balance) ?></h2>
+        </div>
+        <div class="bg-yellow-100 p-3 rounded-full">
+            <i class="fas fa-scale-balanced text-yellow-600 text-xl"></i>
+        </div>
+    </div>
+    <div class="mt-4">
+        <div class="flex justify-between text-sm">
+            <span>Remaining Target</span>
+            <span class="font-semibold"><?= $balancePercentage ?>%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2 overflow-hidden">
+            <div 
+                class="bg-yellow-500 h-2.5 rounded-full" 
+                style="width: <?= ($balancePercentage > 0) ? (100 - min($balancePercentage, 100)) : 0 ?>%">
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
                 <div class="bg-white rounded-xl shadow-sm p-6 card-hover transition fade-in">
