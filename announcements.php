@@ -76,9 +76,8 @@
             <ul>
                 <li><a href="index.php">Home</a></li>
                 <li><a href="#">About</a></li>
-                <li><a href="programs.php">Programs</a></li>
-                <li><a href="announcements.php" class="active">News</a></li>
-                <li><a href="#">Contact</a></li>
+                <li><a href="programs.php">CBED Coordinators</a></li>
+                <li><a href="announcements.php" class="active">Announcements</a></li>
                 <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i> Login</a></li>
             </ul>
         </nav>

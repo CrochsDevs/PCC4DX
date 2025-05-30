@@ -15,141 +15,141 @@
     <link rel="stylesheet" href="css/map.css">
 
     <style>
-/* General styling */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-}
+        /* General styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
 
-.container {
-    width: 90%;
-    margin: 0 auto;
-}
+        .container {
+            width: 90%;
+            margin: 0 auto;
+        }
 
-/* About Section */
-.about-section {
-    display: flex;
-    justify-content: space-between;
-    padding: 40px 0;
-}
+        /* About Section */
+        .about-section {
+            display: flex;
+            justify-content: space-between;
+            padding: 40px 0;
+        }
 
-.about-content {
-    flex: 1;
-    padding-right: 30px; /* Adds space between text and images */
-    margin: 50px;
-}
+        .about-content {
+            flex: 1;
+            padding-right: 30px; /* Adds space between text and images */
+            margin: 50px;
+        }
 
-.section-title {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-}
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
 
-.about-content p {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: #333;
-    margin-bottom: 20px;
-}
+        .about-content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 20px;
+        }
 
-.btn-outline {
-    display: inline-block;
-    background-color: transparent;
-    color: #007bff;
-    border: 2px solid #007bff;
-    width: 400px;
-    text-decoration: none;
-    border-radius: 5px;
-    
-}
+        .btn-outline {
+            display: inline-block;
+            background-color: transparent;
+            color: #007bff;
+            border: 2px solid #007bff;
+            width: 400px;
+            text-decoration: none;
+            border-radius: 5px;
+            
+        }
 
-.btn-outline:hover {
-    background-color: #007bff;
-    color: white;
-}
+        .btn-outline:hover {
+            background-color: #007bff;
+            color: white;
+        }
 
-/* Images Grid */
-.about-images {
-    flex: 1;
-    margin-left: 30px; /* Adds space between text and images */
-}
+        /* Images Grid */
+        .about-images {
+            flex: 1;
+            margin-left: 30px; /* Adds space between text and images */
+        }
 
-.image-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 columns for images */
-    gap: 20px;
-}
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns for images */
+            gap: 20px;
+        }
 
-.image-container {
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+        .image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
 
-.image-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
 
-.image-container:hover img {
-    transform: scale(1.1);
-}
+        .image-container:hover img {
+            transform: scale(1.1);
+        }
 
-.hover-text {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 1rem;
-    display: none;
-}
+        .hover-text {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+            display: none;
+        }
 
-.image-container:hover .hover-text {
-    display: block;
-}
+        .image-container:hover .hover-text {
+            display: block;
+        }
 
-/* Responsive Layout - Adjust grid layout for small screens */
-@media (max-width: 1200px) {
-    .image-grid {
-        grid-template-columns: repeat(3, 1fr); /* 3 columns for medium screens */
-    }
-}
+        /* Responsive Layout - Adjust grid layout for small screens */
+        @media (max-width: 1200px) {
+            .image-grid {
+                grid-template-columns: repeat(3, 1fr); /* 3 columns for medium screens */
+            }
+        }
 
-@media (max-width: 992px) {
-    .image-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 columns for smaller screens */
-    }
-}
+        @media (max-width: 992px) {
+            .image-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns for smaller screens */
+            }
+        }
 
-@media (max-width: 768px) {
-    .about-section {
-        flex-direction: column;
-        align-items: center; /* Center the content */
-    }
+        @media (max-width: 768px) {
+            .about-section {
+                flex-direction: column;
+                align-items: center; /* Center the content */
+            }
 
-    .about-content, .about-images {
-        flex: none;
-        width: 100%;
-       
+            .about-content, .about-images {
+                flex: none;
+                width: 100%;
+            
+                
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
+
+            </style>
         
-    }
-
-    .section-title {
-        font-size: 2rem;
-    }
-}
-
-
-    </style>
- 
-</head>
-<body>
+        </head>
+        <body>
     <!-- Government Header Bar  -->
     <div class="govt-bar">
         <div class="container">
@@ -163,24 +163,24 @@ body {
 
     <!-- Main Header -->
     <header class="main-header">
-    <div class="container">
-        <div class="logo-container">
-            <img src="images/logo.png" alt="PCC Logo" class="logo">
-        </div>
-        <nav class="main-nav">
-            <ul>
-                <li><a href="#" class="active">Home</a></li>
-                <li><a href="#">About</a></li>           
-                <li><a href="programs.php">CBED Coordinators</a></li>
+        <div class="container">
+            <div class="logo-container">
+                <img src="images/logo.png" alt="PCC Logo" class="logo">
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#" class="active">Home</a></li>
+                    <li><a href="#about-section">About</a></li>           
+                    <li><a href="programs.php">CBED Coordinators</a></li>
 
-                <li><a href="announcements.php">News</a></li> 
-                <li><a href="#">Contact</a></li>
-                <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i>Login Account</a></li>
-            </ul>
-        </nav>
-        <button class="mobile-menu-btn"><i class="fas fa-bars"></i></button>
-    </div>
-</header>
+                    <li><a href="announcements.php">Announcements</a></li> 
+
+                    <li><a href="login.php" class="btn-login"><i class="fas fa-user"></i>Login Account</a></li>
+                </ul>
+            </nav>
+            <button class="mobile-menu-btn"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
  
     <!-- Hero Section with Video Background -->
     <section class="hero">
@@ -241,46 +241,43 @@ body {
         </div>
     </section>
 
-<!-- About Section -->
-<section class="about-section">
-  <!-- Left: Text Content -->
-  <div class="about-content">
-    <h2 class="section-title">About Quick Fac</h2>
-    <p><p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities. In line with its mission, 4DX actively collaborates with local government units, academic institutions, and farming cooperatives to ensure that carabao-related interventions reach even the most remote and underserved rural areas. Its efforts extend to providing continuous training for farmers, promoting the adoption of climate-smart agricultural practices, and improving market access for dairy and meat products derived from carabaos. </p>
-    </p>
+    <!-- About Section -->
+    <section id= "about-section" class="about-section">
+    <!-- Left: Text Content -->
+    <div class="about-content">
+        <h2 class="section-title">About Quick Facts</h2>
+        <p><p>The 4DX is under the Department of Agriculture, mandated to conserve, propagate, and promote the carabao as a source of milk, meat, draft power, and hide to benefit rural farming families. It also plays a vital role in enhancing livestock-based livelihoods, supporting dairy enterprises, and advancing scientific research to improve carabao genetics and productivity. Through sustainable breeding programs, technological innovations, and community-based initiatives, 4DX aims to strengthen the agricultural sector while preserving the cultural and economic significance of the carabao in rural communities. In line with its mission, 4DX actively collaborates with local government units, academic institutions, and farming cooperatives to ensure that carabao-related interventions reach even the most remote and underserved rural areas. Its efforts extend to providing continuous training for farmers, promoting the adoption of climate-smart agricultural practices, and improving market access for dairy and meat products derived from carabaos. </p>
+        </p>
 
-    <!-- ✅ Move button here -->
-    <div class="section-footer about-readmore">
-        <a href="#" class="btn-outline">Read more</a>
+        <!-- ✅ Move button here -->
+        <div class="section-footer about-readmore">
+            <a href="#" class="btn-outline">Read more</a>
+        </div>
+
     </div>
 
-  </div>
-
-  <!-- Right: Image Grid -->
-  <div class="about-images">
-    <div class="image-grid">
-      <div class="image-container">
-        <img src="images/milkfeeding.jpg" alt="milkpi">
-        <div class="hover-text">Milk Feeding</div>
-      </div>
-      <div class="image-container">
-        <img src="images/calf.jpeg" alt="calf">
-        <div class="hover-text">Calf</div>
-      </div>
-      <div class="image-container">
-        <img src="images/AI.jpg" alt="AI">
-        <div class="hover-text">Artificial Insemination</div>
-      </div>
-      <div class="image-container">
-        <img src="images/milkprodaksyon.jpg" alt="milkpro">
-        <div class="hover-text">Milk Production</div>
-      </div>
+    <!-- Right: Image Grid -->
+    <div class="about-images">
+        <div class="image-grid">
+        <div class="image-container">
+            <img src="images/milkfeeding.jpg" alt="milkpi">
+            <div class="hover-text">Milk Feeding</div>
+        </div>
+        <div class="image-container">
+            <img src="images/calf.jpeg" alt="calf">
+            <div class="hover-text">Calf</div>
+        </div>
+        <div class="image-container">
+            <img src="images/AI.jpg" alt="AI">
+            <div class="hover-text">Artificial Insemination</div>
+        </div>
+        <div class="image-container">
+            <img src="images/milkprodaksyon.jpg" alt="milkpro">
+            <div class="hover-text">Milk Production</div>
+        </div>
+        </div>
     </div>
-  </div>
-</section>
-
-
-
+    </section>
 
 
      <!-- Announcement Section -->
@@ -299,7 +296,7 @@ body {
 
 
   <!-- Footer -->
-<footer class="main-footer">
+<footer id ="footer" class="main-footer">
     <div class="footer-top">
         <div class="container">
             <div class="footer-col">
@@ -354,172 +351,7 @@ body {
 </body>
 <!-- Load Google Maps API -->
 <script>
-    (g => {
-        var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__";
-        var m = document, b = window;
-        b = b[c] || (b[c] = {});
-        var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (
-            h = new Promise(async(f, n) => {
-                await (a = m.createElement("script"));
-                e.set("libraries", [...r] + "");
-                for(k in g)e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]);
-                e.set("callback", c + ".maps." + q);
-                a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
-                d[q] = f;
-                a.onerror = () => h = n(Error(p + " could not load."));
-                a.nonce = m.querySelector("script[nonce]")?.nonce || "";
-                m.head.append(a);
-            })
-        );
-        d[l] ? console.warn(p + " only loads once. Ignoring:", g) :
-               d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
-    })({
-        key: "AIzaSyC-76TlP4VSPEjMYYUOTNvXFhoDRpZqa54",
-        v: "beta"
-    });
-
-    async function initMap() {
-        // Import required libraries
-        const { Map } = await google.maps.importLibrary("maps");
-        const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
-
-        // Create map instance with disabled controls
-        const map = new Map(document.getElementById('map'), {
-            center: { lat: 12.8797, lng: 121.7740 },
-            zoom: 6,
-            mapId: 'philippines_dapcc_map',
-            disableDefaultUI: true,
-            zoomControl: false,
-            zoomControlOptions: {
-                position: google.maps.ControlPosition.LEFT_CENTER
-            }
-        });
-
-        // Regional centers data
-        const regionalCenters = [
-            {
-                name: "DA-PCC at Mariano Marcos State University",
-                shortName: "DA-PCC at MMSU",
-                lat: 18.0479061,
-                lng: 120.5525777,
-                location: "Batac City, Ilocos Norte",
-                mobile: "+63 919.224.9062",
-                email: "pcc-mmsu@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at Cagayan State University",
-                shortName: "DA-PCC at CSU",
-                lat: 17.5534463,
-                lng: 121.782553,
-                location: "Tuguegarao City, Cagayan",
-                phone: "+63 (078) 377.9315",
-                mobile: "+63 977.806.4930",
-                email: "pcc-csu@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at Don Mariano Marcos Memorial State University",
-                shortName: "DA-PCC at DMMMSU",
-                lat: 16.2378308,
-                lng: 120.4157506,
-                location: "Rosario, La Union",
-                mobile: "+63 920.982.9666",
-                email: "pcc-dmmmsu@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC National Headquarters and Gene Pool",
-                shortName: "DA-PCC NHGP",
-                lat: 15.744035,
-                lng: 120.942936,
-                location: "Science City of Muñoz, Nueva Ecija",
-                phone: "+63 (044) 456.0731",
-                email: "oed@pcc.gov.ph",
-                color: "blue"
-            },
-            {
-                name: "DA-PCC at Central Luzon State University",
-                shortName: "DA-PCC at CLSU",
-                lat: 15.739369,
-                lng: 120.9312026,
-                location: "Science City of Muñoz, Nueva Ecija",
-                phone: "+63 (044) 940 3061",
-                mobile: "+63 968.853.5754",
-                email: "pcc-clsu@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at University Of The Philipines - Los Baños",
-                shortName: "DA-PCC at UPLB",
-                lat: 14.1587114,
-                lng: 121.2440314,
-                location: "Los Baños, Laguna",
-                phone: "(049) 536.2729",
-                email: "pcc-uplb@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at Western Visayas State University",
-                shortName: "DA-PCC at WVSU",
-                lat: 11.1152003,
-                lng: 122.5360161,
-                location: "Calinog, Iloilo",
-                phone: "+63 (033) 323.4781",
-                mobile: "+63 999.991.6115",
-                email: "pcc-wvsu@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at La Carlota Stock Farm",
-                shortName: "DA-PCC at LCSF",
-                lat: 10.4039666,
-                lng: 122.9991764,
-                location: "La Granja, La Carlota City, Negros Occidental",
-                mobile: "+63 919.006.8392",
-                email: "pcc-lcsf@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at VIsayas State University",
-                shortName: "DA-PCC at VSU",
-                lat: 10.7413785,
-                lng: 124.7940473,
-                location: "Baybay City, Leyte",
-                mobile: "+63 908.895.2461",
-                email: "pcc-vsu@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at Ubay Stock Farm",
-                shortName: "DA-PCC at USF",
-                lat: 9.9928517,
-                lng: 124.4482512,
-                location: "Ubay, Bohol",
-                mobile: "+63 992 161 5798",
-                email: "pcc-usf@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at Mindanao Livestock Production Center",
-                shortName: "DA-PCC at MLPC",
-                lat: 7.9253361,
-                lng: 122.5321893,
-                location: "Kalawit, Zamboanga del Norte",
-                mobile: "+63 912.784.4668",
-                email: "pcc-mlpc@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at University of Southern Mindanao",
-                shortName: "DA-PCC at USM",
-                lat: 7.1108477,
-                lng: 124.839300,
-                location: "Kabacan, North Cotabato",
-                mobile: "+63 999.229.5948",
-                email: "pcc-usm@pcc.gov.ph"
-            },
-            {
-                name: "DA-PCC at Central Mindanao University",
-                shortName: "DA-PCC at CMU",
-                lat: 7.8802248,
-                lng: 125.0619829,
-                location: "Maramag, Bukidnon",
-                mobile: "+63 939.916.9719",
-                email: "pcc-cmu@pcc.gov.ph"
-            }
-        ];
-
+ 
         // DOM elements for info panel
         const infoPanel = document.getElementById('info-panel');
         const centerName = document.getElementById('center-name');

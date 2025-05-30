@@ -12,26 +12,38 @@ if ($_SESSION['user']['center_type'] !== 'Headquarters') {
 }
 
 // --- Fetch Dashboard Data with PDO ---
+$currentYear = date('Y'); // Default to current year
+if (isset($_GET['year']) && is_numeric($_GET['year'])) {
+    $currentYear = $_GET['year'];
+}
 
-// Get AI Services total (colored part)
-$aiStmt = $conn->prepare("SELECT SUM(aiServices) AS total_ai FROM ai_services");
+// Get AI Services total for selected year
+$aiStmt = $conn->prepare("SELECT SUM(aiServices) AS total_ai FROM ai_services WHERE YEAR(date) = :year");
+$aiStmt->bindParam(':year', $currentYear, PDO::PARAM_INT);
 $aiStmt->execute();
 $aiTotal = $aiStmt->fetch(PDO::FETCH_ASSOC)['total_ai'] ?? 0;
 
-// Get AI Target total (gray part)
-$aiTargetStmt = $conn->prepare("SELECT SUM(target) AS target_ai FROM ai_target");
+// Get AI Target total for selected year
+$aiTargetStmt = $conn->prepare("SELECT SUM(target) AS target_ai FROM ai_target WHERE year = :year");
+$aiTargetStmt->bindParam(':year', $currentYear, PDO::PARAM_INT);
 $aiTargetStmt->execute();
 $aiTarget = $aiTargetStmt->fetch(PDO::FETCH_ASSOC)['target_ai'] ?? 0;
 
-// Get Calf Drop totals (colored part)
-$calfStmt = $conn->prepare("SELECT SUM(ai + bep + ih + private) AS total_calf FROM calf_drop");
+// Get Calf Drop totals for selected year
+$calfStmt = $conn->prepare("SELECT SUM(ai + bep + ih + private) AS total_calf FROM calf_drop WHERE YEAR(date) = :year");
+$calfStmt->bindParam(':year', $currentYear, PDO::PARAM_INT);
 $calfStmt->execute();
 $calfTotal = $calfStmt->fetch(PDO::FETCH_ASSOC)['total_calf'] ?? 0;
 
-// Get Calf Drop Target (gray part)
-$calfTargetStmt = $conn->prepare("SELECT SUM(target) AS target_calf FROM cd_target");
+// Get Calf Drop Target for selected year
+$calfTargetStmt = $conn->prepare("SELECT SUM(target) AS target_calf FROM cd_target WHERE year = :year");
+$calfTargetStmt->bindParam(':year', $currentYear, PDO::PARAM_INT);
 $calfTargetStmt->execute();
 $calfTarget = $calfTargetStmt->fetch(PDO::FETCH_ASSOC)['target_calf'] ?? 0;
+
+// Get available years for dropdown
+$yearsStmt = $conn->query("SELECT DISTINCT YEAR(date) as year FROM ai_services UNION SELECT DISTINCT year FROM ai_target ORDER BY year DESC");
+$availableYears = $yearsStmt->fetchAll(PDO::FETCH_COLUMN, 0);
 
 // Calculate remaining (avoid negatives)
 $aiRemaining = max($aiTarget - $aiTotal, 0);
@@ -69,75 +81,75 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
         }
     </script>
     <style>
-        /* Quick Facts Section Styles */
-        .quickfacts-container {
-            padding: 20px;
-            margin-top: 20px;
-        }
+            /* Quick Facts Section Styles */
+            .quickfacts-container {
+                padding: 20px;
+                margin-top: 20px;
+            }
 
-        .quickfacts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
+            .quickfacts-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 20px;
+            }
 
-        .quickfact-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            overflow: hidden;
-            position: relative;
-        }
+            .quickfact-card {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease;
+                overflow: hidden;
+                position: relative;
+            }
 
-        .quickfact-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
+            .quickfact-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            }
 
-        .quickfact-link {
-            display: block;
-            padding: 25px;
-            color: inherit;
-            text-decoration: none;
-        }
+            .quickfact-link {
+                display: block;
+                padding: 25px;
+                color: inherit;
+                text-decoration: none;
+            }
 
-        .quickfact-content {
-            padding: 25px;
-        }
+            .quickfact-content {
+                padding: 25px;
+            }
 
-        .quickfact-icon {
-            font-size: 2rem;
-            color: #0056b3;
-            margin-bottom: 15px;
-        }
+            .quickfact-icon {
+                font-size: 2rem;
+                color: #0056b3;
+                margin-bottom: 15px;
+            }
 
-        .quickfact-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #2d3748;
-        }
+            .quickfact-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #2d3748;
+            }
 
-        .quickfact-desc {
-            color: #4a5568;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
+            .quickfact-desc {
+                color: #4a5568;
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
 
-        /* Service Status Styles */
-        .active-service {
-            border-left: 4px solid #0056b3;
-        }
+            /* Service Status Styles */
+            .active-service {
+                border-left: 4px solid #0056b3;
+            }
 
-        .disabled-service {
-            opacity: 0.7;
-            background-color: #f8f9fa;
-            border-left: 4px solid #6c757d;
-        }
+            .disabled-service {
+                opacity: 0.7;
+                background-color: #f8f9fa;
+                border-left: 4px solid #6c757d;
+            }
 
-        .disabled-service .quickfact-icon {
-            color: #6c757d;
+            .disabled-service .quickfact-icon {
+                color: #6c757d;
         }
 
         .disabled-service .quickfact-title,
@@ -237,6 +249,50 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* Add to your existing CSS */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .year-filter {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .year-filter label {
+            margin-right: 10px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .year-filter select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background-color: white;
+            color: #2d3748;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .year-filter select:hover {
+            border-color: #cbd5e0;
+        }
+
+        .year-filter select:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
         }
 
         /* Responsive Adjustments */
@@ -350,10 +406,21 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
         <div id="dashboard-section" class="content-section active">
             <h2 class="dashboard-title"><i class="fas fa-chart-line"></i> Performance Dashboard</h2>
             <p class="dashboard-description">Monitor and manage all PCC Headquarters operations. Track key metrics and performance indicators to ensure efficient service delivery.</p>
+
+            <div class="year-filter">
+                <form method="get" id="yearFilterForm">
+                    <label for="yearSelect">Filter by Year:</label>
+                    <select name="year" id="yearSelect" onchange="document.getElementById('yearFilterForm').submit()">
+                        <?php foreach ($availableYears as $year): ?>
+                            <option value="<?= $year ?>" <?= $year == $currentYear ? 'selected' : '' ?>><?= $year ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
             
             <div class="dashboard-grid">
-                <!-- AI Card -->
-                <div class="dashboard-card">
+               <!-- AI Card -->
+                <a href="admin_ai_dashboard.php" class="dashboard-card" style="text-decoration: none; color: inherit;">
                     <h3 class="card-title"><i class="fas fa-users"></i> Artificial Insemination</h3>
                     <div class="chart-container">
                         <canvas id="usersChart"></canvas>
@@ -364,10 +431,11 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                             <span class="target">Target: <?= $aiTarget ?></span>
                         </div>
                     </div>
-                </div>
+                </a>
 
-                <!-- Calf-Drop Card -->
-                <div class="dashboard-card">
+
+             <!-- Calf-Drop Card -->
+                <a href="admin_cd_dashboard.php" class="dashboard-card" style="text-decoration: none; color: inherit;">
                     <h3 class="card-title"><i class="fas fa-paw"></i> Calf Drop</h3>
                     <div class="chart-container">
                         <canvas id="carabaosChart"></canvas>
@@ -378,46 +446,71 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                             <span class="target">Target: <?= $calfTarget ?></span>
                         </div>
                     </div>
-                </div>
+                </a>
 
-                <!-- Milk Production Card (disabled) -->
-                <div class="dashboard-card" style="opacity: 0.5; pointer-events: none;">
-                    <h3 class="card-title"><i class="fas fa-check-circle"></i>Milk Production</h3>
-                    <div class="chart-container">
-                        <canvas id="servicesChart"></canvas>
+
+              <!-- Milk Production Card (disabled) -->
+                <div class="dashboard-card relative bg-white rounded-xl shadow-md overflow-hidden opacity-70 pointer-events-none">
+                    <!-- Under Development Badge -->
+                    <div class="absolute top-3 right-3 z-10 bg-yellow-400 text-gray-900 text-xs font-semibold px-3 py-1 rounded-full">
+                        Under Development
                     </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">N/A</span>
-                            <span class="target">N/A</span>
+
+                    <!-- Card Content -->
+                    <div class="p-4">
+                        <h3 class="card-title text-lg font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <i class="fas fa-clock text-blue-600"></i> Milk Production
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="servicesChart"></canvas>
+                        </div>
+                        <div class="chart-info mt-4 text-sm text-gray-600">
+                            <div class="chart-stats flex justify-between">
+                                <span class="actual">Actual: N/A</span>
+                                <span class="target">Target: N/A</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Milk Feeding Card (disabled) -->
-                <div class="dashboard-card" style="opacity: 0.5; pointer-events: none;">
-                    <h3 class="card-title"><i class="fas fa-clock"></i> Milk Feeding</h3>
-                    <div class="chart-container">
-                        <canvas id="requestsChart"></canvas>
+                <div class="dashboard-card relative bg-white rounded-xl shadow-md overflow-hidden opacity-70 pointer-events-none">
+                    <div class="absolute top-3 right-3 z-10 bg-yellow-400 text-gray-900 text-xs font-semibold px-3 py-1 rounded-full">
+                        Under Development
                     </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">N/A</span>
-                            <span class="target">N/A</span>
+                    <div class="p-4">
+                        <h3 class="card-title text-lg font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <i class="fas fa-clock text-blue-600"></i> Milk Feeding
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="requestsChart"></canvas>
+                        </div>
+                        <div class="chart-info mt-4 text-sm text-gray-600">
+                            <div class="chart-stats flex justify-between">
+                                <span class="actual">Actual: N/A</span>
+                                <span class="target">Target: N/A</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                    <!-- Dairy Box Card (disabled) -->
-                <div class="dashboard-card" style="opacity: 0.5; pointer-events: none;">
-                    <h3 class="card-title"><i class="fas fa-clock"></i> Dairy Box</h3>
-                    <div class="chart-container">
-                        <canvas id="requestsChart"></canvas>
+                <!-- Dairy Box Card (disabled) -->
+                <div class="dashboard-card relative bg-white rounded-xl shadow-md overflow-hidden opacity-70 pointer-events-none">
+                    <div class="absolute top-3 right-3 z-10 bg-yellow-400 text-gray-900 text-xs font-semibold px-3 py-1 rounded-full">
+                        Under Development
                     </div>
-                    <div class="chart-info">
-                        <div class="chart-stats">
-                            <span class="actual">N/A</span>
-                            <span class="target">N/A</span>
+                    <div class="p-4">
+                        <h3 class="card-title text-lg font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <i class="fas fa-clock text-blue-600"></i> Dairy Box
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="dairyboxChart"></canvas>
+                        </div>
+                        <div class="chart-info mt-4 text-sm text-gray-600">
+                            <div class="chart-stats flex justify-between">
+                                <span class="actual">Actual: N/A</span>
+                                <span class="target">Target: N/A</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -426,28 +519,37 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
      
         
 
-                <!-- Programs Section -->
-        <div id="programs-section" class="content-section">
-            <div class="container mt-5">
-                <h2 class="dashboard-title"><i class="fas fa-user-friends"></i> Programs</h2>
-                <div class="mt-4 mb-3">
-                    <!-- Programs management -->
-                    <a href="create_program.php" class="btn btn-success">Add Program</a>
-                </div>
+<!-- Programs Section -->
+<div id="programs-section" class="content-section bg-gray-100 min-h-screen py-10 px-[30px]">
+    <!-- Full width container with 30px padding left & right -->
+    <div class="w-full">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <i class="fas fa-user-friends text-blue-600 text-2xl"></i> Programs
+            </h2>
+            <a href="create_program.php" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow">
+                + Add Program
+            </a>
+        </div>
 
-                <!-- Programs List -->
-                <h3 class="mt-4">Program Profiles</h3>
-                <table class="table table-striped mt-3">
-                    <thead>
+        <!-- Program Profiles Title -->
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Program Profiles</h3>
+
+        <!-- Table Card -->
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-200 text-gray-700 text-sm uppercase tracking-wide">
                         <tr>
-                            <th>Profile</th>
-                            <th>Name</th>
-                            <th>Title</th>
-                            <th>Date Created</th>
-                            <th>Actions</th>
+                            <th class="py-3 px-4 text-left">Profile</th>
+                            <th class="py-3 px-4 text-left">Name</th>
+                            <th class="py-3 px-4 text-left">Title</th>
+                            <th class="py-3 px-4 text-left">Date Created</th>
+                            <th class="py-3 px-4 text-left">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="text-gray-800">
                         <?php
                         include 'db_config.php';
 
@@ -457,25 +559,29 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
 
                             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 $profileImage = $row['profile_image'] ? 'uploads/programs/' . htmlspecialchars($row['profile_image']) : 'images/default-profile.png';
-                                echo "<tr>";
-                                echo "<td><img src='" . $profileImage . "' style='width: 60px; height: 60px; object-fit: cover; border-radius: 50%;'></td>";
-                                echo "<td>" . htmlspecialchars($row['name']) . "</td>";
-                                echo "<td>" . htmlspecialchars($row['title']) . "</td>";
-                                echo "<td>" . htmlspecialchars(date('F j, Y', strtotime($row['created_at']))) . "</td>";
-                                echo "<td>
-                                        <a href='edit-program.php?id=" . $row['id'] . "' class='btn btn-warning btn-sm me-2'>Edit</a>
-                                        <a href='delete-program.php?id=" . $row['id'] . "' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure you want to delete this program profile?\")'>Delete</a>
+                                echo "<tr class='border-b hover:bg-gray-50'>";
+                                echo "<td class='py-3 px-4'><img src='" . $profileImage . "' class='w-12 h-12 rounded-full object-cover'></td>";
+                                echo "<td class='py-3 px-4'>" . htmlspecialchars($row['name']) . "</td>";
+                                echo "<td class='py-3 px-4'>" . htmlspecialchars($row['title']) . "</td>";
+                                echo "<td class='py-3 px-4'>" . htmlspecialchars(date('F j, Y', strtotime($row['created_at']))) . "</td>";
+                                echo "<td class='py-3 px-4 flex gap-2'>
+                                        <a href='edit-program.php?id=" . $row['id'] . "' class='bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-md text-sm'>Edit</a>
+                                        <a href='delete-program.php?id=" . $row['id'] . "' class='bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm' onclick='return confirm(\"Are you sure you want to delete this program profile?\")'>Delete</a>
                                     </td>";
                                 echo "</tr>";
                             }
                         } catch (PDOException $e) {
-                            echo "<tr><td colspan='5' class='text-danger'>Error fetching programs: " . $e->getMessage() . "</td></tr>";
+                            echo "<tr><td colspan='5' class='text-red-600 py-4 px-4'>Error fetching programs: " . $e->getMessage() . "</td></tr>";
                         }
                         ?>
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+
 
                             
  <!-- Quick Facts Section -->
@@ -722,7 +828,7 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
         // Dark Mode Functions
         function checkTheme() {
             const isDark = localStorage.getItem('theme') === 'dark' || 
-                          (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             
             if (isDark) {
                 document.documentElement.classList.add('dark');
@@ -758,26 +864,11 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
             const textColor = isDark ? '#ffffff' : '#2d3748';
             const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
             
-            const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart'];
+            const charts = ['usersChart', 'carabaosChart', 'servicesChart', 'requestsChart', 'dairyboxChart'];
             charts.forEach(chartId => {
                 const chart = Chart.getChart(chartId);
                 if (chart) {
-                    // Update legend colors
                     chart.options.plugins.legend.labels.color = textColor;
-                    
-                    // Update dataset colors
-                    chart.data.datasets.forEach(dataset => {
-                        if (chartId === 'usersChart') {
-                            dataset.backgroundColor = isDark ? 
-                                ['rgba(0, 86, 179, 0.8)', 'rgba(255, 255, 255, 0.2)'] : 
-                                ['#0056b3', '#e2e8f0'];
-                        } else if (chartId === 'carabaosChart') {
-                            dataset.backgroundColor = isDark ? 
-                                ['rgba(56, 161, 105, 0.8)', 'rgba(255, 255, 255, 0.2)'] : 
-                                ['#38a169', '#e2e8f0'];
-                        }
-                    });
-                    
                     chart.update();
                 }
             });
@@ -801,6 +892,7 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
 
             // Get current theme for initial chart colors
             const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#ffffff' : '#2d3748';
 
             // AI Services Chart
             if (document.getElementById("usersChart")) {
@@ -809,7 +901,7 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                     data: {
                         labels: ["Completed", "Remaining"],
                         datasets: [{
-                            data: [<?= $aiTotal ?>, <?= max($aiTarget - $aiTotal, 0) ?>],
+                            data: [<?= $aiTotal ?>, <?= $aiRemaining ?>],
                             backgroundColor: [chartColors.primary, chartColors.gray],
                             borderWidth: 0
                         }]
@@ -821,7 +913,7 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                         plugins: {
                             legend: {
                                 labels: {
-                                    color: isDark ? '#ffffff' : '#2d3748'
+                                    color: textColor
                                 }
                             }
                         }
@@ -836,7 +928,7 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                     data: {
                         labels: ["Completed", "Remaining"],
                         datasets: [{
-                            data: [<?= $calfTotal ?>, <?= max($calfTarget - $calfTotal, 0) ?>],
+                            data: [<?= $calfTotal ?>, <?= $calfRemaining ?>],
                             backgroundColor: [chartColors.success, chartColors.gray],
                             borderWidth: 0
                         }]
@@ -848,7 +940,7 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                         plugins: {
                             legend: {
                                 labels: {
-                                    color: isDark ? '#ffffff' : '#2d3748'
+                                    color: textColor
                                 }
                             }
                         }
@@ -903,6 +995,38 @@ $calfRemaining = max($calfTarget - $calfTotal, 0);
                             }
                         }
                     }
+                });
+            }
+
+            // Disabled charts (Dairy Box)
+            if (document.getElementById("dairyboxChart")) {
+                new Chart(document.getElementById("dairyboxChart"), {
+                    type: "doughnut",
+                    data: {
+                        labels: ["N/A", "N/A"],
+                        datasets: [{
+                            data: [1, 1],
+                            backgroundColor: [chartColors.gray, chartColors.gray],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "75%",
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Year filter functionality
+            if (document.getElementById('yearSelect')) {
+                document.getElementById('yearSelect').addEventListener('change', function() {
+                    document.getElementById('yearFilterForm').submit();
                 });
             }
         });
